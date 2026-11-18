@@ -19,6 +19,7 @@ import {
   UserCog,
   UsersRound,
   Briefcase,
+  Crown,
 } from 'lucide-react';
 import {
   can,
@@ -241,12 +242,22 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     label: 'Administration',
     items: [
       {
+        id: 'admin-leadership',
+        label: 'HR & Dept Heads',
+        href: '/admin/leadership',
+        icon: Crown,
+        permission: 'role.manage',
+        minScope: 'org',
+        allowedRoles: ['super_admin'],
+      },
+      {
         id: 'admin-users',
         label: 'Users & Roles',
         href: '/admin/users',
         icon: UserCog,
         permission: 'user.read',
         minScope: 'org',
+        allowedRoles: ['super_admin'],
       },
       {
         id: 'admin-audit',
@@ -255,6 +266,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         icon: ShieldCheck,
         permission: 'audit.read',
         minScope: 'org',
+        allowedRoles: ['super_admin'],
       },
     ],
   },

@@ -1,0 +1,17 @@
+/**
+ * In-memory CSRF token store.
+ * Never persists tokens to localStorage, sessionStorage, URLs, or JS-readable cookies.
+ */
+let csrfToken: string | null = null;
+
+export function getCsrfToken(): string | null {
+  return csrfToken;
+}
+
+export function setCsrfToken(token: string | null): void {
+  csrfToken = token;
+}
+
+export function clearCsrfToken(): void {
+  csrfToken = null;
+}

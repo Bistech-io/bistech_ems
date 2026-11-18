@@ -1,52 +1,16 @@
-/**
- * RBAC types, permission keys, scope hierarchy, and client-side visibility helpers.
- * Mirrors the 32 permissions and 4 roles defined in FSD.md section 1.
- * Note: Client-side checks control UI/navigation visibility only; the backend enforces all rules.
- */
+import type {
+  AuthMeData,
+  PermissionGrantMap,
+  PermissionKey,
+  RoleName,
+  ScopeLevel,
+} from '@ems/contracts';
 
-export type RoleName = 'super_admin' | 'hr_manager' | 'dept_head' | 'employee';
-
-export type ScopeLevel = 'own' | 'team' | 'department' | 'managed' | 'org';
-
-export type PermissionKey =
-  | 'user.read'
-  | 'user.manage'
-  | 'role.manage'
-  | 'audit.read'
-  | 'org.settings.manage'
-  | 'employee.read'
-  | 'employee.read.sensitive'
-  | 'employee.create'
-  | 'employee.update'
-  | 'employee.status.manage'
-  | 'employee.history.read'
-  | 'org.structure.read'
-  | 'org.structure.manage'
-  | 'department.head.assign'
-  | 'attendance.self'
-  | 'attendance.read'
-  | 'attendance.correct'
-  | 'task.create.self'
-  | 'task.assign'
-  | 'task.read'
-  | 'task.board.team'
-  | 'task.board.department'
-  | 'task.work'
-  | 'task.comment'
-  | 'task.review'
-  | 'task.manage'
-  | 'team.read'
-  | 'team.manage'
-  | 'dashboard.read'
-  | 'feedback.submit'
-  | 'feedback.read'
-  | 'feedback.manage';
-
-export type PermissionGrantMap = Partial<Record<PermissionKey, ScopeLevel>>;
+export type { AuthMeData, PermissionGrantMap, PermissionKey, RoleName, ScopeLevel };
 
 export interface UserAuthContext {
   userId: string;
-  employeeId?: string;
+  employeeId?: string | null;
   name: string;
   email: string;
   roleTitle?: string;
@@ -71,7 +35,7 @@ export const ROLE_LABELS: Record<RoleName, string> = {
 
 /**
  * Default permission matrices per role from FSD.md section 1.
- * Used as fallback or for role-preview mode before /auth/me is connected.
+ * Used for role-preview mode in development until GET /auth/me is connected.
  */
 export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
   super_admin: {
@@ -170,6 +134,18 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
   },
 };
 
+export function authMeToUserContext(authMe: AuthMeData): UserAuthContext {
+  return {
+    userId: authMe.user.id,
+    employeeId: authMe.employeeId,
+    name: authMe.user.name,
+    email: authMe.user.email,
+    roleTitle: ROLE_LABELS[authMe.roles[0] ?? 'employee'],
+    roles: authMe.roles,
+    permissions: authMe.permissions,
+  };
+}
+
 /**
  * Resolves the additive union of permissions across one or more roles.
  */
@@ -195,7 +171,7 @@ export function resolvePermissionsForRoles(roles: RoleName[]): PermissionGrantMa
  * Checks whether the current user has the required permission at or above minScope.
  */
 export function can(
-  auth: Pick<UserAuthContext, 'permissions'> | null | undefined,
+  auth: { permissions?: PermissionGrantMap } | null | undefined,
   permission: PermissionKey,
   minScope: ScopeLevel = 'own',
 ): boolean {
@@ -209,9 +185,9 @@ export function can(
  * Checks whether the user holds at least one of the specified roles.
  */
 export function hasAnyRole(
-  auth: Pick<UserAuthContext, 'roles'> | null | undefined,
+  auth: { roles?: RoleName[] } | null | undefined,
   allowedRoles: RoleName[],
 ): boolean {
   if (!auth?.roles?.length) return false;
-  return allowedRoles.some((role) => auth.roles.includes(role));
+  return allowedRoles.some((role) => auth.roles?.includes(role));
 }
