@@ -1,7 +1,20 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import type { AuthMeData } from '@ems/contracts';
+import { setOnUnauthenticated } from '@/lib/api/client';
+import { clearCsrfToken, setCsrfToken } from '@/lib/api/csrf';
+import {
+  authMeToUserContext,
   resolvePermissionsForRoles,
   ROLE_LABELS,
   type RoleName,
@@ -10,7 +23,10 @@ import {
 
 interface AuthContextValue {
   user: UserAuthContext;
+  session: AuthMeData | null;
+  isAuthenticated: boolean;
   activeRole: RoleName;
+  setSession: (authMe: AuthMeData | null) => void;
   /** Allows switching roles in UI preview/dev mode until GET /auth/me is connected */
   setPreviewRole: (role: RoleName) => void;
 }
@@ -19,35 +35,57 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 interface AuthProviderProps {
   children: ReactNode;
-  initialUser?: UserAuthContext;
+  initialSession?: AuthMeData | null;
   defaultRole?: RoleName;
 }
 
 export function AuthProvider({
   children,
-  initialUser,
+  initialSession = null,
   defaultRole = 'super_admin',
 }: AuthProviderProps) {
+  const router = useRouter();
+  const [session, setSessionState] = useState<AuthMeData | null>(initialSession);
   const [previewRole, setPreviewRoleState] = useState<RoleName>(
-    initialUser?.roles[0] ?? defaultRole,
+    initialSession?.roles[0] ?? defaultRole,
   );
-  const [customUser, setCustomUser] = useState<UserAuthContext | null>(initialUser ?? null);
+
+  const setSession = useCallback((nextSession: AuthMeData | null) => {
+    setSessionState(nextSession);
+    if (nextSession) {
+      setCsrfToken(nextSession.csrfToken);
+      if (nextSession.roles[0]) {
+        setPreviewRoleState(nextSession.roles[0]);
+      }
+    } else {
+      clearCsrfToken();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialSession?.csrfToken) {
+      setCsrfToken(initialSession.csrfToken);
+    }
+  }, [initialSession]);
+
+  useEffect(() => {
+    setOnUnauthenticated(() => {
+      setSessionState(null);
+      clearCsrfToken();
+      router.replace('/login');
+    });
+    return () => setOnUnauthenticated(null);
+  }, [router]);
 
   const setPreviewRole = useCallback((role: RoleName) => {
     setPreviewRoleState(role);
-    setCustomUser({
-      userId: 'preview-user',
-      employeeId: 'BST-00101',
-      name: 'BisTech Member',
-      email: 'member@bistech.io',
-      roleTitle: ROLE_LABELS[role],
-      roles: [role],
-      permissions: resolvePermissionsForRoles([role]),
-    });
+    setSessionState(null);
   }, []);
 
   const user = useMemo<UserAuthContext>(() => {
-    if (customUser) return customUser;
+    if (session) {
+      return authMeToUserContext(session);
+    }
     return {
       userId: 'preview-user',
       employeeId: 'BST-00101',
@@ -57,15 +95,18 @@ export function AuthProvider({
       roles: [previewRole],
       permissions: resolvePermissionsForRoles([previewRole]),
     };
-  }, [customUser, previewRole]);
+  }, [session, previewRole]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      session,
+      isAuthenticated: Boolean(session),
       activeRole: user.roles[0] ?? previewRole,
+      setSession,
       setPreviewRole,
     }),
-    [user, previewRole, setPreviewRole],
+    [user, session, previewRole, setSession, setPreviewRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
