@@ -1,0 +1,1896 @@
+<!doctype html>
+
+<html class="light" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <meta content="web_dashboard" name="shell-type" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            @layer base {
+                html,
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+                body {
+                    overscroll-behavior: none;
+                }
+                main > :first-child {
+                    margin-top: 0 !important;
+                }
+                main > :last-child {
+                    margin-bottom: 0 !important;
+                }
+            }
+            ::-webkit-scrollbar {
+                display: none;
+            }
+        </style>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "error-container": "#ffdad6",
+                            "on-secondary-container": "#132a26",
+                            "on-primary-container": "#84a59e",
+                            "surface-dim": "#d8dbd5",
+                            "inverse-primary": "#abcec6",
+                            "surface-bright": "#f8faf4",
+                            "surface-variant": "#e1e3dd",
+                            "surface-container-highest": "#e1e3dd",
+                            "surface-container-lowest": "#ffffff",
+                            "inverse-on-surface": "#eff1eb",
+                            "secondary-fixed": "#a7f3d0",
+                            "surface-container-high": "#e7e9e3",
+                            "surface-tint": "#44645f",
+                            "secondary-fixed-dim": "#6ee7b7",
+                            "inverse-surface": "#2e312d",
+                            "tertiary-fixed": "#ffdad3",
+                            "primary-container": "#1b3b36",
+                            "on-tertiary": "#ffffff",
+                            primary: "#12302b",
+                            "on-surface": "#191c19",
+                            "on-error-container": "#93000a",
+                            "surface-container": "#f1f4ed",
+                            outline: "#717976",
+                            "on-secondary-fixed": "#0b2000",
+                            "on-primary-fixed": "#00201c",
+                            "primary-fixed-dim": "#abcec6",
+                            "secondary-container": "#a7f3d0",
+                            "outline-variant": "#c1c8c5",
+                            "on-tertiary-container": "#d38d7e",
+                            "on-tertiary-fixed-variant": "#6d382d",
+                            "tertiary-container": "#f8ad9d",
+                            secondary: "#2d6a4f",
+                            "primary-fixed": "#c7eae2",
+                            "on-secondary": "#ffffff",
+                            "on-error": "#ffffff",
+                            "on-primary": "#ffffff",
+                            error: "#ba1a1a",
+                            "on-secondary-fixed-variant": "#245100",
+                            "tertiary-fixed-dim": "#ffb4a4",
+                            "on-background": "#191c19",
+                            surface: "#f8faf4",
+                            background: "#edf2eb",
+                            "surface-container-low": "#f4f7f1",
+                            "on-tertiary-fixed": "#370e06",
+                            "on-primary-fixed-variant": "#2d4c47",
+                            tertiary: "#e76f51",
+                            "on-surface-variant": "#414846",
+                            forest: "#132a26",
+                            "forest-light": "#1d3d37",
+                            mint: "#52b788",
+                            "mint-light": "#d8f3dc",
+                            peach: "#f8ad9d",
+                            coral: "#e76f51",
+                        },
+                        borderRadius: {
+                            DEFAULT: "1rem",
+                            lg: "1.5rem",
+                            xl: "2rem",
+                            "2xl": "2.25rem",
+                            "3xl": "2.75rem",
+                            full: "9999px",
+                        },
+                        fontFamily: {
+                            sans: ["Plus Jakarta Sans", "sans-serif"],
+                            mono: ["JetBrains Mono", "monospace"],
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body
+        class="bg-[#eef3eb] text-[#191c19] font-sans antialiased min-h-screen p-3 md:p-5 flex gap-4 md:gap-5 selection:bg-mint-light selection:text-forest"
+    >
+        <!-- Floating Deep Forest Pill Sidebar (Inspired by https://lh3.googleusercontent.com/aida-public/AB6AXuBYs07uuwtVDj96v9GpBez6X-VfyC99GoKJGWXPN2kacPbj5XstCzflPF7IaZTMrCZe1KaayipNVAdnEzg_5Jnl9aZRmOMeFhxFmEv42T9thQ-FUYzZoQprMvMkYIUI2XXVRZL1dX1UCa0jECq3aaKtsoqa372xlkSYg0ee0sRaboQi2OG4ALgHmLf3OCUXGVcMK7NO1gT2OoG-uDxxocxmoDjC8S-5uJNzh4dLjViJlb6HDOKxtYSx) -->
+        <aside
+            class="w-16 md:w-20 bg-[#122824] text-white/70 rounded-[2.5rem] flex flex-col items-center py-6 justify-between select-none shadow-2xl flex-shrink-0 z-40 border border-white/10 sticky top-5 h-[calc(100vh-2.5rem)]"
+        >
+            <!-- Brand Glyph -->
+            <div class="flex flex-col items-center gap-4">
+                <div
+                    class="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-white border border-white/15 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                >
+                    <span
+                        class="material-symbols-outlined text-[24px] text-[#52b788]"
+                        >widgets</span
+                    >
+                </div>
+                <!-- Divider -->
+                <div class="w-7 h-[1px] bg-white/10 my-1"></div>
+                <!-- Main Navigation Icons -->
+                <nav class="flex flex-col gap-3 items-center">
+                    <a
+                        class="w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="dashboard"
+                        href="#"
+                        title="Dashboard"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >grid_view</span
+                        >
+                    </a>
+                    <!-- Active Attendance Navigation Pill -->
+                    <a
+                        class="relative w-11 h-11 rounded-2xl bg-[#52b788] text-[#122824] flex items-center justify-center font-bold shadow-lg shadow-[#52b788]/25 transition-all duration-200"
+                        data-path="attendance-and-check-in"
+                        href="#"
+                        title="Attendance &amp; Check-in"
+                    >
+                        <span class="material-symbols-outlined text-[22px]"
+                            >schedule</span
+                        >
+                        <span
+                            class="absolute -right-1 -top-1 w-2.5 h-2.5 rounded-full bg-[#f8ad9d] ring-2 ring-[#122824]"
+                        ></span>
+                    </a>
+                    <a
+                        class="w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="employees-and-directory"
+                        href="#"
+                        title="Employees &amp; Directory"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >badge</span
+                        >
+                    </a>
+                    <a
+                        class="relative w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="tasks-and-review-queue"
+                        href="#"
+                        title="Tasks &amp; Review Queue"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >assignment_turned_in</span
+                        >
+                        <span
+                            class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#f8ad9d]"
+                        ></span>
+                    </a>
+                    <a
+                        class="w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="teams-and-boards"
+                        href="#"
+                        title="Teams &amp; Boards"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >groups</span
+                        >
+                    </a>
+                    <a
+                        class="w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="feedback"
+                        href="#"
+                        title="Feedback"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >rate_review</span
+                        >
+                    </a>
+                    <a
+                        class="w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200"
+                        data-path="admin-and-audit-logs"
+                        href="#"
+                        title="Admin &amp; Audit Logs"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >security</span
+                        >
+                    </a>
+                </nav>
+            </div>
+            <!-- Bottom Utility Icons -->
+            <div class="flex flex-col items-center gap-3">
+                <button
+                    class="w-10 h-10 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                    title="Account Settings"
+                >
+                    <span class="material-symbols-outlined text-[20px]"
+                        >settings</span
+                    >
+                </button>
+                <div class="relative cursor-pointer">
+                    <img
+                        alt="Sarah Jenkins"
+                        class="w-10 h-10 rounded-full object-cover ring-2 ring-[#52b788]/60 shadow-md"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy_UTDeczejtOJgyCKgfbrcm7WX8P0hE3oJP0D9j9rGlvuC1-xQYGhMXvV9OEyWAvgx2YrrcwKxi6FrrzhZy6i1vpgI2iDrq9xpN8dt8vPygOONoD5bxOJYn93Eumn_-ZOuK63-H2fdpVpxrWMqPnsC_KL5BgMTFpX65IkgP5grqbh7uTGDbnLQeGvay3MBLgzQD7DlcHVtleKZxfEm7eVu7RfBg7gn0j5-t2fEQU"
+                    />
+                    <span
+                        class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#52b788] ring-2 ring-[#122824]"
+                    ></span>
+                </div>
+            </div>
+        </aside>
+        <!-- Main Organic Dashboard Canvas -->
+        <div class="flex-1 flex flex-col min-w-0 max-w-full gap-5">
+            <!-- Top Organic Header Bar -->
+            <header
+                class="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 py-1"
+            >
+                <div class="flex items-center gap-3">
+                    <div class="flex flex-col">
+                        <div
+                            class="flex items-center gap-2 text-xs font-semibold text-[#52796f] uppercase tracking-wider"
+                        >
+                            <span>Enterprise Workforce</span>
+                            <span class="text-gray-300">•</span>
+                            <span class="text-[#2d6a4f] font-mono"
+                                >TAD Sec 4.2.2 Live Daemon</span
+                            >
+                        </div>
+                        <h2
+                            class="text-xl md:text-2xl font-bold text-[#142824] tracking-tight"
+                        >
+                            Attendance &amp; Workforce Tracking
+                        </h2>
+                    </div>
+                </div>
+                <!-- Search & System Pill Bar -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div
+                        class="relative flex items-center bg-white/80 rounded-full pl-3.5 pr-2 py-1.5 shadow-sm border border-[#e1e7dc] focus-within:border-[#52b788] focus-within:ring-2 focus-within:ring-[#52b788]/20 transition-all"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[18px] text-[#52796f] mr-2"
+                            >search</span
+                        >
+                        <input
+                            class="bg-transparent border-none text-sm text-[#142824] placeholder:text-gray-400 focus:outline-none w-48 md:w-64 font-sans"
+                            placeholder="Search employees, tasks, logs..."
+                            type="text"
+                        />
+                        <span
+                            class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#eef3eb] text-gray-500 ml-2"
+                            >⌘K</span
+                        >
+                    </div>
+                    <!-- Timezone badge -->
+                    <div
+                        class="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-[#e1e7dc] text-xs font-medium text-[#2d6a4f] shadow-sm"
+                    >
+                        <span
+                            class="w-2 h-2 rounded-full bg-[#52b788] animate-pulse"
+                        ></span>
+                        <span class="font-mono"
+                            >Live Asia/Dhaka BST (UTC+6)</span
+                        >
+                    </div>
+                    <!-- Super Admin Clocked status pill -->
+                    <div
+                        class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e3f4e8] border border-[#a7f3d0] text-[#1b5e3f] text-xs font-semibold shadow-sm"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[16px] text-[#2d6a4f]"
+                            >fingerprint</span
+                        >
+                        <span>Clocked In (09:12 AM)</span>
+                    </div>
+                    <!-- Quick Action: Request Correction Modal Trigger -->
+                    <button
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#142824] font-semibold text-xs border border-[#dce3d6] hover:bg-[#f6f9f3] transition-colors shadow-sm"
+                        id="openCorrectionModalBtn"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[16px] text-[#2d6a4f]"
+                            >edit_calendar</span
+                        >
+                        <span>Request Correction</span>
+                    </button>
+                    <!-- CSV Export Button -->
+                    <button
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#122824] hover:bg-[#1a3832] text-white font-semibold text-xs shadow-md transition-all"
+                        id="downloadCsvBtn"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[16px] text-[#52b788]"
+                            >file_download</span
+                        >
+                        <span>Download CSV</span>
+                    </button>
+                </div>
+            </header>
+            <!-- Top Hero Banner (Inspired by Image 2: "Work's always better together" organic dark card) -->
+            <section
+                class="relative bg-[#142c27] text-white rounded-[2.5rem] p-6 md:p-8 overflow-hidden shadow-xl border border-white/5"
+            >
+                <!-- Ambient organic green/coral gradient circles -->
+                <div
+                    class="absolute -top-20 -right-20 w-80 h-80 bg-[#52b788]/20 rounded-full blur-3xl pointer-events-none"
+                ></div>
+                <div
+                    class="absolute -bottom-24 left-1/3 w-72 h-72 bg-[#f8ad9d]/15 rounded-full blur-3xl pointer-events-none"
+                ></div>
+                <div
+                    class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+                >
+                    <div class="flex flex-col gap-2 max-w-xl">
+                        <div
+                            class="inline-flex items-center gap-2 text-xs font-semibold tracking-wider text-[#a7f3d0] uppercase"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-[#52b788]"
+                            ></span>
+                            <span>NTP Synced Server Clock Guaranteed</span>
+                        </div>
+                        <h1
+                            class="text-2xl md:text-3xl lg:text-[2rem] font-bold tracking-tight text-white leading-tight"
+                        >
+                            Work's always
+                            <span
+                                class="italic font-serif text-[#f8ad9d] font-normal"
+                                >better</span
+                            >
+                            synchronized
+                        </h1>
+                        <p class="text-white/70 text-sm leading-relaxed">
+                            Cryptographically confirmed check-in logs with
+                            automated audit trail verification across 512
+                            personnel in Gulshan 2 Core Gate.
+                        </p>
+                    </div>
+                    <!-- Quick Action Card in Banner -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Team avatar cluster -->
+                        <div
+                            class="flex items-center -space-x-2 bg-black/20 p-1.5 rounded-full border border-white/10 backdrop-blur-sm"
+                        >
+                            <img
+                                alt="Sarah"
+                                class="w-8 h-8 rounded-full object-cover border-2 border-[#142c27]"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4FZm1rk7IEW3oOQt1TZHBVHvVCgV6HNhLbhobzYKGQlgRQ6n_pzYaXKAgfQ3ouAajY-R2zBZLVCh60QcLG5fjop5vsB2BIUwQzs9N3X9G_Dc4hXwdoAd6KMy4c1JDOcPvO076BhobZGaryN5O29eou9dlbP63lMmqsxOfTQirYQyJe4qsJifeum0XfTFU41EGBuvr-6BZc82MS5gHECMrkoOo0oNCER43LDPftB8"
+                            />
+                            <img
+                                alt="Rafiqul"
+                                class="w-8 h-8 rounded-full object-cover border-2 border-[#142c27]"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQNNeJbpXz5f3ZvV-IGLOZaJPX8OUKb0_UF4mdrcjhaSS_lNc-Ulo5f4Lt7RXUf5POKxQwN78_ywxJ297E6UNASfxQ7HbihcersILSTuzrO49apnuQlvF0kqbmHjIYCCQTqG75izt8RmixAWtAVVUfaf7gUFGTSums3oZsEFCi-aVsXL52xSgMvo1zwtBmewTo957-EkuMa_0KCfatAmyyqNw9p4fgvs5ZFvxdeT0"
+                            />
+                            <img
+                                alt="Farhana"
+                                class="w-8 h-8 rounded-full object-cover border-2 border-[#142c27]"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzHludRaBrmSuoW0nx-8qZ2VMi3MavOlxSGw4rLioV7Wyw_nDpBBBtQEzVE8j8D75xn1FCKSmm4J7TjigC2CzpID0rQNei3C1zvcEmQxL90jWrPhMy1j1SrxW6HJIglKEHHl18m671hWKZHZWrM5aQVtoEAYhQh46SuO_ZACU_oEKiYsnKR0Oy5GZ-9wkNk3j3YepAxAFIM5RcchotJYF_aKI_VXA3gYHU3dBw41o"
+                            />
+                            <span
+                                class="w-8 h-8 rounded-full bg-[#1b3b36] text-[11px] font-bold text-white flex items-center justify-center border-2 border-[#142c27]"
+                                >+468</span
+                            >
+                        </div>
+                        <button
+                            class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f8ad9d] hover:bg-[#f69d8a] text-[#3d130a] font-bold text-xs shadow-lg shadow-[#f8ad9d]/20 transition-all"
+                            id="breakActionBtn"
+                        >
+                            <span class="material-symbols-outlined text-[18px]"
+                                >coffee</span
+                            >
+                            <span>Log Break</span>
+                        </button>
+                        <button
+                            class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-sm transition-all"
+                            id="checkoutActionBtn"
+                        >
+                            <span class="material-symbols-outlined text-[18px]"
+                                >logout</span
+                            >
+                            <span>Check Out</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- Bento Grid: Self-Service Employee Clock-in, Weekly Velocity & Telemetry (Image 2 style) -->
+            <section class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                <!-- Card 1: User Self-Service Status & Clock (Span 5) -->
+                <div
+                    class="md:col-span-12 lg:col-span-5 bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#e1e7dc] flex flex-col justify-between gap-5 relative overflow-hidden"
+                >
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-3.5">
+                            <div class="relative">
+                                <img
+                                    alt="Sarah Jenkins"
+                                    class="w-14 h-14 rounded-2xl object-cover ring-2 ring-[#e1e7dc]"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4FZm1rk7IEW3oOQt1TZHBVHvVCgV6HNhLbhobzYKGQlgRQ6n_pzYaXKAgfQ3ouAajY-R2zBZLVCh60QcLG5fjop5vsB2BIUwQzs9N3X9G_Dc4hXwdoAd6KMy4c1JDOcPvO076BhobZGaryN5O29eou9dlbP63lMmqsxOfTQirYQyJe4qsJifeum0XfTFU41EGBuvr-6BZc82MS5gHECMrkoOo0oNCER43LDPftB8"
+                                />
+                                <span
+                                    class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#52b788] ring-2 ring-white"
+                                ></span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3
+                                        class="font-bold text-base text-[#142824]"
+                                    >
+                                        Sarah Jenkins
+                                    </h3>
+                                    <span
+                                        class="font-mono text-[11px] px-2 py-0.5 rounded-full bg-[#eef3eb] text-[#2d6a4f] font-semibold"
+                                        >BST-00012</span
+                                    >
+                                </div>
+                                <p class="text-xs text-gray-500 font-medium">
+                                    VP Engineering • Cloud Infrastructure
+                                </p>
+                            </div>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d8f3dc] text-[#1b4332] text-xs font-bold tracking-wide"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-[#52b788]"
+                            ></span>
+                            ON TIME
+                        </span>
+                    </div>
+                    <!-- Time Ingest Highlight Block -->
+                    <div
+                        class="bg-[#f4f7f1] rounded-2xl p-4 flex flex-col gap-2 border border-[#e8ece3]"
+                    >
+                        <div
+                            class="flex items-center justify-between text-xs text-gray-500 font-mono"
+                        >
+                            <span class="uppercase tracking-wider"
+                                >Checked In Today</span
+                            >
+                            <span>Hash: c91a...fe02</span>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <span
+                                class="text-3xl font-extrabold text-[#142824] tracking-tight font-sans"
+                            >
+                                08:47:12
+                                <span
+                                    class="text-xs font-mono font-medium text-gray-400"
+                                    >BST</span
+                                >
+                            </span>
+                            <div class="text-right">
+                                <span
+                                    class="font-mono text-lg font-bold text-[#2d6a4f]"
+                                    id="liveElapsed"
+                                    >05h 42m 18s</span
+                                >
+                                <span
+                                    class="block text-[11px] text-gray-400 uppercase tracking-wider"
+                                    >Elapsed Time</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Guarantee Footer -->
+                    <div
+                        class="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-[#f0f4ed]"
+                    >
+                        <div
+                            class="flex items-center gap-1.5 text-[11px] text-[#52796f]"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[15px] text-[#52b788]"
+                                >verified_user</span
+                            >
+                            <span
+                                >Cryptographic server clock confirmation
+                                enabled</span
+                            >
+                        </div>
+                        <span
+                            class="font-mono text-[11px] text-[#2d6a4f] font-semibold"
+                            >Node DAC-04</span
+                        >
+                    </div>
+                </div>
+                <!-- Card 2: Weekly 40h Velocity Chart (Span 4) -->
+                <div
+                    class="md:col-span-12 lg:col-span-4 bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#e1e7dc] flex flex-col justify-between gap-4"
+                >
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span
+                                class="text-[11px] uppercase tracking-wider font-semibold text-gray-400 block"
+                                >Workweek Schedule</span
+                            >
+                            <h3 class="font-bold text-base text-[#142824]">
+                                Weekly 40h Velocity
+                            </h3>
+                        </div>
+                        <span
+                            class="font-mono text-xs px-2.5 py-1 rounded-full bg-[#eef3eb] text-[#142824] font-bold"
+                        >
+                            31.3h / 40.0h
+                        </span>
+                    </div>
+                    <!-- Inline Organic Bar Chart -->
+                    <div
+                        class="grid grid-cols-5 gap-2 items-end h-32 pt-3 px-1"
+                    >
+                        <!-- Mon -->
+                        <div
+                            class="flex flex-col items-center gap-1 h-full justify-end"
+                        >
+                            <span
+                                class="text-[11px] font-mono font-medium text-gray-500"
+                                >8.5h</span
+                            >
+                            <div
+                                class="w-full bg-[#eef3eb] rounded-xl overflow-hidden h-24 flex flex-col justify-end p-0.5"
+                            >
+                                <div
+                                    class="bg-[#142c27] h-[85%] rounded-lg"
+                                ></div>
+                            </div>
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase"
+                                >Mon</span
+                            >
+                        </div>
+                        <!-- Tue -->
+                        <div
+                            class="flex flex-col items-center gap-1 h-full justify-end"
+                        >
+                            <span
+                                class="text-[11px] font-mono font-medium text-gray-500"
+                                >8.2h</span
+                            >
+                            <div
+                                class="w-full bg-[#eef3eb] rounded-xl overflow-hidden h-24 flex flex-col justify-end p-0.5"
+                            >
+                                <div
+                                    class="bg-[#142c27] h-[82%] rounded-lg"
+                                ></div>
+                            </div>
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase"
+                                >Tue</span
+                            >
+                        </div>
+                        <!-- Wed -->
+                        <div
+                            class="flex flex-col items-center gap-1 h-full justify-end"
+                        >
+                            <span
+                                class="text-[11px] font-mono font-medium text-gray-500"
+                                >8.8h</span
+                            >
+                            <div
+                                class="w-full bg-[#eef3eb] rounded-xl overflow-hidden h-24 flex flex-col justify-end p-0.5"
+                            >
+                                <div
+                                    class="bg-[#142c27] h-[88%] rounded-lg"
+                                ></div>
+                            </div>
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase"
+                                >Wed</span
+                            >
+                        </div>
+                        <!-- Thu (Today - Active Mint) -->
+                        <div
+                            class="flex flex-col items-center gap-1 h-full justify-end"
+                        >
+                            <span
+                                class="text-[11px] font-mono font-bold text-[#2d6a4f]"
+                                >5.8h</span
+                            >
+                            <div
+                                class="w-full bg-[#d8f3dc] rounded-xl overflow-hidden h-24 flex flex-col justify-end p-0.5"
+                            >
+                                <div
+                                    class="bg-[#52b788] h-[58%] rounded-lg shadow-sm"
+                                ></div>
+                            </div>
+                            <span
+                                class="text-[10px] font-bold text-[#2d6a4f] uppercase"
+                                >Today</span
+                            >
+                        </div>
+                        <!-- Fri -->
+                        <div
+                            class="flex flex-col items-center gap-1 h-full justify-end"
+                        >
+                            <span class="text-[11px] font-mono text-gray-400"
+                                >0h</span
+                            >
+                            <div
+                                class="w-full bg-[#eef3eb] rounded-xl overflow-hidden h-24 flex flex-col justify-end p-0.5"
+                            >
+                                <div
+                                    class="bg-transparent h-0 rounded-lg"
+                                ></div>
+                            </div>
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase"
+                                >Fri</span
+                            >
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-[#f0f4ed]"
+                    >
+                        <span
+                            class="flex items-center gap-1.5 font-medium text-[#2d6a4f]"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-[#52b788]"
+                            ></span>
+                            On-track for weekly target
+                        </span>
+                        <span class="font-mono text-[11px]">Target: 40h</span>
+                    </div>
+                </div>
+                <!-- Card 3: Hub Telemetry Gauge (Span 3) -->
+                <div
+                    class="md:col-span-12 lg:col-span-3 bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#e1e7dc] flex flex-col justify-between gap-4"
+                >
+                    <div class="flex items-center justify-between">
+                        <span
+                            class="text-[11px] uppercase tracking-wider font-semibold text-gray-400"
+                            >Hub Telemetry</span
+                        >
+                        <span
+                            class="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#d8f3dc] text-[#1b4332]"
+                            >ACTIVE</span
+                        >
+                    </div>
+                    <!-- Radial Shift Completeness -->
+                    <div class="flex items-center gap-4 py-1">
+                        <div
+                            class="relative w-18 h-18 flex-shrink-0 flex items-center justify-center"
+                        >
+                            <svg
+                                class="w-16 h-16 transform -rotate-90"
+                                viewbox="0 0 64 64"
+                            >
+                                <circle
+                                    class="text-[#eef3eb]"
+                                    cx="32"
+                                    cy="32"
+                                    fill="none"
+                                    r="26"
+                                    stroke="currentColor"
+                                    stroke-width="6"
+                                ></circle>
+                                <circle
+                                    class="text-[#52b788]"
+                                    cx="32"
+                                    cy="32"
+                                    fill="none"
+                                    r="26"
+                                    stroke="currentColor"
+                                    stroke-dasharray="163.36"
+                                    stroke-dashoffset="45"
+                                    stroke-linecap="round"
+                                    stroke-width="6"
+                                ></circle>
+                            </svg>
+                            <div
+                                class="absolute inset-0 flex items-center justify-center flex-col"
+                            >
+                                <span class="font-bold text-sm text-[#142824]"
+                                    >72%</span
+                                >
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-xs text-[#142824]"
+                                >Shift Day Completeness</span
+                            >
+                            <span class="text-[11px] text-gray-500 mt-0.5"
+                                >02h 18m remaining</span
+                            >
+                        </div>
+                    </div>
+                    <!-- Geo & Terminal Specs -->
+                    <div
+                        class="bg-[#f4f7f1] rounded-2xl p-3 flex flex-col gap-1.5 border border-[#e8ece3]"
+                    >
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-400">Terminal ID:</span>
+                            <span class="font-mono font-medium text-[#142824]"
+                                >DAC-CORE-04</span
+                            >
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-400">Geo-Fence:</span>
+                            <span class="font-mono font-semibold text-[#2d6a4f]"
+                                >MATCHED (Gulshan 2)</span
+                            >
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Query Filters & Controls (Clean Organic White Pill Style) -->
+            <section
+                class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#e1e7dc] flex flex-col gap-4"
+            >
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="material-symbols-outlined text-[20px] text-[#2d6a4f]"
+                            >tune</span
+                        >
+                        <h3 class="font-bold text-base text-[#142824]">
+                            Attendance Filters &amp; Query Controls
+                        </h3>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 text-xs font-mono text-gray-500"
+                    >
+                        <span>Active Registry:</span>
+                        <span class="text-[#142824] font-bold"
+                            >512 Personnel Logged</span
+                        >
+                    </div>
+                </div>
+                <!-- Inputs Row -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <!-- Search -->
+                    <div class="md:col-span-5 relative flex items-center">
+                        <span
+                            class="material-symbols-outlined absolute left-3.5 text-[18px] text-gray-400 pointer-events-none"
+                            >search</span
+                        >
+                        <input
+                            class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-full pl-9 pr-14 py-2 text-xs font-sans text-[#142824] placeholder:text-gray-400 focus:outline-none focus:border-[#52b788] transition-colors"
+                            id="employeeSearchInput"
+                            placeholder="Filter by BST-XXXXX or employee name..."
+                            type="text"
+                        />
+                        <span
+                            class="absolute right-3 px-2 py-0.5 rounded-full font-mono text-[10px] bg-white border border-[#e1e7dc] text-gray-500"
+                            >BST</span
+                        >
+                    </div>
+                    <!-- Department Filter -->
+                    <div class="md:col-span-3">
+                        <select
+                            class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-full px-4 py-2 text-xs font-sans text-[#142824] focus:outline-none focus:border-[#52b788] transition-colors"
+                            id="departmentFilter"
+                        >
+                            <option value="ALL">All Departments</option>
+                            <option value="ENG">Engineering</option>
+                            <option value="SALES">
+                                Sales &amp; Enterprise
+                            </option>
+                            <option value="HR">People Ops &amp; HR</option>
+                            <option value="PRODUCT">Product Design</option>
+                            <option value="OPS">
+                                Infrastructure &amp; SecOps
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Date Range -->
+                    <div class="md:col-span-2">
+                        <select
+                            class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-full px-4 py-2 text-xs font-sans text-[#142824] focus:outline-none focus:border-[#52b788] transition-colors"
+                            id="dateRangeFilter"
+                        >
+                            <option value="TODAY">Today (May 24, 2025)</option>
+                            <option value="YESTERDAY">
+                                Yesterday (May 23, 2025)
+                            </option>
+                            <option selected="" value="THIS_WEEK">
+                                Current Workweek
+                            </option>
+                            <option value="LAST_WEEK">Previous Workweek</option>
+                            <option value="MONTH">Full Month: May 2025</option>
+                        </select>
+                    </div>
+                    <!-- Status Filter -->
+                    <div class="md:col-span-2">
+                        <select
+                            class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-full px-4 py-2 text-xs font-sans text-[#142824] focus:outline-none focus:border-[#52b788] transition-colors"
+                            id="statusFilter"
+                        >
+                            <option value="ALL">Status: All</option>
+                            <option value="PRESENT">Present</option>
+                            <option value="LATE">Late Arrival</option>
+                            <option value="ABSENT">Absent</option>
+                            <option value="LEAVE">On Leave</option>
+                            <option value="CORRECTED">
+                                Corrected / Adjusted
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Quick Pill Badges -->
+                <div
+                    class="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-[#f0f4ed]"
+                >
+                    <span class="text-gray-400 font-medium text-[11px] mr-1"
+                        >Quick Filters:</span
+                    >
+                    <button
+                        class="px-3 py-1 rounded-full bg-[#142824] text-white font-semibold shadow-sm text-xs"
+                    >
+                        All Records (512)
+                    </button>
+                    <button
+                        class="px-3 py-1 rounded-full bg-[#d8f3dc] text-[#1b4332] font-semibold hover:bg-[#c4ebd0] transition-colors text-xs"
+                    >
+                        Present (468)
+                    </button>
+                    <button
+                        class="px-3 py-1 rounded-full bg-[#fed7aa] text-[#7c2d12] font-semibold hover:bg-[#fdba74] transition-colors text-xs"
+                    >
+                        Late Arrival (24)
+                    </button>
+                    <button
+                        class="px-3 py-1 rounded-full bg-[#f4f7f1] border border-[#e1e7dc] text-gray-600 font-semibold hover:bg-gray-100 transition-colors text-xs"
+                    >
+                        Approved Leave (16)
+                    </button>
+                    <button
+                        class="px-3 py-1 rounded-full bg-[#ffdad6] text-[#ba1a1a] font-semibold hover:bg-[#fcc] transition-colors text-xs"
+                    >
+                        Absent (4)
+                    </button>
+                </div>
+            </section>
+            <!-- High-Density Attendance Table (Organic Light Card with rounded rows) -->
+            <section
+                class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-[#e1e7dc] flex flex-col gap-4 overflow-hidden"
+            >
+                <div class="overflow-x-auto w-full">
+                    <table
+                        class="w-full text-left border-collapse"
+                        id="attendanceTable"
+                    >
+                        <thead>
+                            <tr
+                                class="text-gray-400 text-[11px] uppercase tracking-wider font-semibold border-b border-[#eef3eb]"
+                            >
+                                <th class="py-3 px-4">Employee</th>
+                                <th class="py-3 px-4">Department &amp; Role</th>
+                                <th class="py-3 px-4">Check-in (Server BST)</th>
+                                <th class="py-3 px-4">
+                                    Check-out (Server BST)
+                                </th>
+                                <th class="py-3 px-4">Work Duration</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            class="divide-y divide-[#f4f7f1] text-xs text-[#142824]"
+                        >
+                            <!-- Row 1: Sarah Jenkins -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Sarah Jenkins"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-Zl8JLaTpPOViZcZxPZt1L-tzOnAdBuZKUBXl1Snf_meBEV1v6t502LKcAlUdyz_RQlLVI586_0kFiJo2rEgXQ08kwYEfEXZvzvgDcoqKiFptbUWTD5FpLSOPrGGmU7alxZ7PbWNl_ifwkRaW0vAuF-Ql7btGfQfzxBx3vOvw-e1hwiJwif7VeVQ1ssODUeLtfUKShK3Em2HMFvcfJ6RyVwzfmBymrpjrTXEcBaM"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Sarah Jenkins</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00012</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >Engineering</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >VP Engineering</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#142824]"
+                                            >08:47:12</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono text-gray-400 italic"
+                                >
+                                    -- In Progress --
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono font-bold text-[#2d6a4f]"
+                                >
+                                    05h 42m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d8f3dc] text-[#1b4332] font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-[#52b788]"
+                                        ></span>
+                                        Present (On Time)
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00012"
+                                            data-name="Sarah Jenkins"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 2: Rafiqul Islam (Late) -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Rafiqul Islam"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQNNeJbpXz5f3ZvV-IGLOZaJPX8OUKb0_UF4mdrcjhaSS_lNc-Ulo5f4Lt7RXUf5POKxQwN78_ywxJ297E6UNASfxQ7HbihcersILSTuzrO49apnuQlvF0kqbmHjIYCCQTqG75izt8RmixAWtAVVUfaf7gUFGTSums3oZsEFCi-aVsXL52xSgMvo1zwtBmewTo957-EkuMa_0KCfatAmyyqNw9p4fgvs5ZFvxdeT0"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Rafiqul Islam</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00042</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >Engineering</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >Staff DevOps Architect</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#c2410c]"
+                                            >09:14:02</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono text-gray-400 italic"
+                                >
+                                    -- In Progress --
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono font-medium text-[#142824]"
+                                >
+                                    05h 15m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ffedd5] text-[#9a3412] font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-[#f97316]"
+                                        ></span>
+                                        Late Arrival (14 min)
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00042"
+                                            data-name="Rafiqul Islam"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 3: Farhana Ahmed -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Farhana Ahmed"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzHludRaBrmSuoW0nx-8qZ2VMi3MavOlxSGw4rLioV7Wyw_nDpBBBtQEzVE8j8D75xn1FCKSmm4J7TjigC2CzpID0rQNei3C1zvcEmQxL90jWrPhMy1j1SrxW6HJIglKEHHl18m671hWKZHZWrM5aQVtoEAYhQh46SuO_ZACU_oEKiYsnKR0Oy5GZ-9wkNk3j3YepAxAFIM5RcchotJYF_aKI_VXA3gYHU3dBw41o"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Farhana Ahmed</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00088</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >People Ops &amp; HR</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >HR Lead</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#142824]"
+                                            >08:52:19</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono text-gray-400 italic"
+                                >
+                                    -- In Progress --
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono font-medium text-[#142824]"
+                                >
+                                    05h 37m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d8f3dc] text-[#1b4332] font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-[#52b788]"
+                                        ></span>
+                                        Present
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00088"
+                                            data-name="Farhana Ahmed"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 4: Tanvir Hossain (Leave) -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Tanvir Hossain"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8-jmmcgvxAEv2_33zCOj9jS2gXbu9CZNdHJDhKjllbw_f-Z5TxPeW6KWZjE1vrTOyB7hdmMlnUclAvTAnuQV8zhVQVzuqodzoxJqVd9O2_9kx2dlcuuvLF2HAN3QNJUcX7G2sFeIipU-HOgXSJ-96OrzAdbNVEnBUgo0F4dqoz2grDCWhzHFi1dIuCgWBxSasLIBw9xD58tXYpbd2gDWClFkgR9Qtk1EJvTSwZP4"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Tanvir Hossain</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00104</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >Product Design</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >Senior UX Researcher</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 font-mono text-gray-400">
+                                    N/A
+                                </td>
+                                <td class="py-3 px-4 font-mono text-gray-400">
+                                    N/A
+                                </td>
+                                <td class="py-3 px-4 font-mono text-gray-400">
+                                    00h 00m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f4f7f1] border border-[#e1e7dc] text-gray-600 font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                        ></span>
+                                        Approved Leave (Medical)
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00104"
+                                            data-name="Tanvir Hossain"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 5: Natasha Roman (Completed) -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Natasha Roman"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfTh5tAGANDw6nd589dgBsFdZwx95PGG63ZjMwYRyGPvMGKPc70hzzTtip8lXMnHavsHP7Mz0vfjsC_-mbawH2w-SfOqzUENtsxRyqqdu0jnOFhQGyCOXJW5_qmCAgT6qQoY4AXVwPq5awfLUBjZuhIgNxuztH41Mem2fhhdr92PTfl-KSXX6eQ-gZhx3tjYm9rwg0qr_cEhdvfmMzmumXuICb7hT1vskEBBXWncQ"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Natasha Roman</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00031</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >Sales &amp; Enterprise</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >Regional Sales Director</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#142824]"
+                                            >07:45:00</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#142824]"
+                                            >16:00:15</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono font-bold text-[#2d6a4f]"
+                                >
+                                    08h 15m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d8f3dc] text-[#1b4332] font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-[#52b788]"
+                                        ></span>
+                                        Completed Shift
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00031"
+                                            data-name="Natasha Roman"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 6: Arshad Khan (Correction pending) -->
+                            <tr
+                                class="hover:bg-[#f6f9f3] transition-colors group"
+                            >
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img
+                                            alt="Arshad Khan"
+                                            class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-200"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBogWKumJPk73A_H3QWjv-v_2TEIYpWuqJu1EdYwyCSgLcXcjeu4gk3MBzgxhEwBFH5T1tLKeuk567Auvj9yu0PHb42oby26cf9HEwswbDAoYbuNHHBa6QNsX30v5lez0ByHkynregADtfPvdi9DlA2XgCr1Q-xQ2NcQ6scqgidY2kD3FYeNtSGUEgtnIR44-jk7AguXFwKumZjBIm-KX_UyiFOaTuxcRiFrMuZPXg"
+                                        />
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-bold text-sm text-[#142824]"
+                                                >Arshad Khan</span
+                                            >
+                                            <span
+                                                class="font-mono text-[11px] text-gray-400"
+                                                >BST-00122</span
+                                            >
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-[#142824]"
+                                            >Engineering</span
+                                        >
+                                        <span class="text-gray-400 text-[11px]"
+                                            >Backend Engineer II</span
+                                        >
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex flex-col font-mono">
+                                        <span
+                                            class="font-semibold text-[#142824]"
+                                            >09:02:11</span
+                                        >
+                                        <span class="text-gray-400 text-[10px]"
+                                            >May 24, 2025</span
+                                        >
+                                    </div>
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono text-gray-400 italic"
+                                >
+                                    -- In Progress --
+                                </td>
+                                <td
+                                    class="py-3 px-4 font-mono font-medium text-[#142824]"
+                                >
+                                    05h 27m
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f8ad9d]/30 text-[#8c2d19] font-semibold text-[11px]"
+                                    >
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full bg-[#e76f51] animate-pulse"
+                                        ></span>
+                                        Pending Correction
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="View Record"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >visibility</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="p-1.5 rounded-full text-gray-400 hover:text-[#142824] hover:bg-[#eef3eb] transition-colors"
+                                            title="History"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >history</span
+                                            >
+                                        </button>
+                                        <button
+                                            class="open-correction-row-btn p-1.5 rounded-full text-[#2d6a4f] hover:bg-[#d8f3dc] transition-colors"
+                                            data-emp="BST-00122"
+                                            data-name="Arshad Khan"
+                                            title="HR Correction"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[17px]"
+                                                >edit_calendar</span
+                                            >
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Footer -->
+                <div
+                    class="px-2 py-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs select-none border-t border-[#f0f4ed]"
+                >
+                    <div
+                        class="flex items-center gap-4 text-gray-500 font-mono"
+                    >
+                        <span
+                            >Showing
+                            <strong class="text-[#142824]">1</strong> to
+                            <strong class="text-[#142824]">10</strong> of
+                            <strong class="text-[#142824]">512</strong>
+                            records</span
+                        >
+                        <div class="flex items-center gap-1.5">
+                            <span>Rows:</span>
+                            <select
+                                class="bg-[#f4f7f1] border border-[#e1e7dc] rounded-full px-2 py-0.5 font-mono text-xs text-[#142824] focus:outline-none"
+                                id="recordsPerPageSelect"
+                            >
+                                <option selected="" value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Pill Page Selector -->
+                    <div class="flex items-center gap-1 font-mono">
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#f4f7f1] text-gray-400 hover:text-[#142824] flex items-center justify-center transition-colors disabled:opacity-40"
+                            disabled=""
+                        >
+                            <span class="material-symbols-outlined text-[18px]"
+                                >chevron_left</span
+                            >
+                        </button>
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#142824] text-white font-bold flex items-center justify-center shadow-sm"
+                        >
+                            1
+                        </button>
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#f4f7f1] text-[#142824] hover:bg-[#eef3eb] flex items-center justify-center transition-colors"
+                        >
+                            2
+                        </button>
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#f4f7f1] text-[#142824] hover:bg-[#eef3eb] flex items-center justify-center transition-colors"
+                        >
+                            3
+                        </button>
+                        <span class="px-1 text-gray-400">...</span>
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#f4f7f1] text-[#142824] hover:bg-[#eef3eb] flex items-center justify-center transition-colors"
+                        >
+                            52
+                        </button>
+                        <button
+                            class="w-8 h-8 rounded-full bg-[#f4f7f1] text-gray-400 hover:text-[#142824] flex items-center justify-center transition-colors"
+                        >
+                            <span class="material-symbols-outlined text-[18px]"
+                                >chevron_right</span
+                            >
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- HR Attendance Correction Modal (TAD Section 7 Audit Trail Guaranteed) -->
+        <div
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200"
+            id="correctionModal"
+        >
+            <div
+                class="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-[#e1e7dc]"
+            >
+                <!-- Modal Header -->
+                <div
+                    class="p-6 bg-[#f4f7f1] border-b border-[#e8ece3] flex items-center justify-between"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-[#d8f3dc] text-[#1b4332] flex items-center justify-center"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >edit_calendar</span
+                            >
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-base text-[#142824]">
+                                HR Attendance Correction &amp; Override
+                            </h3>
+                            <span class="font-mono text-[11px] text-gray-500"
+                                >TAD Section 7 Immutable Audit Compliance</span
+                            >
+                        </div>
+                    </div>
+                    <button
+                        class="w-8 h-8 rounded-full text-gray-400 hover:text-[#142824] hover:bg-gray-200 flex items-center justify-center transition-colors"
+                        id="closeCorrectionModalBtn"
+                    >
+                        <span class="material-symbols-outlined text-[20px]"
+                            >close</span
+                        >
+                    </button>
+                </div>
+                <!-- Modal Body Form -->
+                <div class="p-6 flex flex-col gap-4">
+                    <!-- TAD Audit Warning -->
+                    <div
+                        class="p-3.5 rounded-2xl bg-[#fff7ed] border border-[#ffedd5] flex items-start gap-2.5"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[#ea580c] text-[20px] flex-shrink-0 mt-0.5"
+                            >policy</span
+                        >
+                        <div class="flex flex-col gap-0.5 text-xs">
+                            <span
+                                class="font-bold text-[#9a3412] uppercase tracking-wide"
+                                >Audit Trail Notice</span
+                            >
+                            <span class="text-[#7c2d12]">
+                                Every timestamp override is cryptographically
+                                stored in the TAD ledger under
+                                <strong class="text-[#142824]"
+                                    >Sarah Jenkins (Super Admin)</strong
+                                >.
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Employee Specs -->
+                    <div
+                        class="grid grid-cols-2 gap-3 bg-[#f4f7f1] p-3.5 rounded-2xl border border-[#e8ece3]"
+                    >
+                        <div class="flex flex-col">
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider"
+                                >Target Employee</span
+                            >
+                            <span
+                                class="font-bold text-sm text-[#142824]"
+                                id="modalTargetName"
+                                >Rafiqul Islam</span
+                            >
+                            <span
+                                class="font-mono text-xs text-[#2d6a4f] font-semibold"
+                                id="modalTargetCode"
+                                >BST-00042</span
+                            >
+                        </div>
+                        <div class="flex flex-col">
+                            <span
+                                class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider"
+                                >Target Date</span
+                            >
+                            <span class="font-bold text-sm text-[#142824]"
+                                >May 24, 2025</span
+                            >
+                            <span class="text-[11px] text-gray-500 font-mono"
+                                >Shift: 09:00 - 18:00 BST</span
+                            >
+                        </div>
+                    </div>
+                    <!-- Time Overrides -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-semibold text-gray-600"
+                                >New Check-In Time (BST)</label
+                            >
+                            <input
+                                class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-xl px-3 py-2 font-mono text-sm text-[#142824] focus:outline-none focus:border-[#52b788]"
+                                type="time"
+                                value="09:00"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-semibold text-gray-600"
+                                >New Check-Out Time (BST)</label
+                            >
+                            <input
+                                class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-xl px-3 py-2 font-mono text-sm text-[#142824] focus:outline-none focus:border-[#52b788]"
+                                type="time"
+                                value="18:00"
+                            />
+                        </div>
+                    </div>
+                    <!-- Reason text -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold text-gray-600"
+                            >Override Reason &amp; Verification Evidence
+                            <span class="text-red-500">*</span></label
+                        >
+                        <textarea
+                            class="w-full bg-[#f4f7f1] border border-[#e1e7dc] rounded-2xl p-3 text-xs text-[#142824] placeholder:text-gray-400 focus:outline-none focus:border-[#52b788]"
+                            placeholder="Provide justification (e.g. Biometric node 04 network partition; biometric verified via security desk sign-in log #4491)..."
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+                <!-- Modal Footer -->
+                <div
+                    class="p-6 bg-[#f4f7f1] border-t border-[#e8ece3] flex items-center justify-end gap-3"
+                >
+                    <button
+                        class="px-5 py-2.5 rounded-full bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-[#e1e7dc] transition-colors"
+                        id="cancelCorrectionBtn"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#122824] hover:bg-[#1a3832] text-white font-bold text-xs shadow-md transition-all"
+                        id="confirmCorrectionBtn"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[16px] text-[#52b788]"
+                            >verified</span
+                        >
+                        <span>Commit Correction to Audit Log</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Notification Toast Container -->
+        <div
+            class="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#122824] text-white px-5 py-3.5 rounded-2xl shadow-2xl translate-y-24 opacity-0 transition-all duration-300 pointer-events-none border border-white/10"
+            id="toastNotification"
+        >
+            <span
+                class="material-symbols-outlined text-[#52b788]"
+                id="toastIcon"
+                >check_circle</span
+            >
+            <div class="flex flex-col">
+                <span class="text-xs font-bold text-white" id="toastTitle"
+                    >Action Recorded</span
+                >
+                <span class="font-mono text-[11px] text-white/70" id="toastSub"
+                    >Server verified BST 08:47:12</span
+                >
+            </div>
+        </div>
+        <!-- Interactive Module Script -->
+        <script>
+            (function initAttendanceModule() {
+                // 1. Live Elapsed Clock simulation
+                let secondsElapsed = 5 * 3600 + 42 * 60 + 18;
+                const elapsedElem = document.getElementById("liveElapsed");
+
+                if (elapsedElem) {
+                    setInterval(() => {
+                        secondsElapsed++;
+                        const hours = Math.floor(secondsElapsed / 3600);
+                        const minutes = Math.floor(
+                            (secondsElapsed % 3600) / 60,
+                        );
+                        const seconds = secondsElapsed % 60;
+
+                        const pad = (n) => String(n).padStart(2, "0");
+                        elapsedElem.textContent = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+                    }, 1000);
+                }
+
+                // 2. Toast Notification Helper
+                const toast = document.getElementById("toastNotification");
+                const toastTitle = document.getElementById("toastTitle");
+                const toastSub = document.getElementById("toastSub");
+                const toastIcon = document.getElementById("toastIcon");
+
+                function showToast(
+                    title,
+                    subtitle,
+                    icon = "check_circle",
+                    isSuccess = true,
+                ) {
+                    if (!toast) return;
+                    toastTitle.textContent = title;
+                    toastSub.textContent = subtitle;
+                    toastIcon.textContent = icon;
+                    toastIcon.className = `material-symbols-outlined ${isSuccess ? "text-[#52b788]" : "text-[#f8ad9d]"}`;
+
+                    toast.classList.remove(
+                        "translate-y-24",
+                        "opacity-0",
+                        "pointer-events-none",
+                    );
+
+                    setTimeout(() => {
+                        toast.classList.add(
+                            "translate-y-24",
+                            "opacity-0",
+                            "pointer-events-none",
+                        );
+                    }, 4000);
+                }
+
+                // 3. Quick Actions
+                const checkoutBtn =
+                    document.getElementById("checkoutActionBtn");
+                if (checkoutBtn) {
+                    checkoutBtn.addEventListener("click", () => {
+                        showToast(
+                            "Shift Checkout Registered",
+                            "Server Hash c91b... confirmed at Asia/Dhaka time.",
+                            "logout",
+                            false,
+                        );
+                    });
+                }
+
+                const breakBtn = document.getElementById("breakActionBtn");
+                if (breakBtn) {
+                    breakBtn.addEventListener("click", () => {
+                        showToast(
+                            "Break Logged",
+                            "Active pause recorded on node DAC-04.",
+                            "coffee",
+                            true,
+                        );
+                    });
+                }
+
+                const csvBtn = document.getElementById("downloadCsvBtn");
+                if (csvBtn) {
+                    csvBtn.addEventListener("click", () => {
+                        showToast(
+                            "Generating CSV Stream",
+                            "attendance_dump_utc6_20250524.csv initiated.",
+                            "file_download",
+                            true,
+                        );
+                    });
+                }
+
+                // 4. Modal Triggers
+                const modal = document.getElementById("correctionModal");
+                const openBtns = document.querySelectorAll(
+                    ".open-correction-row-btn",
+                );
+                const globalOpenBtn = document.getElementById(
+                    "openCorrectionModalBtn",
+                );
+                const closeBtn = document.getElementById(
+                    "closeCorrectionModalBtn",
+                );
+                const cancelBtn = document.getElementById(
+                    "cancelCorrectionBtn",
+                );
+                const confirmBtn = document.getElementById(
+                    "confirmCorrectionBtn",
+                );
+                const modalTargetName =
+                    document.getElementById("modalTargetName");
+                const modalTargetCode =
+                    document.getElementById("modalTargetCode");
+
+                function openModal(name = "Sarah Jenkins", code = "BST-00012") {
+                    if (modalTargetName) modalTargetName.textContent = name;
+                    if (modalTargetCode) modalTargetCode.textContent = code;
+                    modal.classList.remove("hidden");
+                    setTimeout(() => modal.classList.remove("opacity-0"), 10);
+                }
+
+                function closeModal() {
+                    modal.classList.add("opacity-0");
+                    setTimeout(() => modal.classList.add("hidden"), 200);
+                }
+
+                if (globalOpenBtn) {
+                    globalOpenBtn.addEventListener("click", () =>
+                        openModal(
+                            "Self-Correction (Sarah Jenkins)",
+                            "BST-00012",
+                        ),
+                    );
+                }
+
+                openBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const name =
+                            btn.getAttribute("data-name") || "Rafiqul Islam";
+                        const code =
+                            btn.getAttribute("data-emp") || "BST-00042";
+                        openModal(name, code);
+                    });
+                });
+
+                if (closeBtn) closeBtn.addEventListener("click", closeModal);
+                if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+                if (confirmBtn) {
+                    confirmBtn.addEventListener("click", () => {
+                        closeModal();
+                        showToast(
+                            "Correction Committed to TAD Sec 7 Ledger",
+                            "Audit trail payload hash #e5b98 created.",
+                            "verified",
+                            true,
+                        );
+                    });
+                }
+
+                // 5. Search Filter client mock interaction
+                const searchInput = document.getElementById(
+                    "employeeSearchInput",
+                );
+                const table = document.getElementById("attendanceTable");
+                if (searchInput && table) {
+                    searchInput.addEventListener("input", (e) => {
+                        const query = e.target.value.toLowerCase().trim();
+                        const rows = table.querySelectorAll("tbody tr");
+                        rows.forEach((row) => {
+                            const text = row.innerText.toLowerCase();
+                            row.style.display = text.includes(query)
+                                ? ""
+                                : "none";
+                        });
+                    });
+                }
+            })();
+        </script>
+    </body>
+</html>

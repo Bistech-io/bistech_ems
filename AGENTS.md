@@ -11,13 +11,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Version: 1.1 | Date: 2026-11-17
 Applies to every AI agent and every human working in this repository. These rules are **mandatory**. If a rule blocks you, stop and ask; never work around it.
 
-Related docs: PRD.md, TAD.md, SAD.md, FSD.md, FTL.md (ticket list).
+Related docs: PRD.md, TAD.md, SAD.md, FSD.md, FTL.md (ticket list), `docs/ui/Bistech_brand_theme.md` (official brand & color palette).
 
 ---
 
 ## 1. Source of truth
 
-1. Behaviour: FSD.md. Security: SAD.md. Structure: TAD.md. Intent: PRD.md. Work items: FTL.md.
+1. Behaviour: FSD.md. Security: SAD.md. Structure: TAD.md. Intent: PRD.md. Work items: FTL.md. UI & Brand Theme: `docs/ui/Bistech_brand_theme.md`.
 2. On conflict between documents, stop and ask the human owner. Do not guess.
 3. Never implement anything on the PRD non-goals list (leave, payroll, documents, check-out, nightly absence job, Redis, file uploads, etc.).
 
@@ -74,6 +74,7 @@ Multiple agents must never work on the same ticket or the same files at once.
 
 ### Scope and permissions
 - Work only on the approved ticket. No drive-by refactors, dependency upgrades or unrelated fixes; raise them as new tickets.
+- **Do not modify any file inside `docs/` without explicit permission from the human owner.**
 - Do not change CI, deployment, secrets configuration or permissions definitions unless the ticket says so.
 - Never disable, skip or weaken a test, lint rule, boundary rule, CI check, or security control to make something pass.
 
@@ -98,6 +99,12 @@ Multiple agents must never work on the same ticket or the same files at once.
 - Responses use explicit DTOs; never return entities, hashes or tokens.
 - Migrations are plain SQL, backward compatible, never run on app start.
 - Frontend: no tokens in browser storage; no `dangerouslySetInnerHTML` on user content; dark mode must pass axe contrast.
+
+### Official UI & Brand Theme rules (`docs/ui/Bistech_brand_theme.md` & `docs/ui/mock/`)
+- **Mandatory reference**: Before creating or modifying any UI page, layout, or component, read and strictly follow `docs/ui/Bistech_brand_theme.md` and inspect the HTML mockups in `docs/ui/mock/` (`overview-dashboard.html`, `attendance_dashboard.html`, etc.) as visual and structural inspiration.
+- **Official Color Palette**: Use the BisTech Deep Dark Mode palette (`--color-bg: #0B0F0E`, `--color-bg-secondary: #131A17`) paired with Sea Green brand accents (`--color-primary: #2E8B57`, `--color-primary-light: #4CAF7D`, `--color-primary-dark: #1F5C3A`). Never use arbitrary off-brand primary colors.
+- **Official Typography**: Configure and use `Space Grotesk` for headings (with tight letter-spacing `-0.02em`) and `Inter` for body text via `next/font/google`.
+- **Motion & Animation (`framer-motion`)**: Use `framer-motion` for UI transitions and micro-interactions. Animations must remain very simple, subtle, lightweight, and eye-pleasing—never heavy or distracting for a daily office environment, and must respect `prefers-reduced-motion`.
 
 ### Honesty and verification
 - Run the ticket's tests and the full CI checks locally before opening a PR. Report real results; never claim a test passed if it was not run.
@@ -216,6 +223,7 @@ Agent: agent-1
 - [ ] Listed tests (T-xx) exist and pass locally; full CI green
 - [ ] No secrets, personal data or debug output committed
 - [ ] Every handler has `@RequirePermission()` or `@Public()`; org id from session only
+- [ ] All UI work adheres to the official BisTech color palette and typography in `docs/ui/Bistech_brand_theme.md`
 - [ ] Audit and transaction rules from FSD.md followed
 - [ ] Commits follow Conventional Commits with `Refs: F-xxx` and agent trailer
 - [ ] PR description complete; assumptions and open questions listed

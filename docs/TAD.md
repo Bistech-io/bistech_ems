@@ -26,8 +26,9 @@ Choices marked **(final)** were open or optional in 1.0 and are now decided. Ver
 | Frontend | Next.js (App Router) + TypeScript | Presentation and forms only; client validation is usability, not security |
 | UI components | shadcn/ui (Radix UI + Tailwind CSS) | Components copied into `apps/web/src/components/ui`; accessible base for WCAG 2.1 AA |
 | Icons | lucide-react | Import icons individually |
-| Fonts | Google Sans via `next/font` | Verify web licence; fallback DM Sans or Figtree via `next/font/google` |
-| Theme | next-themes, `defaultTheme="dark"`, class strategy, shadcn CSS variables | Light theme + toggle optional later |
+| Animation / Motion | framer-motion **(final)** | Simple, lightweight, eye-pleasing transitions and micro-interactions suitable for an office environment (never heavy or distracting; respects `prefers-reduced-motion`) |
+| Fonts | Space Grotesk (headings, `-0.02em`) & Inter (body) via `next/font/google` | Official brand typography defined in `docs/ui/Bistech_brand_theme.md` |
+| Theme & UI Design | next-themes (`defaultTheme="dark"`), official BisTech palette (`docs/ui/Bistech_brand_theme.md`), UI mocks (`docs/ui/mock/`) | Deep dark mode (`#0B0F0E`, `#131A17`) with Sea Green (`#2E8B57`, `#4CAF7D`, `#1F5C3A`) accents; HTML mocks in `docs/ui/mock/` serve as visual/layout inspiration |
 | Forms | react-hook-form + `@hookform/resolvers/zod` **(final)** | Uses schemas from `packages/contracts` |
 | Client data | TanStack Query **(final)** | Cache, retries, 30 to 60 s notification polling. Server Components fetch initial page data through a server-only API helper that forwards cookies |
 | Tables | TanStack Table inside a shadcn `DataTable` wrapper **(final)** | Server-side pagination and sort only |
@@ -53,17 +54,19 @@ Choices marked **(final)** were open or optional in 1.0 and are now decided. Ver
 **Caveat**: nestjs-zod, nestjs-cls, nestjs-pino, @sentry/nestjs, and Prisma ORM are intended choices, not verified for mutual compatibility. Pin and verify versions in M0. Keep first-party `@nestjs/*` packages on one version line.
 
 ## 3. Frontend stack summary
-Next.js App Router + TS; Tailwind + shadcn/ui (Radix); lucide-react; Google Sans (or fallback) via next/font; next-themes dark by default; Zod schemas from `packages/contracts`; react-hook-form; TanStack Query/Table; Playwright + axe.
+Next.js App Router + TS; Tailwind + shadcn/ui (Radix); `framer-motion`; lucide-react; Space Grotesk & Inter via `next/font/google`; next-themes dark by default (`docs/ui/Bistech_brand_theme.md` + `docs/ui/mock/` inspiration); Zod schemas from `packages/contracts`; react-hook-form; TanStack Query/Table; Playwright + axe.
 
 Frontend rules (apply to every UI ticket):
-1. Server Components by default; `'use client'` only on interactive leaves (forms, tables with state, the notification bell, theme toggle).
+1. Server Components by default; `'use client'` only on interactive leaves (forms, tables with state, the notification bell, theme toggle, animated motion leaves).
 2. The browser talks to one origin. `next.config.ts` rewrites `/api/*` to the API (`API_INTERNAL_URL`). No CORS needed.
 3. No token in `localStorage`, `sessionStorage`, URLs or JS-readable cookies. Auth cookies are HttpOnly and set by the API. The CSRF token comes from `GET /auth/me` (and login/refresh responses) and is held **in memory only** by `lib/api/csrf.ts`.
 4. All HTTP goes through `lib/api/client.ts` (browser) or `lib/api/server.ts` (server, forwards the incoming cookies). Neither is bypassed with raw `fetch`. The client attaches `X-CSRF-Token`, does single-flight refresh on `TOKEN_EXPIRED`, and branches on `error.code`, never on message text.
 5. Navigation and action visibility come from `GET /auth/me` permissions through `lib/auth/permissions.ts` (`can(permission, minScope?)`). The server still enforces everything.
 6. A route-protection file (`middleware.ts`; named `proxy.ts` in newer Next.js majors, verify in F-007) only redirects unauthenticated visitors to `/login` and sets the CSP nonce. It is a UX convenience, not authorization.
 7. Every form uses a contracts schema with `zodResolver`; server `details[].field` errors are mapped back onto fields.
-8. Dark mode is the baseline; every new screen is checked with axe in dark mode.
+8. Dark mode is the baseline; every new screen is checked with axe in dark mode and strictly follows `docs/ui/Bistech_brand_theme.md`.
+9. **UI Inspiration (`docs/ui/mock/`)**: When creating any new UI screen or component, use the reference HTML mockups in `docs/ui/mock/` (e.g. `overview-dashboard.html`, `attendance_dashboard.html`) as layout, structural, and visual inspiration.
+10. **Motion & Animation (`framer-motion`)**: Use `framer-motion` for UI transitions and micro-interactions. Keep animations very simple, subtle, fast, and eye-pleasing—never heavy, slow, or distracting for an office environment, and always respect `prefers-reduced-motion`.
 
 ## 4. Repository layout
 
@@ -629,6 +632,7 @@ docs/
 ├── runbooks/       deploy.md  rollback.md  restore-drill.md  on-call.md  incident-and-breach.md  gmail-sending.md
 ├── erd/            ems-erd.mmd  ems-erd.svg  (regenerated from final DDL, section 7.8)
 ├── security/       asvs-l2-review.md  checklist-S01-S39.md
+├── ui/             Bistech_brand_theme.md  mock/ (overview-dashboard.html, attendance_dashboard.html)
 └── perf/           results-<commit>.md
 
 .github/
