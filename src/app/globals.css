@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+.dark {
+  color-scheme: dark;
+
+  /* Backgrounds & Surfaces (Deep Dark Theme) */
+  --color-bg: #0B0F0E;
+  --color-bg-secondary: #131A17;
+  --color-bg-elevated: #1A2420;
+  --color-border: #23302B;
+
+  /* Sea Green Brand Accents */
+  --color-primary: #2E8B57;
+  --color-primary-light: #4CAF7D;
+  --color-primary-dark: #1F5C3A;
+
+  /* Text & Foreground Hierarchy */
+  --color-text-primary: #F0F5F2;
+  --color-text-secondary: #A3B3AC;
+  --color-text-muted: #6E8078;
+
+  /* Semantic Status Colors */
+  --color-success: #4CAF7D;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #38BDF8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text-primary);
+  --color-surface: var(--color-bg-secondary);
+  --color-surface-elevated: var(--color-bg-elevated);
+  --color-border-subtle: var(--color-border);
+  --color-brand: var(--color-primary);
+  --color-brand-light: var(--color-primary-light);
+  --color-brand-dark: var(--color-primary-dark);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    overscroll-behavior: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Subtle custom scrollbar for dark mode sidebar & panels */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(163, 179, 172, 0.16);
+  border-radius: 9999px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(76, 175, 125, 0.35);
 }
