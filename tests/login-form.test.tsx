@@ -111,17 +111,18 @@ describe('LoginForm', () => {
     });
   });
 
-  it('fills demo credentials and logs in when clicking Demo Login in development', async () => {
+  it('fills demo credentials when clicking a quick demo role button', async () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    await user.click(screen.getByRole('button', { name: /demo login/i }));
+    await user.click(screen.getByRole('button', { name: /hr manager/i }));
 
-    expect(screen.getByLabelText(/username/i)).toHaveValue('devdemo');
-    expect(screen.getByLabelText(/^password$/i)).toHaveValue('verysecurepass');
+    expect(screen.getByLabelText(/username/i)).toHaveValue('hr');
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
 
-    await waitFor(() => {
-      expect(replaceMock).toHaveBeenCalledWith('/dashboard');
-    });
+    await user.click(screen.getByRole('button', { name: /dept head/i }));
+
+    expect(screen.getByLabelText(/username/i)).toHaveValue('head');
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
   });
 });

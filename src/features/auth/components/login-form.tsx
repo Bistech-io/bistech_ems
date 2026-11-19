@@ -15,11 +15,18 @@ interface LoginFormProps {
   nextPath?: string;
 }
 
-const IS_DEV_MODE = process.env.NODE_ENV !== 'production';
-const DEV_DEMO_CREDENTIALS: LoginRequest = {
-  username: 'devdemo',
-  password: 'verysecurepass',
-};
+export interface QuickDemoAccount {
+  label: string;
+  role: string;
+  username: string;
+}
+
+export const QUICK_DEMO_ACCOUNTS: QuickDemoAccount[] = [
+  { label: 'Super Admin', role: 'Full Access', username: 'admin' },
+  { label: 'HR Manager', role: 'People & Onboarding', username: 'hr' },
+  { label: 'Dept Head', role: 'Engineering Head', username: 'head' },
+  { label: 'Employee', role: 'Software Engineer', username: 'employee' },
+];
 
 export function getSafeNextPath(nextParam?: string | null): string {
   if (!nextParam) return '/dashboard';
@@ -178,7 +185,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
       <button
         type="submit"
         disabled={isBusy}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-sm font-semibold text-[#F0F5F2] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-sm font-semibold text-[#0B0F0E] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isBusy ? (
           <>
@@ -190,21 +197,45 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         )}
       </button>
 
-      {IS_DEV_MODE && (
-        <button
-          type="button"
-          disabled={isBusy}
-          onClick={() => {
-            setValue('username', DEV_DEMO_CREDENTIALS.username, { shouldValidate: true });
-            setValue('password', DEV_DEMO_CREDENTIALS.password, { shouldValidate: true });
-            void onSubmit(DEV_DEMO_CREDENTIALS);
-          }}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-[#23302B] bg-[#1A2420]/70 px-4 text-xs font-medium text-[#A3B3AC] transition-colors hover:border-[#2E8B57]/60 hover:bg-[#1A2420] hover:text-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <FlaskConical className="h-3.5 w-3.5 text-[#4CAF7D]" />
-          <span>Demo Login (Dev Only)</span>
-        </button>
-      )}
+      {/* Quick Demo Sign-In Roles */}
+      <div className="pt-2">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#23302B]" />
+          </div>
+          <div className="relative bg-[#0E1512] px-3 text-[11px] font-medium uppercase tracking-wider text-[#A3B3AC]">
+            Quick Demo Sign-In
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {QUICK_DEMO_ACCOUNTS.map((acc) => (
+            <button
+              key={acc.username}
+              type="button"
+              disabled={isBusy}
+              onClick={() => {
+                setValue('username', acc.username, { shouldValidate: true });
+                setValue('password', 'Password123!', { shouldValidate: true });
+                setFormError(null);
+              }}
+              className="group flex flex-col items-start rounded-xl border border-[#23302B] bg-[#131A17]/80 p-2.5 text-left transition-all hover:border-[#2E8B57] hover:bg-[#1A2420] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="flex w-full items-center justify-between">
+                <span className="text-xs font-semibold text-[#F0F5F2] group-hover:text-[#4CAF7D] transition-colors">
+                  {acc.label}
+                </span>
+                <span className="rounded bg-[#23302B] px-1.5 py-0.5 text-[10px] font-medium text-[#A3B3AC] group-hover:bg-[#2E8B57]/20 group-hover:text-[#4CAF7D] transition-colors">
+                  {acc.username}
+                </span>
+              </div>
+              <span className="mt-0.5 text-[11px] text-[#A3B3AC]">
+                {acc.role}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
     </motion.form>
   );
 }
