@@ -14,21 +14,23 @@ export type MockScenarioId =
   | 'refresh-fails';
 
 export const DEV_PASSWORD = 'DevPassword123!';
+export const DEV_DEMO_PASSWORD = 'verysecurepass';
 
 export const MOCK_ACCOUNTS = {
-  admin: 'admin@example.com',
-  hr: 'hr@example.com',
-  deptHead: 'head@example.com',
-  employee: 'employee@example.com',
-  locked: 'locked@example.com',
-  rateLimited: 'ratelimited@example.com',
-  validationError: 'validation@example.com',
-  expiredRefreshOk: 'expired@example.com',
-  refreshFail: 'refreshfail@example.com',
+  devDemo: 'devdemo',
+  admin: 'admin',
+  hr: 'hr.manager',
+  deptHead: 'dept.head',
+  employee: 'employee',
+  locked: 'locked',
+  rateLimited: 'ratelimited',
+  validationError: 'validation',
+  expiredRefreshOk: 'expired',
+  refreshFail: 'refreshfail',
 } as const;
 
 export function buildAuthMePayload(
-  email: string,
+  username: string,
   name: string,
   roles: RoleName[],
   csrfToken: string,
@@ -36,7 +38,8 @@ export function buildAuthMePayload(
   return authMeDataSchema.parse({
     user: {
       id: '550e8400-e29b-41d4-a716-446655440010',
-      email,
+      username,
+      email: `${username}@bistech.io`,
       name,
       accountStatus: 'active',
     },
@@ -63,11 +66,11 @@ export function buildErrorEnvelope(
   });
 }
 
-export function resolveAccountForEmail(email: string): {
+export function resolveAccountForUsername(username: string): {
   name: string;
   roles: RoleName[];
 } {
-  switch (email.toLowerCase()) {
+  switch (username.toLowerCase()) {
     case MOCK_ACCOUNTS.hr:
       return { name: 'Nadia Rahman (HR)', roles: ['hr_manager'] };
     case MOCK_ACCOUNTS.deptHead:
