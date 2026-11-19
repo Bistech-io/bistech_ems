@@ -117,10 +117,16 @@ Multiple agents must never work on the same ticket or the same files at once.
 ## 5. Git rules
 
 ### Branches
-- Never commit directly to `main` (or `develop`). All work happens on a ticket branch and merges through a reviewed PR.
-- Branch name: `<type>/<ticket-id>-<short-kebab-description>`, e.g. `feat/F-041-task-creation`, `fix/F-044-review-race`.
+- **Never edit files or commit directly on `main` or `dev`.**
+- **Mandatory Pre-Edit Branch Check:** Before modifying or creating any file for a task, the agent MUST run `git branch --show-current`.
+  - If the current branch is `main`, `dev`, or an unrelated branch, stop and create a new branch off the latest `dev` first:
+    1. `git switch dev && git pull origin dev`
+    2. `git switch -c <type>/<ticket-id>-<short-kebab-description>` (or `<type>/<short-kebab-description>` if no ticket ID is given)
+  - Only start editing files after `git branch --show-current` confirms you are on the new `feat/*` or `fix/*` branch.
+- **Branch naming:** `<type>/<ticket-id>-<short-kebab-description>`, e.g. `feat/F-041-task-creation`, `fix/F-044-review-race`.
+- **Target branch:** All `feat/*` and `fix/*` branches are created from `dev` and must open Pull Requests targeting `dev` (never `main`).
 - One ticket = one branch = one PR. Keep PRs small; split a ticket that is too large (after asking).
-- Rebase or merge `main` into your branch regularly; resolve conflicts without discarding others' changes.
+- Sync `dev` into your branch regularly (`git fetch origin && git merge origin/dev`); resolve conflicts without discarding others' changes.
 
 ### Commits: Conventional Commits (mandatory)
 
