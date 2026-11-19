@@ -38,6 +38,20 @@ Related docs: PRD.md, TAD.md, SAD.md, FSD.md, FTL.md (ticket list), `docs/ui/Bis
 
 ---
 
+## UI/UX conventions (read before building components)
+
+Before creating or modifying any UI component, page, or form:
+1. Read `docs/ux/conventions.md` and `docs/ui/conventions.md`.
+2. Follow every rule whose "Applies to" matches your component.
+3. When done, verify your work against the acceptance checklist in the
+   relevant section, if one exists.
+4. If a rule conflicts with the task, or you think a rule should
+   change, stop and ask. Do not silently deviate.
+5. When you add or change a convention, update the matching file and
+   keep the ID format consistent.
+
+---
+
 ## 3. One task, one agent (no overlapping work)
 
 Multiple agents must never work on the same ticket or the same files at once.
