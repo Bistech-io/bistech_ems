@@ -71,7 +71,7 @@ describe('apiRequest browser client', () => {
         return HttpResponse.json({
           success: true,
           message: 'ok',
-          data: buildAuthMePayload('admin@example.com', 'Admin', ['super_admin'], 'csrf-new'),
+          data: buildAuthMePayload('admin', 'Admin', ['super_admin'], 'csrf-new'),
           meta: null,
         });
       }),
@@ -81,7 +81,7 @@ describe('apiRequest browser client', () => {
         return HttpResponse.json({
           success: true,
           message: 'refreshed',
-          data: buildAuthMePayload('admin@example.com', 'Admin', ['super_admin'], 'csrf-new'),
+          data: buildAuthMePayload('admin', 'Admin', ['super_admin'], 'csrf-new'),
           meta: null,
         });
       }),

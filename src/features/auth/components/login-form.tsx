@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, FlaskConical, Loader2, Lock, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { useAuth } from '@/providers/auth-provider';
@@ -14,6 +14,12 @@ import { loginRequestSchema, type LoginRequest } from '../schemas';
 interface LoginFormProps {
   nextPath?: string;
 }
+
+const IS_DEV_MODE = process.env.NODE_ENV !== 'production';
+const DEV_DEMO_CREDENTIALS: LoginRequest = {
+  username: 'devdemo',
+  password: 'verysecurepass',
+};
 
 export function getSafeNextPath(nextParam?: string | null): string {
   if (!nextParam) return '/dashboard';
@@ -36,11 +42,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     handleSubmit,
     setError,
     setFocus,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginRequest>({
     resolver: zodResolver(loginRequestSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -66,7 +73,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         if (err.code === 'VALIDATION_ERROR' && err.details.length > 0) {
           let focused = false;
           for (const detail of err.details) {
-            if (detail.field === 'email' || detail.field === 'password' || detail.field === 'organizationSlug') {
+            if (detail.field === 'username' || detail.field === 'password' || detail.field === 'organizationSlug') {
               setError(detail.field, { type: 'server', message: detail.message });
               if (!focused) {
                 setFocus(detail.field);
@@ -107,28 +114,28 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         </div>
       )}
 
-      {/* Email */}
+      {/* Username */}
       <div className="space-y-1.5">
-        <label htmlFor="login-email" className="block text-xs font-medium text-[#A3B3AC]">
-          Work Email
+        <label htmlFor="login-username" className="block text-xs font-medium text-[#A3B3AC]">
+          Username
         </label>
         <div className="relative">
-          <Mail className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+          <User className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
           <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
+            id="login-username"
+            type="text"
+            autoComplete="username"
             disabled={isBusy}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? 'login-email-error' : undefined}
-            placeholder="name@bistech.io"
-            {...register('email')}
+            aria-invalid={Boolean(errors.username)}
+            aria-describedby={errors.username ? 'login-username-error' : undefined}
+            placeholder="Enter your username"
+            {...register('username')}
             className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-4 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
-        {errors.email && (
-          <p id="login-email-error" role="alert" className="text-xs text-[#EF4444]">
-            {errors.email.message}
+        {errors.username && (
+          <p id="login-username-error" role="alert" className="text-xs text-[#EF4444]">
+            {errors.username.message}
           </p>
         )}
       </div>
@@ -182,6 +189,22 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           <span>Sign in</span>
         )}
       </button>
+
+      {IS_DEV_MODE && (
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={() => {
+            setValue('username', DEV_DEMO_CREDENTIALS.username, { shouldValidate: true });
+            setValue('password', DEV_DEMO_CREDENTIALS.password, { shouldValidate: true });
+            void onSubmit(DEV_DEMO_CREDENTIALS);
+          }}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-[#23302B] bg-[#1A2420]/70 px-4 text-xs font-medium text-[#A3B3AC] transition-colors hover:border-[#2E8B57]/60 hover:bg-[#1A2420] hover:text-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FlaskConical className="h-3.5 w-3.5 text-[#4CAF7D]" />
+          <span>Demo Login (Dev Only)</span>
+        </button>
+      )}
     </motion.form>
   );
 }
