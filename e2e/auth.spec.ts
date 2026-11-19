@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const DEV_PASSWORD = 'DevPassword123!';
+const DEV_PASSWORD = 'Password123!';
 
 test.describe('Authentication (desktop-dark)', () => {
   test('passes axe accessibility checks on /login in dark mode', async ({ page }) => {
@@ -18,11 +18,11 @@ test.describe('Authentication (desktop-dark)', () => {
     await page.getByLabel(/username/i).fill('admin');
     await page.getByLabel(/^password$/i).fill('WrongPassword!');
     await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.getByRole('alert')).toContainText(/invalid username or password/i);
+    await expect(page.locator('form [role="alert"]')).toContainText(/invalid username or password/i);
 
     await page.getByLabel(/username/i).fill('locked');
     await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.getByRole('alert')).toContainText(/temporarily locked/i);
+    await expect(page.locator('form [role="alert"]')).toContainText(/temporarily locked/i);
   });
 
   test('redirects unauthenticated visitors to /login?next=..., logs in, and logs out', async ({
