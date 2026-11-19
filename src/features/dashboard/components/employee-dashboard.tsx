@@ -93,7 +93,7 @@ export function EmployeeDashboard({
           <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-xs font-medium text-[#A3B3AC]">Active Role:</span>
           <span className="text-xs font-semibold text-[#F0F5F2]">
-            {ROLE_LABELS[activeRole]}
+            {activeRole ? ROLE_LABELS[activeRole] : '—'}
           </span>
         </div>
       </header>

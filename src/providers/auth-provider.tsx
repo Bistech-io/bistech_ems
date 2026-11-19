@@ -9,26 +9,24 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { AuthMeData } from '@ems/contracts';
+import { me } from '@/features/auth/api';
 import { setOnUnauthenticated } from '@/lib/api/client';
 import { clearCsrfToken, setCsrfToken } from '@/lib/api/csrf';
 import {
   authMeToUserContext,
-  resolvePermissionsForRoles,
-  ROLE_LABELS,
   type RoleName,
   type UserAuthContext,
 } from '@/lib/auth/permissions';
 
 interface AuthContextValue {
-  user: UserAuthContext;
+  user: UserAuthContext | null;
   session: AuthMeData | null;
   isAuthenticated: boolean;
-  activeRole: RoleName;
+  isLoading: boolean;
+  activeRole: RoleName | null;
   setSession: (authMe: AuthMeData | null) => void;
-  /** Allows switching roles in UI preview/dev mode until GET /auth/me is connected */
-  setPreviewRole: (role: RoleName) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,27 +34,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 interface AuthProviderProps {
   children: ReactNode;
   initialSession?: AuthMeData | null;
-  defaultRole?: RoleName;
 }
 
+/**
+ * Provides authenticated user state hydrated strictly from server `/auth/login` or `/auth/me`.
+ * Fail-closed: no client-side role switching or default elevated roles.
+ */
 export function AuthProvider({
   children,
   initialSession = null,
-  defaultRole = 'super_admin',
 }: AuthProviderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [session, setSessionState] = useState<AuthMeData | null>(initialSession);
-  const [previewRole, setPreviewRoleState] = useState<RoleName>(
-    initialSession?.roles[0] ?? defaultRole,
-  );
+  const [hydrated, setHydrated] = useState<boolean>(Boolean(initialSession));
 
   const setSession = useCallback((nextSession: AuthMeData | null) => {
     setSessionState(nextSession);
+    setHydrated(true);
     if (nextSession) {
       setCsrfToken(nextSession.csrfToken);
-      if (nextSession.roles[0]) {
-        setPreviewRoleState(nextSession.roles[0]);
-      }
     } else {
       clearCsrfToken();
     }
@@ -68,45 +65,63 @@ export function AuthProvider({
     }
   }, [initialSession]);
 
+  // Hydrate client session from /api/v1/auth/me if not provided by SSR
+  useEffect(() => {
+    if (session || hydrated || pathname === '/login') {
+      return;
+    }
+
+    let cancelled = false;
+    me()
+      .then((data) => {
+        if (!cancelled) {
+          setSessionState(data);
+          setCsrfToken(data.csrfToken);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSessionState(null);
+          clearCsrfToken();
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setHydrated(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, hydrated, pathname]);
+
   useEffect(() => {
     setOnUnauthenticated(() => {
       setSessionState(null);
+      setHydrated(true);
       clearCsrfToken();
       router.replace('/login');
     });
     return () => setOnUnauthenticated(null);
   }, [router]);
 
-  const setPreviewRole = useCallback((role: RoleName) => {
-    setPreviewRoleState(role);
-    setSessionState(null);
-  }, []);
+  const user = useMemo<UserAuthContext | null>(() => {
+    return session ? authMeToUserContext(session) : null;
+  }, [session]);
 
-  const user = useMemo<UserAuthContext>(() => {
-    if (session) {
-      return authMeToUserContext(session);
-    }
-    return {
-      userId: 'preview-user',
-      employeeId: 'BST-00101',
-      name: 'BisTech Member',
-      email: 'member@bistech.io',
-      roleTitle: ROLE_LABELS[previewRole],
-      roles: [previewRole],
-      permissions: resolvePermissionsForRoles([previewRole]),
-    };
-  }, [session, previewRole]);
+  const isLoading = !session && !hydrated && pathname !== '/login';
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       session,
       isAuthenticated: Boolean(session),
-      activeRole: user.roles[0] ?? previewRole,
+      isLoading,
+      activeRole: session?.roles[0] ?? null,
       setSession,
-      setPreviewRole,
     }),
-    [user, session, previewRole, setSession, setPreviewRole],
+    [user, session, isLoading, setSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

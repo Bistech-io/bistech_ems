@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, EyeOff, FlaskConical, Loader2, Lock, User } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { useAuth } from '@/providers/auth-provider';

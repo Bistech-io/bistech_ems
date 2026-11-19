@@ -11,24 +11,17 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Shield,
   X,
 } from 'lucide-react';
-import {
-  ACCOUNT_NAV_ITEMS,
-  getFilteredNavigation,
-  type NavItem,
-} from '@/config/navigation';
+import { getFilteredNavigation, type NavItem } from '@/config/navigation';
 import { useLogoutMutation } from '@/features/auth/hooks';
-import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
+import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 264;
-
-const ROLES_LIST: RoleName[] = ['super_admin', 'hr_manager', 'dept_head', 'employee'];
 
 function isPathActive(pathname: string, href: string, exact = false): boolean {
   if (exact) return pathname === href;
@@ -45,7 +38,7 @@ function isItemOrChildActive(pathname: string, item: NavItem): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, activeRole, setPreviewRole, setSession } = useAuth();
+  const { user, activeRole, setSession } = useAuth();
   const logoutMutation = useLogoutMutation();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -103,7 +96,7 @@ export function Sidebar() {
                     BisTech EMS
                   </span>
                   <span className="text-[11px] font-medium text-[#6E8078]">
-                    {ROLE_LABELS[activeRole]}
+                    {activeRole ? ROLE_LABELS[activeRole] : 'Workspace'}
                   </span>
                 </motion.div>
               )}
@@ -143,7 +136,7 @@ export function Sidebar() {
         <div className="mx-auto my-4 h-px w-full bg-[#23302B]/80" />
       </div>
 
-      {/* Main RBAC-Filtered Navigation */}
+      {/* Main RBAC-Filtered Navigation (implemented routes only) */}
       <nav
         aria-label="Primary Navigation"
         className="sidebar-scroll flex-1 space-y-4 overflow-y-auto px-3.5"
@@ -195,16 +188,6 @@ export function Sidebar() {
                       >
                         <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                           <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.85} />
-                          {item.hasDot && !expanded && (
-                            <span
-                              className={cn(
-                                'absolute -top-1 -right-1 h-2 w-2 rounded-full ring-2',
-                                active
-                                  ? 'bg-[#F0F5F2] ring-[#2E8B57]'
-                                  : 'bg-[#4CAF7D] ring-[#131A17]',
-                              )}
-                            />
-                          )}
                         </span>
 
                         <AnimatePresence initial={false}>
@@ -220,15 +203,6 @@ export function Sidebar() {
                             </motion.span>
                           )}
                         </AnimatePresence>
-
-                        {expanded && item.hasDot && !hasChildren && (
-                          <span
-                            className={cn(
-                              'h-2 w-2 shrink-0 rounded-full',
-                              active ? 'bg-[#F0F5F2]' : 'bg-[#4CAF7D]',
-                            )}
-                          />
-                        )}
                       </Link>
 
                       {expanded && hasChildren && (
@@ -300,117 +274,43 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom Utility & RBAC Role Switcher */}
-      <div className="mt-3 space-y-2 border-t border-[#23302B]/80 px-3.5 pt-3">
-        {/* RBAC Role Switcher (visible when expanded for testing/optimizing role views) */}
-        <AnimatePresence initial={false}>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.18, ease: SIDEBAR_EASE }}
-              className="overflow-hidden pb-1"
-            >
-              <label
-                htmlFor="rbac-role-select"
-                className="mb-1 flex items-center gap-1.5 px-2 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
+      {/* Bottom Sign Out Action */}
+      <div className="mt-3 border-t border-[#23302B]/80 px-3.5 pt-3">
+        <button
+          type="button"
+          disabled={logoutMutation.isPending}
+          onClick={async () => {
+            await logoutMutation.mutateAsync();
+            setSession(null);
+            onNavigate?.();
+            router.replace('/login');
+            router.refresh();
+          }}
+          title={!expanded ? 'Sign Out' : undefined}
+          className="flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-150 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.85} />
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.span
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                className="truncate whitespace-nowrap"
               >
-                <Shield className="h-3 w-3 text-[#4CAF7D]" />
-                <span>RBAC Role View</span>
-              </label>
-              <select
-                id="rbac-role-select"
-                value={activeRole}
-                onChange={(e) => setPreviewRole(e.target.value as RoleName)}
-                className="h-9 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 text-xs font-medium text-[#F0F5F2] transition-colors outline-none hover:border-[#2E8B57]/60 focus:border-[#4CAF7D]"
-              >
-                {ROLES_LIST.map((role) => (
-                  <option key={role} value={role}>
-                    {ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </select>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Account Links */}
-        <ul className="space-y-1">
-          {ACCOUNT_NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = isPathActive(pathname, item.href, true);
-
-            return (
-              <li key={item.id}>
-                <Link
-                  href={item.href}
-                  onClick={onNavigate}
-                  title={!expanded ? item.label : undefined}
-                  className={cn(
-                    'flex h-10 items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150',
-                    active
-                      ? 'bg-[#1F5C3A]/50 text-[#4CAF7D]'
-                      : 'text-[#A3B3AC] hover:bg-[#1A2420] hover:text-[#F0F5F2]',
-                  )}
-                >
-                  <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.85} />
-                  <AnimatePresence initial={false}>
-                    {expanded && (
-                      <motion.span
-                        initial={{ opacity: 0, x: -6 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -6 }}
-                        transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
-                        className="truncate whitespace-nowrap"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </li>
-            );
-          })}
-
-          <li>
-            <button
-              type="button"
-              disabled={logoutMutation.isPending}
-              onClick={async () => {
-                await logoutMutation.mutateAsync();
-                setSession(null);
-                onNavigate?.();
-                router.replace('/login');
-                router.refresh();
-              }}
-              title={!expanded ? 'Sign Out' : undefined}
-              className="flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-150 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
-            >
-              <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.85} />
-              <AnimatePresence initial={false}>
-                {expanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -6 }}
-                    transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
-                    className="truncate whitespace-nowrap"
-                  >
-                    {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-          </li>
-        </ul>
+                {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop Sticky Floating Pill Sidebar (Expands smoothly on hover) */}
+      {/* Desktop Sticky Floating Pill Sidebar */}
       <motion.aside
         aria-label="Sidebar"
         onMouseEnter={() => setIsHovered(true)}

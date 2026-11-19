@@ -17,6 +17,7 @@ vi.mock('next/navigation', () => ({
     replace: replaceMock,
     refresh: refreshMock,
   }),
+  usePathname: () => '/login',
 }));
 
 const server = setupServer(...authHandlers);
