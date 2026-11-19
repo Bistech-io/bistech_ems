@@ -47,9 +47,9 @@ describe('LoginForm', () => {
 
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/username is required/i)).toBeInTheDocument();
     expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/work email/i)).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText(/username/i)).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('toggles password visibility', async () => {
@@ -67,34 +67,34 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    const emailInput = screen.getByLabelText(/work email/i);
+    const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/^password$/i);
     const submitBtn = screen.getByRole('button', { name: /sign in/i });
 
     // 1. Wrong password -> INVALID_CREDENTIALS
-    await user.type(emailInput, MOCK_ACCOUNTS.admin);
+    await user.type(usernameInput, MOCK_ACCOUNTS.admin);
     await user.type(passwordInput, 'WrongPassword!');
     await user.click(submitBtn);
     expect(await screen.findByText(getErrorMessageForCode('INVALID_CREDENTIALS'))).toBeInTheDocument();
 
     // 2. Locked account -> ACCOUNT_LOCKED
-    await user.clear(emailInput);
-    await user.type(emailInput, MOCK_ACCOUNTS.locked);
+    await user.clear(usernameInput);
+    await user.type(usernameInput, MOCK_ACCOUNTS.locked);
     await user.click(submitBtn);
     expect(await screen.findByText(getErrorMessageForCode('ACCOUNT_LOCKED'))).toBeInTheDocument();
 
     // 3. Rate limited -> RATE_LIMITED
-    await user.clear(emailInput);
-    await user.type(emailInput, MOCK_ACCOUNTS.rateLimited);
+    await user.clear(usernameInput);
+    await user.type(usernameInput, MOCK_ACCOUNTS.rateLimited);
     await user.click(submitBtn);
     expect(await screen.findByText(getErrorMessageForCode('RATE_LIMITED'))).toBeInTheDocument();
 
-    // 4. Server field validation -> VALIDATION_ERROR mapped to email field
-    await user.clear(emailInput);
-    await user.type(emailInput, MOCK_ACCOUNTS.validationError);
+    // 4. Server field validation -> VALIDATION_ERROR mapped to username field
+    await user.clear(usernameInput);
+    await user.type(usernameInput, MOCK_ACCOUNTS.validationError);
     await user.click(submitBtn);
     expect(
-      await screen.findByText(/this email domain is not allowed for this workspace/i),
+      await screen.findByText(/this username is not allowed for this workspace/i),
     ).toBeInTheDocument();
   });
 
@@ -102,12 +102,26 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
     renderLoginForm('/employees');
 
-    await user.type(screen.getByLabelText(/work email/i), MOCK_ACCOUNTS.admin);
+    await user.type(screen.getByLabelText(/username/i), MOCK_ACCOUNTS.admin);
     await user.type(screen.getByLabelText(/^password$/i), DEV_PASSWORD);
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(replaceMock).toHaveBeenCalledWith('/employees');
+    });
+  });
+
+  it('fills demo credentials and logs in when clicking Demo Login in development', async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByRole('button', { name: /demo login/i }));
+
+    expect(screen.getByLabelText(/username/i)).toHaveValue('devdemo');
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue('verysecurepass');
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith('/dashboard');
     });
   });
 });

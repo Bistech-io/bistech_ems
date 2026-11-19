@@ -11,9 +11,10 @@ import {
 import {
   buildAuthMePayload,
   buildErrorEnvelope,
+  DEV_DEMO_PASSWORD,
   DEV_PASSWORD,
   MOCK_ACCOUNTS,
-  resolveAccountForEmail,
+  resolveAccountForUsername,
 } from './scenarios';
 
 interface MockSessionState {
@@ -58,14 +59,14 @@ export const authHandlers = [
     if (!parsedReq.success) {
       return HttpResponse.json(
         buildErrorEnvelope('VALIDATION_ERROR', 'Invalid request payload', [
-          { field: 'email', message: 'Enter a valid email address' },
+          { field: 'username', message: 'Enter a valid username' },
         ]),
         { status: ERROR_CODE_HTTP_STATUS.VALIDATION_ERROR },
       );
     }
 
-    const { email, password } = parsedReq.data;
-    const normalized = email.toLowerCase();
+    const { username, password } = parsedReq.data;
+    const normalized = username.toLowerCase();
 
     if (normalized === MOCK_ACCOUNTS.locked) {
       return HttpResponse.json(
@@ -87,20 +88,23 @@ export const authHandlers = [
     if (normalized === MOCK_ACCOUNTS.validationError) {
       return HttpResponse.json(
         buildErrorEnvelope('VALIDATION_ERROR', 'Validation error', [
-          { field: 'email', message: 'This email domain is not allowed for this workspace' },
+          { field: 'username', message: 'This username is not allowed for this workspace' },
         ]),
         { status: ERROR_CODE_HTTP_STATUS.VALIDATION_ERROR },
       );
     }
 
-    if (password !== DEV_PASSWORD) {
+    const expectedPassword =
+      normalized === MOCK_ACCOUNTS.devDemo ? DEV_DEMO_PASSWORD : DEV_PASSWORD;
+
+    if (password !== expectedPassword) {
       return HttpResponse.json(
-        buildErrorEnvelope('INVALID_CREDENTIALS', 'Invalid email or password'),
+        buildErrorEnvelope('INVALID_CREDENTIALS', 'Invalid username or password'),
         { status: ERROR_CODE_HTTP_STATUS.INVALID_CREDENTIALS },
       );
     }
 
-    const account = resolveAccountForEmail(normalized);
+    const account = resolveAccountForUsername(normalized);
     const nextCsrf = `mock-csrf-${Date.now()}`;
     const sessionData = buildAuthMePayload(normalized, account.name, account.roles, nextCsrf);
 

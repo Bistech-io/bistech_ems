@@ -16,18 +16,18 @@ Set `NEXT_PUBLIC_API_MOCKING=disabled` (or omit it) to talk to the real API.
 
 All valid accounts use password: `DevPassword123!`
 
-| Email | Scenario |
+| Username | Scenario |
 |---|---|
-| `admin@example.com` | Valid login as **Super Admin** |
-| `hr@example.com` | Valid login as **HR Manager** |
-| `head@example.com` | Valid login as **Dept Head** |
-| `employee@example.com` | Valid login as **Employee** |
+| `admin` | Valid login as **Super Admin** |
+| `hr.manager` | Valid login as **HR Manager** |
+| `dept.head` | Valid login as **Dept Head** |
+| `employee` | Valid login as **Employee** |
 | Any valid account + wrong password | `401 INVALID_CREDENTIALS` |
-| `locked@example.com` | `403 ACCOUNT_LOCKED` |
-| `ratelimited@example.com` | `429 RATE_LIMITED` |
-| `validation@example.com` | `422 VALIDATION_ERROR` with `details[].field` |
-| `expired@example.com` | Next `GET /auth/me` returns `401 TOKEN_EXPIRED` once -> `POST /auth/refresh` succeeds -> `GET /auth/me` retries and succeeds |
-| `refreshfail@example.com` | Next `GET /auth/me` returns `401 TOKEN_EXPIRED` -> `POST /auth/refresh` returns `401 UNAUTHENTICATED` -> UI redirects to `/login` |
+| `locked` | `403 ACCOUNT_LOCKED` |
+| `ratelimited` | `429 RATE_LIMITED` |
+| `validation` | `422 VALIDATION_ERROR` with `details[].field` |
+| `expired` | Next `GET /auth/me` returns `401 TOKEN_EXPIRED` once -> `POST /auth/refresh` succeeds -> `GET /auth/me` retries and succeeds |
+| `refreshfail` | Next `GET /auth/me` returns `401 TOKEN_EXPIRED` -> `POST /auth/refresh` returns `401 UNAUTHENTICATED` -> UI redirects to `/login` |
 
 ## How to Remove Completely
 
