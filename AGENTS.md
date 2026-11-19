@@ -94,6 +94,7 @@ Multiple agents must never work on the same ticket or the same files at once.
 
 ### Destructive and irreversible actions (forbidden without explicit human approval)
 - `git push --force`, `git reset --hard` on shared branches, history rewrites, deleting remote branches you do not own
+- Automatic `git push`: never push automatically; ask the human owner for explicit permission every time before pushing
 - Dropping or truncating tables, editing merged migrations, deleting data, or running anything against staging/production databases
 - Deleting files outside your ticket's scope
 - Installing global packages or changing machine/system configuration
@@ -222,7 +223,8 @@ Agent: agent-1
 ### Commit hygiene
 - Never commit secrets, `.env` files, build output, large binaries, or generated files that are not tracked by convention.
 - Do not bypass hooks (`--no-verify`) or signing requirements.
-- Commit locally often; push at each meaningful checkpoint so the claim and work are visible.
+- Commit locally often.
+- **DO NOT PUSH AUTOMATICALLY:** Never run `git push` automatically. The agent MUST ask the human owner for explicit permission every single time before pushing to any remote branch.
 - Never force-push a branch someone else has pulled; never force-push `main`.
 - Do not amend or rebase commits that have been reviewed without telling the reviewer.
 
