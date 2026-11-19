@@ -10,9 +10,10 @@ export type { AuthMeData, PermissionGrantMap, PermissionKey, RoleName, ScopeLeve
 
 export interface UserAuthContext {
   userId: string;
+  username?: string;
   employeeId?: string | null;
   name: string;
-  email: string;
+  email?: string;
   roleTitle?: string;
   roles: RoleName[];
   permissions: PermissionGrantMap;
@@ -137,6 +138,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
 export function authMeToUserContext(authMe: AuthMeData): UserAuthContext {
   return {
     userId: authMe.user.id,
+    username: authMe.user.username,
     employeeId: authMe.employeeId,
     name: authMe.user.name,
     email: authMe.user.email,

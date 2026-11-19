@@ -4,7 +4,7 @@ export const ERROR_CODE_MESSAGES: Record<ErrorCode, string> = {
   BAD_REQUEST: 'The request could not be processed. Please check your input and try again.',
   UNAUTHENTICATED: 'Your session has expired. Please sign in again.',
   TOKEN_EXPIRED: 'Your session token expired. Refreshing your session...',
-  INVALID_CREDENTIALS: 'Invalid email or password. Please check your credentials and try again.',
+  INVALID_CREDENTIALS: 'Invalid username or password. Please check your credentials and try again.',
   FORBIDDEN: 'You do not have permission to perform this action.',
   ACCOUNT_LOCKED:
     'Your account is temporarily locked due to multiple failed sign-in attempts. Please try again later.',

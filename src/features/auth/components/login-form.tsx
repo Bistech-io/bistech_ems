@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { useAuth } from '@/providers/auth-provider';
@@ -40,7 +40,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
   } = useForm<LoginRequest>({
     resolver: zodResolver(loginRequestSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -66,7 +66,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         if (err.code === 'VALIDATION_ERROR' && err.details.length > 0) {
           let focused = false;
           for (const detail of err.details) {
-            if (detail.field === 'email' || detail.field === 'password' || detail.field === 'organizationSlug') {
+            if (detail.field === 'username' || detail.field === 'password' || detail.field === 'organizationSlug') {
               setError(detail.field, { type: 'server', message: detail.message });
               if (!focused) {
                 setFocus(detail.field);
@@ -107,28 +107,28 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         </div>
       )}
 
-      {/* Email */}
+      {/* Username */}
       <div className="space-y-1.5">
-        <label htmlFor="login-email" className="block text-xs font-medium text-[#A3B3AC]">
-          Work Email
+        <label htmlFor="login-username" className="block text-xs font-medium text-[#A3B3AC]">
+          Username
         </label>
         <div className="relative">
-          <Mail className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+          <User className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
           <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
+            id="login-username"
+            type="text"
+            autoComplete="username"
             disabled={isBusy}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? 'login-email-error' : undefined}
-            placeholder="name@bistech.io"
-            {...register('email')}
+            aria-invalid={Boolean(errors.username)}
+            aria-describedby={errors.username ? 'login-username-error' : undefined}
+            placeholder="admin"
+            {...register('username')}
             className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-4 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
-        {errors.email && (
-          <p id="login-email-error" role="alert" className="text-xs text-[#EF4444]">
-            {errors.email.message}
+        {errors.username && (
+          <p id="login-username-error" role="alert" className="text-xs text-[#EF4444]">
+            {errors.username.message}
           </p>
         )}
       </div>
@@ -171,7 +171,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
       <button
         type="submit"
         disabled={isBusy}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-sm font-semibold text-[#F0F5F2] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-sm font-semibold text-[#0B0F0E] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isBusy ? (
           <>

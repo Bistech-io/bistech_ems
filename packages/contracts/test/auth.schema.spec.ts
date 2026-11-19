@@ -12,6 +12,7 @@ import {
 const VALID_AUTH_ME_DATA = {
   user: {
     id: '550e8400-e29b-41d4-a716-446655440000',
+    username: 'admin',
     email: 'admin@example.com',
     name: 'Super Admin',
     accountStatus: 'active' as const,
@@ -30,22 +31,22 @@ describe('@ems/contracts auth schemas', () => {
   it('accepts valid login request with and without organizationSlug', () => {
     expect(
       loginRequestSchema.parse({
-        email: 'admin@example.com',
+        username: 'Admin',
         password: 'DevPassword123!',
       }),
     ).toEqual({
-      email: 'admin@example.com',
+      username: 'admin',
       password: 'DevPassword123!',
     });
 
     expect(
       loginRequestSchema.parse({
-        email: 'admin@example.com',
+        username: 'admin',
         password: 'DevPassword123!',
         organizationSlug: 'bistech',
       }),
     ).toEqual({
-      email: 'admin@example.com',
+      username: 'admin',
       password: 'DevPassword123!',
       organizationSlug: 'bistech',
     });
@@ -54,21 +55,21 @@ describe('@ems/contracts auth schemas', () => {
   it('rejects invalid login requests and unknown fields', () => {
     expect(() =>
       loginRequestSchema.parse({
-        email: 'not-an-email',
+        username: '',
         password: 'secret',
       }),
     ).toThrow();
 
     expect(() =>
       loginRequestSchema.parse({
-        email: 'admin@example.com',
+        username: 'admin',
         password: '',
       }),
     ).toThrow();
 
     expect(() =>
       loginRequestSchema.parse({
-        email: 'admin@example.com',
+        username: 'admin',
         password: 'secret',
         extraField: true,
       }),

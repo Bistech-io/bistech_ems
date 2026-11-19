@@ -53,7 +53,7 @@ export type AccountStatus = z.infer<typeof accountStatusSchema>;
 
 export const loginRequestSchema = z
   .object({
-    email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
+    username: z.string().trim().min(1, 'Username is required').toLowerCase(),
     password: z.string().min(1, 'Password is required'),
     organizationSlug: z.string().trim().min(1).optional(),
   })
@@ -64,7 +64,8 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export const authUserSchema = z
   .object({
     id: z.string().uuid(),
-    email: z.string().email(),
+    username: z.string().min(1),
+    email: z.string().email().optional(),
     name: z.string().min(1),
     accountStatus: accountStatusSchema,
   })

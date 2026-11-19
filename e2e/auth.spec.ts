@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const DEV_PASSWORD = 'DevPassword123!';
+const DEV_PASSWORD = 'Password123!';
 
 test.describe('Authentication (desktop-dark)', () => {
   test('passes axe accessibility checks on /login in dark mode', async ({ page }) => {
@@ -15,14 +15,14 @@ test.describe('Authentication (desktop-dark)', () => {
   test('shows error for wrong password and locked account', async ({ page }) => {
     await page.goto('/login');
 
-    await page.getByLabel(/work email/i).fill('admin@example.com');
+    await page.getByLabel(/username/i).fill('admin');
     await page.getByLabel(/^password$/i).fill('WrongPassword!');
     await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.getByRole('alert')).toContainText(/invalid email or password/i);
+    await expect(page.locator('form [role="alert"]')).toContainText(/invalid username or password/i);
 
-    await page.getByLabel(/work email/i).fill('locked@example.com');
+    await page.getByLabel(/username/i).fill('locked');
     await page.getByRole('button', { name: /sign in/i }).click();
-    await expect(page.getByRole('alert')).toContainText(/temporarily locked/i);
+    await expect(page.locator('form [role="alert"]')).toContainText(/temporarily locked/i);
   });
 
   test('redirects unauthenticated visitors to /login?next=..., logs in, and logs out', async ({
@@ -31,7 +31,7 @@ test.describe('Authentication (desktop-dark)', () => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login\?next=%2Fdashboard/);
 
-    await page.getByLabel(/work email/i).fill('admin@example.com');
+    await page.getByLabel(/username/i).fill('admin');
     await page.getByLabel(/^password$/i).fill(DEV_PASSWORD);
     await page.getByRole('button', { name: /sign in/i }).click();
 
