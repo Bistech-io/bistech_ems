@@ -15,7 +15,7 @@ interface EmployeeProfileModalProps {
   canEditDesignation: boolean;
   onClose: () => void;
   onDesignationUpdated: (employeeId: string, designation: { id: string; title: string }) => void;
-  onLiveStatusChange: (employeeId: string, status: EmployeeLiveStatus) => void;
+  onLiveStatusChange: (employeeId: string, status: EmployeeLiveStatus | 'auto') => void;
 }
 
 const EMPLOYMENT_TYPE_LABELS: Record<EmployeeItem['employmentType'], string> = {
@@ -191,15 +191,19 @@ export function EmployeeProfileModal({
                     id="profile-live-status-select"
                     value={liveStatus}
                     onChange={(e) =>
-                      onLiveStatusChange(employee.id, e.target.value as EmployeeLiveStatus)
+                      onLiveStatusChange(
+                        employee.id,
+                        e.target.value as EmployeeLiveStatus | 'auto',
+                      )
                     }
                     className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
                   >
+                    <option value="auto">Auto (From Attendance)</option>
                     <option value="available">Available</option>
                     <option value="arriving">Arriving</option>
                     <option value="absent">Absent</option>
                     <option value="on_vacation">On Vacation</option>
-                    <option value="after_hours">After Working Hours</option>
+                    <option value="after_hours">Working Hour Ended</option>
                   </select>
                 </div>
 

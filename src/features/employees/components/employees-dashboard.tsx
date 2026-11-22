@@ -36,14 +36,7 @@ const DEFAULT_SHIFT: OrganizationShiftSettings = {
   graceMinutes: 15,
 };
 
-const EMPLOYMENT_TYPE_LABELS: Record<EmployeeItem['employmentType'], string> = {
-  full_time: 'Full Time',
-  part_time: 'Part Time',
-  contract: 'Contract',
-  intern: 'Intern',
-};
-
-const LIVE_STATUS_STYLES: Record<
+export const LIVE_STATUS_STYLES: Record<
   EmployeeLiveStatus,
   { badge: string; label: string }
 > = {
@@ -65,7 +58,7 @@ const LIVE_STATUS_STYLES: Record<
   },
   after_hours: {
     badge: 'border-[#23302B] bg-[#1A2420] text-[#A3B3AC]',
-    label: 'After Working Hours',
+    label: 'Working Hour Ended',
   },
 };
 
@@ -176,6 +169,10 @@ export function EmployeesDashboard() {
     };
   }, [user?.employeeId]);
 
+  /**
+   * Auto-derives employee live status from daily attendance and working hours,
+   * while allowing HR manual override (e.g., On Vacation).
+   */
   const deriveLiveStatus = useCallback(
     (emp: EmployeeItem): EmployeeLiveStatus => {
       const override = statusOverrides[emp.id];
@@ -186,30 +183,27 @@ export function EmployeesDashboard() {
       }
 
       const att = attendanceMap[emp.id];
+      const hasCheckedInToday = Boolean(
+        att && (att.status === 'present' || att.status === 'late'),
+      );
+
       const currentMinutes = now
         ? now.getHours() * 60 + now.getMinutes()
         : 10 * 60;
-      const startCutoff =
-        parseHhMmToMinutes(shiftSettings.workStart, 9 * 60) +
-        (shiftSettings.graceMinutes ?? 15);
       const endCutoff = parseHhMmToMinutes(shiftSettings.workEnd, 18 * 60);
+      const isWorkingHourEnded = currentMinutes >= endCutoff;
 
-      if (currentMinutes >= endCutoff) {
-        return 'after_hours';
+      if (isWorkingHourEnded) {
+        // Working hour ended: if not checked in today -> Absent; if checked in -> Working Hour Ended
+        return hasCheckedInToday ? 'after_hours' : 'absent';
       }
 
-      if (att) {
-        if (att.status === 'present' || att.status === 'late') {
-          return 'available';
-        }
-        return 'absent';
+      if (hasCheckedInToday) {
+        return 'available';
       }
 
-      if (currentMinutes <= startCutoff) {
-        return 'arriving';
-      }
-
-      return 'absent';
+      // Work hour started / active, not checked in yet -> Arriving
+      return 'arriving';
     },
     [statusOverrides, attendanceMap, now, shiftSettings],
   );
@@ -256,11 +250,19 @@ export function EmployeesDashboard() {
     );
   }
 
-  function handleLiveStatusChange(employeeId: string, status: EmployeeLiveStatus) {
-    setStatusOverrides((prev) => ({
-      ...prev,
-      [employeeId]: status,
-    }));
+  function handleLiveStatusChange(
+    employeeId: string,
+    status: EmployeeLiveStatus | 'auto',
+  ) {
+    setStatusOverrides((prev) => {
+      const next = { ...prev };
+      if (status === 'auto') {
+        delete next[employeeId];
+      } else {
+        next[employeeId] = status;
+      }
+      return next;
+    });
   }
 
   return (
@@ -274,7 +276,7 @@ export function EmployeesDashboard() {
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
         <div className="flex flex-wrap items-baseline gap-4">
           <h1 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-            Employees
+            Manage Employees
           </h1>
           <div className="flex items-center gap-2 text-xs text-[#A3B3AC]">
             <span className="rounded-lg border border-[#23302B] bg-[#131A17] px-2.5 py-1">
@@ -340,12 +342,12 @@ export function EmployeesDashboard() {
             <option value="arriving">Arriving</option>
             <option value="absent">Absent</option>
             <option value="on_vacation">On Vacation</option>
-            <option value="after_hours">After Working Hours</option>
+            <option value="after_hours">Working Hour Ended</option>
           </select>
         </div>
       </div>
 
-      {/* Employee Table */}
+      {/* Employee Table (Code -> Employee -> Department -> Designation -> Status) */}
       <section className="overflow-hidden rounded-3xl border border-[#23302B] bg-[#131A17]">
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -357,15 +359,14 @@ export function EmployeesDashboard() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full table-fixed text-left text-sm">
               <thead>
                 <tr className="border-b border-[#23302B] bg-[#0B0F0E]/40 text-[11px] font-semibold tracking-[0.06em] text-[#6E8078] uppercase">
-                  <th className="px-5 py-3.5">Employee</th>
-                  <th className="px-4 py-3.5">Code</th>
-                  <th className="px-4 py-3.5">Department</th>
-                  <th className="px-4 py-3.5">Designation</th>
-                  <th className="px-4 py-3.5">Type</th>
-                  <th className="px-5 py-3.5 text-right">Status</th>
+                  <th className="w-32 px-6 py-4">Code</th>
+                  <th className="w-[34%] px-6 py-4">Employee</th>
+                  <th className="w-[22%] px-6 py-4">Department</th>
+                  <th className="w-[22%] px-6 py-4">Designation</th>
+                  <th className="w-48 px-6 py-4 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#23302B]/60">
@@ -379,33 +380,32 @@ export function EmployeesDashboard() {
                       onClick={() => setSelectedEmployee(emp)}
                       className="cursor-pointer transition-colors hover:bg-[#1A2420]/75"
                     >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
+                      <td className="px-6 py-4 font-mono text-xs font-medium text-[#4CAF7D]">
+                        {emp.employeeCode}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3.5">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#23302B] bg-[#1A2420] font-heading text-xs font-bold text-[#4CAF7D]">
                             {getInitials(emp.fullName)}
                           </div>
-                          <div>
-                            <div className="font-medium text-[#F0F5F2]">{emp.fullName}</div>
-                            <div className="text-xs text-[#6E8078]">
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-[#F0F5F2]">
+                              {emp.fullName}
+                            </div>
+                            <div className="truncate text-xs text-[#6E8078]">
                               @{emp.user.username} · {emp.workEmail}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-xs text-[#4CAF7D]">
-                        {emp.employeeCode}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-[#A3B3AC]">
+                      <td className="truncate px-6 py-4 text-xs text-[#A3B3AC]">
                         {emp.department.name}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-[#F0F5F2]">
+                      <td className="truncate px-6 py-4 text-xs font-medium text-[#F0F5F2]">
                         {emp.designation.title}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-[#A3B3AC]">
-                        {EMPLOYMENT_TYPE_LABELS[emp.employmentType]}
-                      </td>
                       <td
-                        className="px-5 py-3.5 text-right"
+                        className="px-6 py-4 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {canUpdate ? (
@@ -414,15 +414,18 @@ export function EmployeesDashboard() {
                             onChange={(e) =>
                               handleLiveStatusChange(
                                 emp.id,
-                                e.target.value as EmployeeLiveStatus,
+                                e.target.value as EmployeeLiveStatus | 'auto',
                               )
                             }
                             aria-label={`Change status for ${emp.fullName}`}
                             className={cn(
-                              'cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-medium outline-none',
+                              'cursor-pointer rounded-full border px-3 py-1 text-[11px] font-medium outline-none',
                               style.badge,
                             )}
                           >
+                            <option value="auto" className="bg-[#131A17] text-[#4CAF7D]">
+                              Auto (Attendance)
+                            </option>
                             <option value="available" className="bg-[#131A17] text-[#F0F5F2]">
                               Available
                             </option>
@@ -436,13 +439,13 @@ export function EmployeesDashboard() {
                               On Vacation
                             </option>
                             <option value="after_hours" className="bg-[#131A17] text-[#F0F5F2]">
-                              After Working Hours
+                              Working Hour Ended
                             </option>
                           </select>
                         ) : (
                           <span
                             className={cn(
-                              'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
+                              'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium',
                               style.badge,
                             )}
                           >
