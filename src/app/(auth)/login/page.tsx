@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { getSession } from '@/lib/auth/session';
 
+export const instant = false;
+
 interface LoginPageProps {
   searchParams: Promise<{ next?: string }>;
 }
