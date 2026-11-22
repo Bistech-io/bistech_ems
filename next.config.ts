@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
-const apiInternal = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
+const defaultApi =
+  process.env.NODE_ENV === 'production'
+    ? 'https://bistech-ems-server.vercel.app'
+    : 'http://localhost:4000';
+
+const apiInternal = (process.env.API_INTERNAL_URL ?? defaultApi).replace(/\/+$/, '');
 
 const nextConfig: NextConfig = {
   /* config options here */
