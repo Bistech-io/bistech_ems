@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Clock, Crown, LayoutGrid } from 'lucide-react';
+import { Clock, Crown, LayoutGrid, UserCircle } from 'lucide-react';
 import {
   can,
   hasAnyRole,
@@ -85,6 +85,18 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         allowedRoles: ['super_admin'],
       },
     ],
+  },
+];
+
+/**
+ * Bottom utility navigation items pinned directly above the Sign Out button.
+ */
+export const ACCOUNT_NAV_ITEMS: NavItem[] = [
+  {
+    id: 'account-profile',
+    label: 'My Profile',
+    href: '/account/profile',
+    icon: UserCircle,
   },
 ];
 

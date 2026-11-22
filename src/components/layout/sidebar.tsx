@@ -13,7 +13,11 @@ import {
   PanelLeftOpen,
   X,
 } from 'lucide-react';
-import { getFilteredNavigation, type NavItem } from '@/config/navigation';
+import {
+  ACCOUNT_NAV_ITEMS,
+  getFilteredNavigation,
+  type NavItem,
+} from '@/config/navigation';
 import { useLogoutMutation } from '@/features/auth/hooks';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
@@ -274,36 +278,99 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom Sign Out Action */}
-      <div className="mt-3 border-t border-[#23302B]/80 px-3.5 pt-3">
-        <button
-          type="button"
-          disabled={logoutMutation.isPending}
-          onClick={async () => {
-            await logoutMutation.mutateAsync();
-            setSession(null);
-            onNavigate?.();
-            router.replace('/login');
-            router.refresh();
-          }}
-          title={!expanded ? 'Sign Out' : undefined}
-          className="flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-150 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.85} />
-          <AnimatePresence initial={false}>
-            {expanded && (
-              <motion.span
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -6 }}
-                transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
-                className="truncate whitespace-nowrap"
-              >
-                {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
+      {/* Bottom Account & Sign Out Section */}
+      <div className="mt-3 space-y-1.5 border-t border-[#23302B]/80 px-3.5 pt-3">
+        {expanded && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
+            className="px-3 pb-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
+          >
+            Account
+          </motion.p>
+        )}
+
+        <ul className="space-y-1">
+          {ACCOUNT_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = isPathActive(pathname, item.href, true);
+
+            return (
+              <li key={item.id} className="relative flex items-center">
+                {active && (
+                  <motion.span
+                    layoutId="sidebar-active-pill"
+                    transition={{ duration: 0.22, ease: SIDEBAR_EASE }}
+                    className="absolute inset-0 rounded-2xl bg-[#2E8B57] shadow-[0_6px_20px_-4px_rgba(46,139,87,0.5)]"
+                  />
+                )}
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  title={!expanded ? item.label : undefined}
+                  className={cn(
+                    'relative z-10 flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
+                    active
+                      ? 'text-[#F0F5F2]'
+                      : 'text-[#A3B3AC] hover:bg-[#1A2420]/90 hover:text-[#F0F5F2]',
+                  )}
+                >
+                  <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                    <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.2 : 1.85} />
+                  </span>
+                  <AnimatePresence initial={false}>
+                    {expanded && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -6 }}
+                        transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                        className="flex-1 truncate whitespace-nowrap"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              </li>
+            );
+          })}
+
+          <li>
+            <button
+              type="button"
+              disabled={logoutMutation.isPending}
+              onClick={async () => {
+                await logoutMutation.mutateAsync();
+                setSession(null);
+                onNavigate?.();
+                router.replace('/login');
+                router.refresh();
+              }}
+              title={!expanded ? 'Sign Out' : undefined}
+              className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-150 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
+            >
+              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                <LogOut className="h-[18px] w-[18px]" strokeWidth={1.85} />
+              </span>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -6 }}
+                    transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                    className="truncate whitespace-nowrap"
+                  >
+                    {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
   );
