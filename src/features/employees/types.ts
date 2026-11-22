@@ -1,6 +1,13 @@
 export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'intern';
 export type EmploymentStatus = 'active' | 'inactive' | 'suspended';
 
+export type EmployeeLiveStatus =
+  | 'available'
+  | 'arriving'
+  | 'absent'
+  | 'on_vacation'
+  | 'after_hours';
+
 export interface DepartmentOption {
   id: string;
   name: string;

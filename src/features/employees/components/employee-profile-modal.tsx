@@ -4,16 +4,18 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
 import { updateEmployeeDesignation } from '../api';
-import type { DesignationOption, EmployeeItem } from '../types';
+import type { DesignationOption, EmployeeItem, EmployeeLiveStatus } from '../types';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface EmployeeProfileModalProps {
   employee: EmployeeItem | null;
+  liveStatus: EmployeeLiveStatus;
   designations: DesignationOption[];
   canEditDesignation: boolean;
   onClose: () => void;
   onDesignationUpdated: (employeeId: string, designation: { id: string; title: string }) => void;
+  onLiveStatusChange: (employeeId: string, status: EmployeeLiveStatus) => void;
 }
 
 const EMPLOYMENT_TYPE_LABELS: Record<EmployeeItem['employmentType'], string> = {
@@ -32,19 +34,21 @@ function getInitials(name: string): string {
 
 export function EmployeeProfileModal({
   employee,
+  liveStatus,
   designations,
   canEditDesignation,
   onClose,
   onDesignationUpdated,
+  onLiveStatusChange,
 }: EmployeeProfileModalProps) {
-  const [selectedDesignationId, setSelectedDesignationId] = useState<string>('');
+  const [designationInput, setDesignationInput] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
   useEffect(() => {
     if (!employee) return;
     const timer = setTimeout(() => {
-      setSelectedDesignationId(employee.designation.id);
+      setDesignationInput(employee.designation.title);
       setSavedNotice(false);
     }, 0);
     return () => clearTimeout(timer);
@@ -52,23 +56,29 @@ export function EmployeeProfileModal({
 
   async function handleSaveDesignation(e: React.FormEvent) {
     e.preventDefault();
-    if (!employee || !selectedDesignationId || isSaving) return;
+    const trimmed = designationInput.trim();
+    if (!employee || !trimmed || isSaving) return;
 
-    const matched = designations.find((d) => d.id === selectedDesignationId);
-    if (!matched) return;
+    const matched = designations.find(
+      (d) => d.title.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
 
     setIsSaving(true);
     setSavedNotice(false);
 
     try {
       await updateEmployeeDesignation(employee.id, {
-        designationId: selectedDesignationId,
+        ...(matched ? { designationId: matched.id } : {}),
+        designationTitle: trimmed,
         reason: 'Designation updated by HR',
       });
     } catch {
-      // Optimistically apply in directory if backend PATCH /employees/:id is not yet deployed
+      // Apply locally in directory if backend PATCH /employees/:id is not yet deployed
     } finally {
-      onDesignationUpdated(employee.id, { id: matched.id, title: matched.title });
+      onDesignationUpdated(employee.id, {
+        id: matched?.id ?? employee.designation.id,
+        title: trimmed,
+      });
       setIsSaving(false);
       setSavedNotice(true);
     }
@@ -167,60 +177,79 @@ export function EmployeeProfileModal({
               </div>
             </div>
 
-            {/* Change Designation Form */}
+            {/* Dynamic Status & Change Designation (Text Input) */}
             {canEditDesignation && (
-              <form
-                onSubmit={handleSaveDesignation}
-                className="mt-5 border-t border-[#23302B] pt-4"
-              >
-                <label
-                  htmlFor="profile-designation-select"
-                  className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
-                >
-                  Change Designation
-                </label>
-                <div className="flex items-center gap-2.5">
+              <div className="mt-5 space-y-4 border-t border-[#23302B] pt-4">
+                <div>
+                  <label
+                    htmlFor="profile-live-status-select"
+                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                  >
+                    Attendance / Presence Status
+                  </label>
                   <select
-                    id="profile-designation-select"
-                    value={selectedDesignationId}
-                    onChange={(e) => {
-                      setSelectedDesignationId(e.target.value);
-                      setSavedNotice(false);
-                    }}
-                    className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
-                  >
-                    {designations.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.title}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    type="submit"
-                    disabled={
-                      isSaving || selectedDesignationId === employee.designation.id
+                    id="profile-live-status-select"
+                    value={liveStatus}
+                    onChange={(e) =>
+                      onLiveStatusChange(employee.id, e.target.value as EmployeeLiveStatus)
                     }
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
                   >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Saving</span>
-                      </>
-                    ) : (
-                      <span>Update</span>
-                    )}
-                  </button>
+                    <option value="available">Available</option>
+                    <option value="arriving">Arriving</option>
+                    <option value="absent">Absent</option>
+                    <option value="on_vacation">On Vacation</option>
+                    <option value="after_hours">After Working Hours</option>
+                  </select>
                 </div>
 
-                {savedNotice && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Designation updated.</span>
-                  </p>
-                )}
-              </form>
+                <form onSubmit={handleSaveDesignation}>
+                  <label
+                    htmlFor="profile-designation-input"
+                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                  >
+                    Change Designation
+                  </label>
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      id="profile-designation-input"
+                      type="text"
+                      value={designationInput}
+                      onChange={(e) => {
+                        setDesignationInput(e.target.value);
+                        setSavedNotice(false);
+                      }}
+                      className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={
+                        isSaving ||
+                        !designationInput.trim() ||
+                        designationInput.trim() === employee.designation.title
+                      }
+                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Saving</span>
+                        </>
+                      ) : (
+                        <span>Update</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {savedNotice && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Designation updated.</span>
+                    </p>
+                  )}
+                </form>
+              </div>
             )}
           </motion.div>
         </motion.div>

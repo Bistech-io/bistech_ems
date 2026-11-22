@@ -51,10 +51,21 @@ export const employeeItemSchema = z.object({
   }),
 });
 
+export const orgAttendanceItemSchema = z.object({
+  employeeId: z.string(),
+  workDate: z.string(),
+  status: z.enum(['present', 'late', 'absent']),
+  checkInAt: z.string().nullable().optional(),
+});
+
+export type OrgAttendanceItem = z.infer<typeof orgAttendanceItemSchema>;
+
 const employeesListResponseSchema = successEnvelopeSchema(z.array(employeeItemSchema));
 const employeeSingleResponseSchema = successEnvelopeSchema(employeeItemSchema);
 const departmentsResponseSchema = successEnvelopeSchema(z.array(departmentOptionSchema));
 const designationsResponseSchema = successEnvelopeSchema(z.array(designationOptionSchema));
+const designationSingleResponseSchema = successEnvelopeSchema(designationOptionSchema);
+const orgAttendanceListResponseSchema = successEnvelopeSchema(z.array(orgAttendanceItemSchema));
 
 export async function fetchEmployees(params?: {
   departmentId?: string;
@@ -91,6 +102,23 @@ export async function fetchDesignations(): Promise<DesignationOption[]> {
   return res.data;
 }
 
+export async function createDesignation(title: string): Promise<DesignationOption> {
+  const res = await apiRequest('/designations', {
+    method: 'POST',
+    body: { title },
+    schema: designationSingleResponseSchema,
+  });
+  return res.data;
+}
+
+export async function fetchTodayOrgAttendance(workDate: string): Promise<OrgAttendanceItem[]> {
+  const res = await apiRequest(`/attendance?from=${workDate}&to=${workDate}`, {
+    method: 'GET',
+    schema: orgAttendanceListResponseSchema,
+  });
+  return res.data;
+}
+
 export async function createEmployee(
   payload: CreateEmployeePayload,
   idempotencyKey: string,
@@ -108,7 +136,7 @@ export async function createEmployee(
 
 export async function updateEmployeeDesignation(
   employeeId: string,
-  payload: { designationId: string; reason?: string },
+  payload: { designationId?: string; designationTitle?: string; reason?: string },
 ): Promise<EmployeeItem> {
   const res = await apiRequest(`/employees/${employeeId}`, {
     method: 'PATCH',

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Loader2, UserPlus, X } from 'lucide-react';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
-import { createEmployee } from '../api';
+import { createDesignation, createEmployee } from '../api';
 import type {
   CreateEmployeePayload,
   DepartmentOption,
@@ -49,7 +49,7 @@ export function CreateEmployeeModal({
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [departmentId, setDepartmentId] = useState('');
-  const [designationId, setDesignationId] = useState('');
+  const [designationTitle, setDesignationTitle] = useState('');
   const [employmentType, setEmploymentType] = useState<EmploymentType>('full_time');
   const [joiningDate, setJoiningDate] = useState('2026-11-22');
 
@@ -72,10 +72,9 @@ export function CreateEmployeeModal({
       const today = new Date().toISOString().slice(0, 10);
       setJoiningDate(today);
       if (departments[0] && !departmentId) setDepartmentId(departments[0].id);
-      if (designations[0] && !designationId) setDesignationId(designations[0].id);
     }, 0);
     return () => clearTimeout(timer);
-  }, [open, departments, designations, departmentId, designationId]);
+  }, [open, departments, departmentId]);
 
   function resetForm() {
     setFirstName('');
@@ -84,6 +83,7 @@ export function CreateEmployeeModal({
     setUsername('');
     setPassword('');
     setPhone('');
+    setDesignationTitle('');
     setEmploymentType('full_time');
     setDateOfBirth('');
     setPersonalEmail('');
@@ -97,17 +97,40 @@ export function CreateEmployeeModal({
     setErrorMessage(null);
   }
 
+  async function resolveDesignationId(typedTitle: string): Promise<string> {
+    const normalized = typedTitle.trim().toLowerCase();
+    const matched = designations.find(
+      (d) => d.title.trim().toLowerCase() === normalized,
+    );
+    if (matched) return matched.id;
+
+    try {
+      const createdDesig = await createDesignation(typedTitle.trim());
+      return createdDesig.id;
+    } catch {
+      return designations[0]?.id ?? '';
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!departmentId || !designationId) {
-      setErrorMessage('Please select both a department and a designation.');
+    const trimmedDesignation = designationTitle.trim();
+    if (!departmentId || !trimmedDesignation) {
+      setErrorMessage('Please select a department and enter a designation.');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage(null);
+
+    const resolvedDesignationId = await resolveDesignationId(trimmedDesignation);
+    if (!resolvedDesignationId) {
+      setErrorMessage('No designation available in organization.');
+      setIsSubmitting(false);
+      return;
+    }
 
     const hasPersonalFields = Boolean(
       dateOfBirth ||
@@ -128,7 +151,7 @@ export function CreateEmployeeModal({
       ...(password ? { password } : {}),
       ...(phone.trim() ? { phone: phone.trim() } : {}),
       departmentId,
-      designationId,
+      designationId: resolvedDesignationId,
       employmentType,
       joiningDate,
       ...(hasPersonalFields
@@ -158,8 +181,15 @@ export function CreateEmployeeModal({
 
     try {
       const created = await createEmployee(payload, idempotencyKey || generateIdempotencyKey());
+      const withTypedDesignation: EmployeeItem = {
+        ...created,
+        designation: {
+          ...created.designation,
+          title: trimmedDesignation,
+        },
+      };
       resetForm();
-      onCreated(created);
+      onCreated(withTypedDesignation);
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -323,7 +353,7 @@ export function CreateEmployeeModal({
                       htmlFor="emp-password"
                       className="mb-1 block text-xs font-medium text-[#A3B3AC]"
                     >
-                      Initial Password
+                      Initial Password <span className="text-[#6E8078]">(one-time use)</span>
                     </label>
                     <input
                       id="emp-password"
@@ -368,25 +398,19 @@ export function CreateEmployeeModal({
 
                   <div>
                     <label
-                      htmlFor="emp-designation"
+                      htmlFor="emp-designation-input"
                       className="mb-1 block text-xs font-medium text-[#A3B3AC]"
                     >
                       Designation *
                     </label>
-                    <select
-                      id="emp-designation"
+                    <input
+                      id="emp-designation-input"
+                      type="text"
                       required
-                      value={designationId}
-                      onChange={(e) => setDesignationId(e.target.value)}
+                      value={designationTitle}
+                      onChange={(e) => setDesignationTitle(e.target.value)}
                       className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
-                    >
-                      <option value="">Select designation</option>
-                      {designations.map((desig) => (
-                        <option key={desig.id} value={desig.id}>
-                          {desig.title}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>
