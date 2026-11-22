@@ -112,19 +112,10 @@ describe('LoginForm', () => {
     });
   });
 
-  it('fills demo credentials when clicking a quick demo role button', async () => {
-    const user = userEvent.setup();
+  it('does not render quick demo sign-in buttons', () => {
     renderLoginForm();
-
-    await user.click(screen.getByRole('button', { name: /hr manager/i }));
-
-    expect(screen.getByLabelText(/username/i)).toHaveValue('hr');
-    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
-    expect(screen.queryByText(/must be at least 3 characters/i)).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /dept head/i }));
-
-    expect(screen.getByLabelText(/username/i)).toHaveValue('head');
-    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
+    expect(screen.queryByText(/quick demo sign-in/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /super admin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /hr manager/i })).not.toBeInTheDocument();
   });
 });
