@@ -57,7 +57,6 @@ export const loginRequestSchema = z
       .string()
       .trim()
       .min(1, 'Username is required')
-      .min(3, 'Username must be at least 3 characters')
       .max(64, 'Username must be 64 characters or fewer'),
     password: z.string().min(1, 'Password is required'),
     organizationSlug: z.string().trim().min(1).optional(),

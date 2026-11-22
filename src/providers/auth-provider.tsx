@@ -21,6 +21,51 @@ import {
   type UserAuthContext,
 } from '@/lib/auth/permissions';
 
+export const ROLE_PREVIEW_PERSONAS: Record<
+  RoleName,
+  {
+    name: string;
+    email: string;
+    employeeCode: string;
+    designation: string;
+    department: string;
+    teamName: string;
+  }
+> = {
+  super_admin: {
+    name: 'BisTech Admin',
+    email: 'admin@bistech.io',
+    employeeCode: 'BST-0001',
+    designation: 'Super Administrator',
+    department: 'Management & Operations',
+    teamName: 'Executive Leadership',
+  },
+  hr_manager: {
+    name: 'Nadia Rahman',
+    email: 'hr@bistech.io',
+    employeeCode: 'BST-1001',
+    designation: 'HR Manager',
+    department: 'Human Resources',
+    teamName: 'People Operations',
+  },
+  dept_head: {
+    name: 'Farhan Ahmed',
+    email: 'head@bistech.io',
+    employeeCode: 'BST-1002',
+    designation: 'Lead Engineer & Department Head',
+    department: 'Engineering',
+    teamName: 'Engineering Leadership',
+  },
+  employee: {
+    name: 'Mehedi Alam',
+    email: 'employee@bistech.io',
+    employeeCode: 'BST-1003',
+    designation: 'Senior Frontend Engineer',
+    department: 'Engineering',
+    teamName: 'Core Platform Squad',
+  },
+};
+
 interface AuthContextValue {
   user: UserAuthContext;
   session: AuthMeData | null;
@@ -86,12 +131,14 @@ export function AuthProvider({
     if (session) {
       return authMeToUserContext(session);
     }
+    const persona = ROLE_PREVIEW_PERSONAS[previewRole] ?? ROLE_PREVIEW_PERSONAS.employee;
     return {
-      userId: 'preview-user',
-      employeeId: 'BST-00101',
-      name: 'BisTech Member',
-      email: 'member@bistech.io',
-      roleTitle: ROLE_LABELS[previewRole],
+      userId: `preview-${previewRole}`,
+      employeeId: persona.employeeCode,
+      username: previewRole,
+      name: persona.name,
+      email: persona.email,
+      roleTitle: persona.designation,
       roles: [previewRole],
       permissions: resolvePermissionsForRoles([previewRole]),
     };
