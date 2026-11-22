@@ -53,9 +53,19 @@ describe('@ems/contracts auth schemas', () => {
   });
 
   it('rejects invalid login requests and unknown fields', () => {
+    expect(
+      loginRequestSchema.parse({
+        username: 'hr',
+        password: 'Password123!',
+      }),
+    ).toEqual({
+      username: 'hr',
+      password: 'Password123!',
+    });
+
     expect(() =>
       loginRequestSchema.parse({
-        username: 'ab',
+        username: '',
         password: 'secret',
       }),
     ).toThrow();

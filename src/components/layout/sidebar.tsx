@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
@@ -18,7 +18,7 @@ import {
   getFilteredNavigation,
   type NavItem,
 } from '@/config/navigation';
-import { useLogoutMutation } from '@/features/auth/hooks';
+import { useSignOut } from '@/features/auth/hooks';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
@@ -41,9 +41,8 @@ function isItemOrChildActive(pathname: string, item: NavItem): boolean {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, activeRole, setSession } = useAuth();
-  const logoutMutation = useLogoutMutation();
+  const { user, activeRole } = useAuth();
+  const { signOut, isPending: isSigningOut } = useSignOut();
 
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -341,14 +340,8 @@ export function Sidebar() {
           <li>
             <button
               type="button"
-              disabled={logoutMutation.isPending}
-              onClick={async () => {
-                await logoutMutation.mutateAsync();
-                setSession(null);
-                onNavigate?.();
-                router.replace('/login');
-                router.refresh();
-              }}
+              disabled={isSigningOut}
+              onClick={() => signOut(onNavigate)}
               title={!expanded ? 'Sign Out' : undefined}
               className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-150 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
             >
@@ -364,7 +357,7 @@ export function Sidebar() {
                     transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
                     className="truncate whitespace-nowrap"
                   >
-                    {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
+                    {isSigningOut ? 'Signing Out...' : 'Sign Out'}
                   </motion.span>
                 )}
               </AnimatePresence>

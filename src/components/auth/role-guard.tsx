@@ -56,12 +56,16 @@ export function RoleGuard({
             <ShieldAlert className="h-6 w-6" />
           </div>
           <h1 className="mt-4 font-heading text-xl font-bold text-[#F0F5F2]">
-            Super Admin Access Required
+            {allowedRoles.length === 1
+              ? `${ROLE_LABELS[allowedRoles[0]]} Access Required`
+              : 'Restricted Access'}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-[#A3B3AC]">
-            This governance dashboard is restricted to{' '}
-            <span className="font-medium text-[#F0F5F2]">Super Admin</span>. Your current active
-            role is{' '}
+            This section is restricted to{' '}
+            <span className="font-medium text-[#F0F5F2]">
+              {allowedRoles.map((r) => ROLE_LABELS[r]).join(' or ')}
+            </span>
+            . Your current active role is{' '}
             <span className="font-medium text-[#4CAF7D]">
               {activeRole ? ROLE_LABELS[activeRole] : 'Unauthenticated'}
             </span>

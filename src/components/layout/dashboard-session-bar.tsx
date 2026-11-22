@@ -1,22 +1,13 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { LogOut, ShieldCheck } from 'lucide-react';
-import { useLogoutMutation } from '@/features/auth/hooks';
+import { useSignOut } from '@/features/auth/hooks';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 
 export function DashboardSessionBar() {
-  const router = useRouter();
-  const { user, isAuthenticated, activeRole, setSession } = useAuth();
-  const logoutMutation = useLogoutMutation();
-
-  async function handleLogout() {
-    await logoutMutation.mutateAsync();
-    setSession(null);
-    router.replace('/login');
-    router.refresh();
-  }
+  const { user, isAuthenticated, activeRole } = useAuth();
+  const { signOut, isPending } = useSignOut();
 
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-3">
@@ -44,12 +35,12 @@ export function DashboardSessionBar() {
 
       <button
         type="button"
-        disabled={logoutMutation.isPending}
-        onClick={handleLogout}
+        disabled={isPending}
+        onClick={() => signOut()}
         className="inline-flex items-center gap-2 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3.5 py-2 text-xs font-medium text-[#A3B3AC] transition-colors hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
       >
         <LogOut className="h-3.5 w-3.5" />
-        <span>{logoutMutation.isPending ? 'Signing out...' : 'Sign Out'}</span>
+        <span>{isPending ? 'Signing out...' : 'Sign Out'}</span>
       </button>
     </div>
   );

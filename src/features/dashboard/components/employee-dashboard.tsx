@@ -1,12 +1,12 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
-import { ROLE_LABELS } from '@/lib/auth/permissions';
+import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { EMPLOYEE_DASHBOARD_MOCK } from '../mock-data';
-import type { EmployeeDashboardData } from '../types';
+import type { EmployeeDashboardData, EmployeeProfileSummary } from '../types';
 import { ActivityFeedCard } from './activity-feed-card';
 import { AttendanceChartCard } from './attendance-chart-card';
 import { DueSoonCard } from './due-soon-card';
@@ -19,11 +19,109 @@ interface EmployeeDashboardProps {
   initialData?: EmployeeDashboardData;
 }
 
+const ROLE_DASHBOARD_CONFIG: Record<
+  RoleName,
+  {
+    title: string;
+    subtitle: string;
+    badge: string;
+    defaultPersona: {
+      designation: string;
+      department: string;
+      teamName: string;
+      employeeCode: string;
+    };
+  }
+> = {
+  super_admin: {
+    title: 'Super Admin Dashboard',
+    subtitle: 'System governance, user administration, organization structure, and platform audit logs.',
+    badge: 'Super Admin Workspace',
+    defaultPersona: {
+      designation: 'Super Administrator',
+      department: 'Management & Operations',
+      teamName: 'Executive Leadership',
+      employeeCode: 'BST-0001',
+    },
+  },
+  hr_manager: {
+    title: 'HR Manager Dashboard',
+    subtitle: 'Workforce attendance, employee directory, people operations, and department oversight.',
+    badge: 'HR Manager Workspace',
+    defaultPersona: {
+      designation: 'HR Manager',
+      department: 'Human Resources',
+      teamName: 'People Operations',
+      employeeCode: 'BST-1001',
+    },
+  },
+  dept_head: {
+    title: 'Department Head Dashboard',
+    subtitle: 'Department task management, team attendance tracking, review approvals, and project operations.',
+    badge: 'Department Head Workspace',
+    defaultPersona: {
+      designation: 'Lead Engineer & Department Head',
+      department: 'Engineering',
+      teamName: 'Engineering Leadership',
+      employeeCode: 'BST-1002',
+    },
+  },
+  employee: {
+    title: 'Employee Dashboard',
+    subtitle: 'Daily attendance check-in, personal task assignments, and upcoming deadlines.',
+    badge: 'Employee Workspace',
+    defaultPersona: {
+      designation: 'Senior Frontend Engineer',
+      department: 'Engineering',
+      teamName: 'Core Platform Squad',
+      employeeCode: 'BST-1003',
+    },
+  },
+};
+
 export function EmployeeDashboard({
   initialData = EMPLOYEE_DASHBOARD_MOCK,
 }: EmployeeDashboardProps) {
-  const { activeRole } = useAuth();
+  const { user, activeRole } = useAuth();
   const [data, setData] = useState<EmployeeDashboardData>(initialData);
+
+  const config =
+    (activeRole ? ROLE_DASHBOARD_CONFIG[activeRole] : undefined) ??
+    ROLE_DASHBOARD_CONFIG.employee;
+
+  const currentEmployee: EmployeeProfileSummary = useMemo(() => {
+    const fullName = user?.name || data.employee.fullName;
+    const initials =
+      fullName
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'BT';
+
+    const employeeCode =
+      (user?.employeeId && user.employeeId.startsWith('BST-') ? user.employeeId : null) ||
+      (user?.username === 'admin'
+        ? 'BST-0001'
+        : user?.username === 'hr'
+          ? 'BST-1001'
+          : user?.username === 'head'
+            ? 'BST-1002'
+            : user?.username === 'employee'
+              ? 'BST-1003'
+              : config.defaultPersona.employeeCode);
+
+    return {
+      ...data.employee,
+      fullName,
+      initials,
+      employeeCode,
+      designation: user?.roleTitle || config.defaultPersona.designation,
+      department: config.defaultPersona.department,
+      teamName: config.defaultPersona.teamName,
+    };
+  }, [user, data.employee, config]);
 
   const handleCheckIn = () => {
     const now = new Date();
@@ -79,13 +177,13 @@ export function EmployeeDashboard({
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
         <div>
           <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
-            BisTech EMS Workspace
+            {config.badge}
           </p>
           <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-            Employee Dashboard
+            {config.title}
           </h1>
           <p className="mt-1 text-sm text-[#A3B3AC]">
-            Daily attendance check-in, personal task assignments, and upcoming deadlines.
+            {config.subtitle}
           </p>
         </div>
 
@@ -101,7 +199,7 @@ export function EmployeeDashboard({
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
         <div className="flex flex-col gap-6 xl:col-span-8">
           <EmployeeHeroBanner
-            employee={data.employee}
+            employee={currentEmployee}
             todayAttendance={data.todayAttendance}
             onCheckIn={handleCheckIn}
           />
@@ -118,7 +216,7 @@ export function EmployeeDashboard({
             weeklyPoints={data.weeklyAttendanceChart}
             twoWeekPoints={data.twoWeekAttendanceChart}
             monthlySummary={data.monthlyAttendance}
-            graceCutoffLabel={`${data.employee.workStartTime} (+${data.employee.graceMinutes}m)`}
+            graceCutoffLabel={`${currentEmployee.workStartTime} (+${currentEmployee.graceMinutes}m)`}
           />
 
           <MyTasksTable tasks={data.tasks} />

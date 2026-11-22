@@ -120,6 +120,7 @@ describe('LoginForm', () => {
 
     expect(screen.getByLabelText(/username/i)).toHaveValue('hr');
     expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
+    expect(screen.queryByText(/must be at least 3 characters/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /dept head/i }));
 

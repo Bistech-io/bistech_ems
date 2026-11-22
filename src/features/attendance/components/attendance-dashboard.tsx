@@ -101,18 +101,32 @@ function buildMonthRecords(
 }
 
 export function AttendanceDashboard() {
-  const [now, setNow] = useState<Date>(() => new Date());
-  const todayKey = useMemo(() => formatDateKey(now), [now]);
+  const [now, setNow] = useState<Date | null>(null);
+  const todayKey = useMemo(
+    () => (now ? formatDateKey(now) : '2026-11-19'),
+    [now],
+  );
 
-  const [viewYear, setViewYear] = useState<number>(() => now.getFullYear());
-  const [viewMonth, setViewMonth] = useState<number>(() => now.getMonth());
-  const [selectedDateKey, setSelectedDateKey] = useState<string>(() => formatDateKey(new Date()));
+  const [viewYear, setViewYear] = useState<number>(2026);
+  const [viewMonth, setViewMonth] = useState<number>(10);
+  const [selectedDateKey, setSelectedDateKey] = useState<string>('2026-11-19');
   const [checkedInToday, setCheckedInToday] = useState<AttendanceDayRecord | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
 
   useEffect(() => {
+    const initTimer = setTimeout(() => {
+      const current = new Date();
+      setNow(current);
+      setViewYear(current.getFullYear());
+      setViewMonth(current.getMonth());
+      setSelectedDateKey(formatDateKey(current));
+    }, 0);
+
     const timer = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(initTimer);
+      clearInterval(timer);
+    };
   }, []);
 
   const recordsByDate = useMemo(
@@ -141,6 +155,7 @@ export function AttendanceDashboard() {
   }, [recordsByDate]);
 
   const formattedDate = useMemo(() => {
+    if (!now) return 'Loading date...';
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       month: 'long',
@@ -150,6 +165,7 @@ export function AttendanceDashboard() {
   }, [now]);
 
   const formattedTime = useMemo(() => {
+    if (!now) return '--:--';
     return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -440,8 +456,9 @@ export function AttendanceDashboard() {
                 <button
                   type="button"
                   onClick={() => {
-                    setViewYear(now.getFullYear());
-                    setViewMonth(now.getMonth());
+                    const current = now ?? new Date();
+                    setViewYear(current.getFullYear());
+                    setViewMonth(current.getMonth());
                     setSelectedDateKey(todayKey);
                   }}
                   className="font-medium text-[#4CAF7D] transition-colors hover:underline"
