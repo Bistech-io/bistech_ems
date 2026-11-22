@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, EyeOff, FlaskConical, Loader2, Lock, User } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { useAuth } from '@/providers/auth-provider';
@@ -14,19 +14,6 @@ import { loginRequestSchema, type LoginRequest } from '../schemas';
 interface LoginFormProps {
   nextPath?: string;
 }
-
-export interface QuickDemoAccount {
-  label: string;
-  role: string;
-  username: string;
-}
-
-export const QUICK_DEMO_ACCOUNTS: QuickDemoAccount[] = [
-  { label: 'Super Admin', role: 'Full Access', username: 'admin' },
-  { label: 'HR Manager', role: 'People & Onboarding', username: 'hr' },
-  { label: 'Dept Head', role: 'Engineering Head', username: 'head' },
-  { label: 'Employee', role: 'Software Engineer', username: 'employee' },
-];
 
 export function getSafeNextPath(nextParam?: string | null): string {
   if (!nextParam) return '/dashboard';
@@ -49,7 +36,6 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     handleSubmit,
     setError,
     setFocus,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginRequest>({
     resolver: zodResolver(loginRequestSchema),
@@ -103,7 +89,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     <motion.form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
-      initial={{ opacity: 0, y: 8 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-5"
@@ -196,46 +182,6 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           <span>Sign in</span>
         )}
       </button>
-
-      {/* Quick Demo Sign-In Roles */}
-      <div className="pt-2">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#23302B]" />
-          </div>
-          <div className="relative bg-[#0E1512] px-3 text-[11px] font-medium uppercase tracking-wider text-[#A3B3AC]">
-            Quick Demo Sign-In
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {QUICK_DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.username}
-              type="button"
-              disabled={isBusy}
-              onClick={() => {
-                setValue('username', acc.username, { shouldValidate: true });
-                setValue('password', 'Password123!', { shouldValidate: true });
-                setFormError(null);
-              }}
-              className="group flex flex-col items-start rounded-xl border border-[#23302B] bg-[#131A17]/80 p-2.5 text-left transition-all hover:border-[#2E8B57] hover:bg-[#1A2420] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-xs font-semibold text-[#F0F5F2] group-hover:text-[#4CAF7D] transition-colors">
-                  {acc.label}
-                </span>
-                <span className="rounded bg-[#23302B] px-1.5 py-0.5 text-[10px] font-medium text-[#A3B3AC] group-hover:bg-[#2E8B57]/20 group-hover:text-[#4CAF7D] transition-colors">
-                  {acc.username}
-                </span>
-              </div>
-              <span className="mt-0.5 text-[11px] text-[#A3B3AC]">
-                {acc.role}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
     </motion.form>
   );
 }

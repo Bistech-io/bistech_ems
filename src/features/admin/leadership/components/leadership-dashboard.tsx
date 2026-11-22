@@ -272,7 +272,7 @@ export function LeadershipDashboard() {
         id: `evt-${Date.now()}`,
         action: 'role.changed',
         summary: `Granted HR Manager role to ${target.name} (${target.code})`,
-        actor: user.name || 'Super Admin',
+        actor: user?.name || 'Super Admin',
         timestamp: 'Just now',
       },
       ...prev,
@@ -295,7 +295,7 @@ export function LeadershipDashboard() {
         id: `evt-${Date.now()}`,
         action: 'role.changed',
         summary: `Revoked HR Manager role from ${revokeHrTarget.name} (${revokeHrTarget.code})`,
-        actor: user.name || 'Super Admin',
+        actor: user?.name || 'Super Admin',
         timestamp: 'Just now',
       },
       ...prev,
@@ -326,7 +326,7 @@ export function LeadershipDashboard() {
         summary: nextHead
           ? `Assigned ${nextHead.name} (${nextHead.code}) as Head of ${headModalDept.name}`
           : `Cleared Department Head for ${headModalDept.name}`,
-        actor: user.name || 'Super Admin',
+        actor: user?.name || 'Super Admin',
         timestamp: 'Just now',
       },
       ...prev,

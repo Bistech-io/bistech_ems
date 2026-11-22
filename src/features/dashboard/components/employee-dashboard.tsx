@@ -85,10 +85,12 @@ export function EmployeeDashboard({
   const { user, activeRole } = useAuth();
   const [data, setData] = useState<EmployeeDashboardData>(initialData);
 
-  const config = ROLE_DASHBOARD_CONFIG[activeRole] ?? ROLE_DASHBOARD_CONFIG.employee;
+  const config =
+    (activeRole ? ROLE_DASHBOARD_CONFIG[activeRole] : undefined) ??
+    ROLE_DASHBOARD_CONFIG.employee;
 
   const currentEmployee: EmployeeProfileSummary = useMemo(() => {
-    const fullName = user.name || data.employee.fullName;
+    const fullName = user?.name || data.employee.fullName;
     const initials =
       fullName
         .split(' ')
@@ -99,14 +101,14 @@ export function EmployeeDashboard({
         .toUpperCase() || 'BT';
 
     const employeeCode =
-      (user.employeeId && user.employeeId.startsWith('BST-') ? user.employeeId : null) ||
-      (user.username === 'admin'
+      (user?.employeeId && user.employeeId.startsWith('BST-') ? user.employeeId : null) ||
+      (user?.username === 'admin'
         ? 'BST-0001'
-        : user.username === 'hr'
+        : user?.username === 'hr'
           ? 'BST-1001'
-          : user.username === 'head'
+          : user?.username === 'head'
             ? 'BST-1002'
-            : user.username === 'employee'
+            : user?.username === 'employee'
               ? 'BST-1003'
               : config.defaultPersona.employeeCode);
 
@@ -115,11 +117,11 @@ export function EmployeeDashboard({
       fullName,
       initials,
       employeeCode,
-      designation: user.roleTitle || config.defaultPersona.designation,
+      designation: user?.roleTitle || config.defaultPersona.designation,
       department: config.defaultPersona.department,
       teamName: config.defaultPersona.teamName,
     };
-  }, [user, activeRole, data.employee, config]);
+  }, [user, data.employee, config]);
 
   const handleCheckIn = () => {
     const now = new Date();
@@ -189,7 +191,7 @@ export function EmployeeDashboard({
           <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-xs font-medium text-[#A3B3AC]">Active Role:</span>
           <span className="text-xs font-semibold text-[#F0F5F2]">
-            {ROLE_LABELS[activeRole]}
+            {activeRole ? ROLE_LABELS[activeRole] : '—'}
           </span>
         </div>
       </header>

@@ -17,13 +17,18 @@ export function DashboardSessionBar() {
         </div>
         <div>
           <p className="text-xs font-semibold text-[#F0F5F2]">
-            {user.name}{' '}
-            <span className="font-normal text-[#A3B3AC]">({user.email})</span>
+            {user?.name ?? 'Loading session...'}{' '}
+            {user?.username && (
+              <span className="font-normal text-[#A3B3AC]">(@{user.username})</span>
+            )}
           </p>
           <p className="text-[11px] text-[#6E8078]">
-            Role: <span className="text-[#4CAF7D]">{ROLE_LABELS[activeRole]}</span>
+            Role:{' '}
+            <span className="text-[#4CAF7D]">
+              {activeRole ? ROLE_LABELS[activeRole] : '—'}
+            </span>
             {' · '}
-            {isAuthenticated ? 'Authenticated Session' : 'Preview Mode'}
+            {isAuthenticated ? 'Authenticated Session' : 'Verifying Session'}
           </p>
         </div>
       </div>
