@@ -7,6 +7,9 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
 
+type CookieStore = Awaited<ReturnType<typeof cookies>>;
+type ServerApiReturn = Awaited<ReturnType<typeof serverApiModule.serverApiRequest>>;
+
 describe('getSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -17,7 +20,7 @@ describe('getSession', () => {
       get: vi.fn().mockReturnValue(undefined),
       toString: vi.fn().mockReturnValue(''),
     };
-    vi.mocked(cookies).mockResolvedValue(mockCookieStore as any);
+    vi.mocked(cookies).mockResolvedValue(mockCookieStore as unknown as CookieStore);
 
     const serverApiSpy = vi.spyOn(serverApiModule, 'serverApiRequest');
 
@@ -33,7 +36,7 @@ describe('getSession', () => {
       get: vi.fn().mockReturnValue({ name: 'ems_access', value: 'valid-token' }),
       toString: vi.fn().mockReturnValue('ems_access=valid-token'),
     };
-    vi.mocked(cookies).mockResolvedValue(mockCookieStore as any);
+    vi.mocked(cookies).mockResolvedValue(mockCookieStore as unknown as CookieStore);
 
     const mockAuthMe = {
       user: {
@@ -49,7 +52,7 @@ describe('getSession', () => {
     const serverApiSpy = vi.spyOn(serverApiModule, 'serverApiRequest').mockResolvedValue({
       success: true,
       data: mockAuthMe,
-    } as any);
+    } as unknown as ServerApiReturn);
 
     const result = await getSession();
 
@@ -62,7 +65,7 @@ describe('getSession', () => {
       get: vi.fn().mockReturnValue({ name: 'ems_access', value: 'invalid-token' }),
       toString: vi.fn().mockReturnValue('ems_access=invalid-token'),
     };
-    vi.mocked(cookies).mockResolvedValue(mockCookieStore as any);
+    vi.mocked(cookies).mockResolvedValue(mockCookieStore as unknown as CookieStore);
 
     vi.spyOn(serverApiModule, 'serverApiRequest').mockRejectedValue(new Error('fetch failed'));
 
