@@ -1,0 +1,2520 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>BisTech EMS - Operations Dashboard</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link href="https://fonts.googleapis.com" rel="preconnect" />
+        <link
+            crossorigin=""
+            href="https://fonts.gstatic.com"
+            rel="preconnect"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&amp;family=JetBrains+Mono:wght@400..600&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <script id="tailwind-config">
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            "pine-dark": "#0d211e",
+                            "pine-surface": "#132a26",
+                            "pine-card": "#183832",
+                            "mint-accent": "#82f0aa",
+                            "mint-glow": "#a3e635",
+                            "soft-mint": "#dcfce7",
+                            "organic-bg": "#eaf0e8",
+                            "sage-surface": "#f4f7f2",
+                            "card-white": "#ffffff",
+                            "text-dark": "#162623",
+                            "text-muted": "#526561",
+                            "peach-accent": "#ffbe98",
+                            "coral-btn": "#ee7b57",
+                            "coral-btn-hover": "#e16843",
+                        },
+                        fontFamily: {
+                            sans: ['"Plus Jakarta Sans"', "sans-serif"],
+                            mono: ['"JetBrains Mono"', "monospace"],
+                        },
+                        borderRadius: {
+                            "4xl": "2rem",
+                            "5xl": "2.5rem",
+                            pill: "9999px",
+                        },
+                        boxShadow: {
+                            soft: "0 12px 36px -4px rgba(22, 38, 35, 0.05), 0 4px 12px -2px rgba(22, 38, 35, 0.03)",
+                            floating:
+                                "0 20px 40px -10px rgba(13, 33, 30, 0.12)",
+                            "pill-glow": "0 0 16px rgba(130, 240, 170, 0.45)",
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            @layer base {
+                html,
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #eaf0e8;
+                    color: #162623;
+                    font-family: "Plus Jakarta Sans", sans-serif;
+                }
+                ::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: rgba(82, 101, 97, 0.2);
+                    border-radius: 9999px;
+                }
+            }
+        </style>
+        <meta content="web_dashboard" name="shell-type" />
+    </head>
+    <body
+        class="min-h-screen bg-organic-bg text-text-dark antialiased relative overflow-x-hidden selection:bg-mint-accent selection:text-pine-dark"
+    >
+        <!-- Ambient Organic Glow Blobs -->
+        <div
+            class="fixed top-[-10%] left-[15%] w-[500px] h-[500px] rounded-full bg-emerald-200/35 blur-[120px] pointer-events-none -z-10"
+        ></div>
+        <div
+            class="fixed bottom-[-5%] right-[10%] w-[600px] h-[600px] rounded-full bg-amber-100/45 blur-[140px] pointer-events-none -z-10"
+        ></div>
+        <div
+            class="fixed top-[40%] right-[30%] w-[450px] h-[450px] rounded-full bg-teal-100/30 blur-[130px] pointer-events-none -z-10"
+        ></div>
+        <!-- Overall Outer Wrapper replicating reference rounded bezel layout -->
+        <div
+            class="p-3 md:p-5 lg:p-6 min-h-screen flex gap-4 lg:gap-6 max-w-[1720px] mx-auto"
+        >
+            <!-- FLOATING PINE PILL SIDEBAR (Inspired by Reference Sidebar) -->
+            <aside
+                class="w-16 md:w-20 bg-pine-dark text-white rounded-[2.5rem] py-6 px-3 flex flex-col items-center justify-between shadow-floating shrink-0 z-50 sticky top-6 h-[calc(100vh-3rem)]"
+            >
+                <!-- Top Brand Logo -->
+                <div class="flex flex-col items-center gap-6">
+                    <a
+                        class="w-12 h-12 rounded-2xl bg-pine-surface/80 border border-white/10 flex items-center justify-center text-mint-accent shadow-inner transition hover:scale-105"
+                        href="#"
+                    >
+                        <span class="material-symbols-outlined text-[26px]"
+                            >all_inclusive</span
+                        >
+                    </a>
+                    <!-- Main Nav Icons -->
+                    <nav class="flex flex-col items-center gap-3">
+                        <!-- Active Dashboard Button with glowing teal/mint rounded pill -->
+                        <button
+                            class="w-12 h-12 rounded-2xl bg-mint-accent text-pine-dark flex items-center justify-center shadow-pill-glow transition duration-200 transform scale-105"
+                            title="Dashboard"
+                        >
+                            <span class="material-symbols-outlined text-[24px]"
+                                >grid_view</span
+                            >
+                        </button>
+                        <button
+                            class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                            title="Attendance &amp; Check-in"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >schedule</span
+                            >
+                        </button>
+                        <button
+                            class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                            title="Employees &amp; Directory"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >group</span
+                            >
+                        </button>
+                        <button
+                            class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition relative"
+                            title="Tasks &amp; Review Queue"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >assignment_turned_in</span
+                            >
+                            <span
+                                class="w-2 h-2 rounded-full bg-peach-accent absolute top-2 right-2.5"
+                            ></span>
+                        </button>
+                        <button
+                            class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                            title="Organization"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >account_tree</span
+                            >
+                        </button>
+                        <button
+                            class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                            title="Audit Logs &amp; Security"
+                        >
+                            <span class="material-symbols-outlined text-[22px]"
+                                >shield</span
+                            >
+                        </button>
+                    </nav>
+                </div>
+                <!-- Bottom Nav Controls -->
+                <div class="flex flex-col items-center gap-3">
+                    <button
+                        class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                        title="System Settings"
+                    >
+                        <span class="material-symbols-outlined text-[22px]"
+                            >tune</span
+                        >
+                    </button>
+                    <button
+                        class="w-11 h-11 rounded-2xl text-emerald-100/60 hover:text-white hover:bg-pine-surface/70 flex items-center justify-center transition"
+                        title="Theme Options"
+                    >
+                        <span class="material-symbols-outlined text-[22px]"
+                            >light_mode</span
+                        >
+                    </button>
+                    <!-- User Avatar Pill -->
+                    <div class="mt-2 relative">
+                        <img
+                            alt="Sarah Jenkins"
+                            class="w-10 h-10 rounded-full object-cover ring-2 ring-mint-accent/80 p-0.5"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy_UTDeczejtOJgyCKgfbrcm7WX8P0hE3oJP0D9j9rGlvuC1-xQYGhMXvV9OEyWAvgx2YrrcwKxi6FrrzhZy6i1vpgI2iDrq9xpN8dt8vPygOONoD5bxOJYn93Eumn_-ZOuK63-H2fdpVpxrWMqPnsC_KL5BgMTFpX65IkgP5grqbh7uTGDbnLQeGvay3MBLgzQD7DlcHVtleKZxfEm7eVu7RfBg7gn0j5-t2fEQU"
+                        />
+                        <span
+                            class="w-2.5 h-2.5 rounded-full bg-mint-accent ring-2 ring-pine-dark absolute bottom-0 right-0"
+                        ></span>
+                    </div>
+                </div>
+            </aside>
+            <!-- MAIN DASHBOARD CONTENT AREA -->
+            <main class="flex-1 flex flex-col gap-6 min-w-0">
+                <div class="flex flex-col w-full">
+                    <!-- Top Navigation & Header Context -->
+                    <header class="flex flex-col gap-5 w-full pb-4">
+                        <!-- Breadcrumb & Telemetry Info Row -->
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-4"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md shadow-sm"
+                                >
+                                    <span
+                                        class="w-2 h-2 rounded-full bg-secondary-fixed-dim animate-pulse"
+                                    ></span>
+                                    Enterprise Workforce • HR Operations &amp;
+                                    Personnel Registry
+                                </span>
+                                <span
+                                    class="text-outline font-label-md text-label-md hidden sm:inline"
+                                    >•</span
+                                >
+                                <span
+                                    class="text-on-surface-variant font-label-md text-label-md hidden sm:inline flex items-center gap-1"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-sm"
+                                        >database</span
+                                    >
+                                    PostgreSQL 16 Multi-Tenant Cluster: Synced
+                                </span>
+                            </div>
+                            <!-- Quick Action Buttons -->
+                            <div class="flex items-center gap-2.5">
+                                <button
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >download</span
+                                    >
+                                    Export CSV
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >upload</span
+                                    >
+                                    Import CSV
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >checklist</span
+                                    >
+                                    Bulk Actions
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-tertiary-fixed-dim text-on-tertiary-fixed font-label-lg text-label-lg shadow-md hover:brightness-105 active:scale-95 transition-all"
+                                    onclick="
+                                        document
+                                            .getElementById(
+                                                'new-employee-modal',
+                                            )
+                                            .classList.remove('hidden')
+                                    "
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-lg"
+                                        >person_add</span
+                                    >
+                                    + New Employee
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Title & Quick Key Telemetry Pills -->
+                        <div
+                            class="flex flex-col lg:flex-row lg:items-end justify-between gap-4"
+                        >
+                            <div>
+                                <h1
+                                    class="text-primary font-headline-lg text-headline-lg tracking-tight"
+                                >
+                                    HR Employee Directory &amp; Administration
+                                </h1>
+                                <p
+                                    class="text-on-surface-variant font-body-md text-body-md mt-0.5"
+                                >
+                                    Real-time workforce governance, RBAC role
+                                    permissions, biometric access states, and
+                                    global registry.
+                                </p>
+                            </div>
+                            <!-- Quick Metrics Ribbon -->
+                            <div
+                                class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"
+                            >
+                                <div
+                                    class="bg-surface-container-lowest px-4 py-2.5 rounded-2xl shadow-sm flex flex-col justify-center"
+                                >
+                                    <span
+                                        class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"
+                                        >Total Personnel</span
+                                    >
+                                    <div
+                                        class="flex items-baseline gap-1 mt-0.5"
+                                    >
+                                        <span
+                                            class="text-primary font-headline-sm text-headline-sm"
+                                            >512</span
+                                        >
+                                        <span
+                                            class="text-outline font-label-sm text-label-sm"
+                                            >/ 520 cap</span
+                                        >
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-surface-container-lowest px-4 py-2.5 rounded-2xl shadow-sm flex flex-col justify-center"
+                                >
+                                    <span
+                                        class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"
+                                        >Active Contracts</span
+                                    >
+                                    <div
+                                        class="flex items-baseline gap-1 mt-0.5"
+                                    >
+                                        <span
+                                            class="text-secondary font-headline-sm text-headline-sm"
+                                            >498</span
+                                        >
+                                        <span
+                                            class="text-secondary font-label-sm text-label-sm"
+                                            >97.2%</span
+                                        >
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-surface-container-lowest px-4 py-2.5 rounded-2xl shadow-sm flex flex-col justify-center"
+                                >
+                                    <span
+                                        class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"
+                                        >Onboarding</span
+                                    >
+                                    <div
+                                        class="flex items-baseline gap-1 mt-0.5"
+                                    >
+                                        <span
+                                            class="text-primary font-headline-sm text-headline-sm"
+                                            >10</span
+                                        >
+                                        <span
+                                            class="text-primary-fixed-dim font-label-sm text-label-sm"
+                                            >in pipeline</span
+                                        >
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-surface-container-lowest px-4 py-2.5 rounded-2xl shadow-sm flex flex-col justify-center"
+                                >
+                                    <span
+                                        class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"
+                                        >Probation / Review</span
+                                    >
+                                    <div
+                                        class="flex items-baseline gap-1 mt-0.5"
+                                    >
+                                        <span
+                                            class="text-tertiary-container font-headline-sm text-headline-sm"
+                                            >14</span
+                                        >
+                                        <span
+                                            class="text-outline font-label-sm text-label-sm"
+                                            >Q4 cohort</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- Deep Spruce Hero / Quick Action Banner -->
+                    <section
+                        class="w-full bg-primary-container text-on-primary rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden mb-6"
+                    >
+                        <div
+                            class="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-secondary-fixed/10 blur-3xl pointer-events-none"
+                        ></div>
+                        <div
+                            class="absolute right-1/3 -bottom-10 w-48 h-48 rounded-full bg-tertiary-fixed-dim/15 blur-2xl pointer-events-none"
+                        ></div>
+                        <div
+                            class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6"
+                        >
+                            <div class="max-w-2xl">
+                                <div
+                                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-primary-fixed font-label-md text-label-md mb-3 backdrop-blur-sm"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-sm"
+                                        >auto_awesome</span
+                                    >
+                                    Continuous Sync Active
+                                </div>
+                                <h2
+                                    class="font-headline-md text-headline-md tracking-tight text-white"
+                                >
+                                    Work’s always
+                                    <span
+                                        class="italic font-light text-primary-fixed"
+                                        >better organized</span
+                                    >
+                                </h2>
+                                <p
+                                    class="font-body-md text-body-md text-primary-fixed-dim mt-1.5 leading-relaxed"
+                                >
+                                    Manage RBAC access tiers, verify biometric
+                                    kiosk terminals at Dhaka Core Gate-04, and
+                                    issue cryptographic BST identity tokens
+                                    across cross-functional domains.
+                                </p>
+                            </div>
+                            <!-- Action Cluster inside Banner -->
+                            <div
+                                class="flex flex-wrap items-center gap-3 shrink-0"
+                            >
+                                <!-- Online HR Admins Mini-Cluster -->
+                                <div
+                                    class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-white/10 backdrop-blur-md"
+                                >
+                                    <div class="flex -space-x-2">
+                                        <img
+                                            class="w-7 h-7 rounded-full object-cover"
+                                            data-alt="A portrait of an Asian woman HR specialist smiling, warm studio lighting with soft pine green gradient background, highly polished corporate identity shot"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNaV4U3KgKjk6G50fFClQ0D3BBN9KDNOz_XnPb1v2_QvYOMwMux0-mixSxEqk3kT15q_wwsoPxbMyyfJWJ2oCnS4Sp7gUTpEWX3EPX_SBr6CJM3hnrcTRMUTDaZGODxD3sl3yqIw2wJptjG0jmzpLnlqP00cQrUPgb5lR4bR8IVUdu7RfjohBIeXFn2tdvnc-mGkOkkpiqrW2ALJqSj4b3kQNiPvPHA8fMFWWIJoo"
+                                        />
+                                        <img
+                                            class="w-7 h-7 rounded-full object-cover"
+                                            data-alt="A portrait of a male corporate operations manager wearing subtle spectacles, muted studio lighting, clean background"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4SGlLmz45p4tsfLgRwkZLXI7Qr3gzmipiSHSwRB33xuJwIHI-aLW-yg-IwdTXnJXz4OFvkzp8KZ0Idh1a_6kiQwQVUw7DURLLP3re8gDJKJI4SbbaDz7vliGTR_DSGbKfOCjmrqV6tTqFTENcDPt4j3czjiGY9Yhn7s3hs6QcHzzrbfi3CRqOq51_BKBz_C2qtnkUXBdaJPmslHFL_o5CGMKlJ1yWt1IahC2USFQ"
+                                        />
+                                        <img
+                                            class="w-7 h-7 rounded-full object-cover"
+                                            data-alt="A portrait of a young female HR administrator with natural lighting and soft warm tones, professional badge style"
+                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCe-cebaMyaw3Rs8jf-lHB14FrB7_4_dfq-I5XRGhFA0ASB2U-rPAgWtyinEr_ZXNfAEQOFXrQI_vWQut0c0h3yZp-YlW0nxThkgTIxhvEhADS0BiriFILbN8wFe_ZxJ9jSWS7M6uG5A3jY3VKuEi9SZ98OKXiuppTBt-QWGzmgaX6rGSnveXd5x1QEu96S1UMk9u9iW4Nbmpuhus6U0bKS3YiQLOARurqc9r7921A"
+                                        />
+                                    </div>
+                                    <span
+                                        class="text-primary-fixed font-label-sm text-label-sm"
+                                        >4 Admins active</span
+                                    >
+                                </div>
+                                <button
+                                    class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white/15 hover:bg-white/20 text-white font-label-md text-label-md transition-all"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >forward_to_inbox</span
+                                    >
+                                    Issue Magic Links
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-tertiary-fixed-dim text-on-tertiary-fixed font-label-md text-label-md shadow-md hover:brightness-105 active:scale-95 transition-all"
+                                    onclick="
+                                        document
+                                            .getElementById(
+                                                'new-employee-modal',
+                                            )
+                                            .classList.remove('hidden')
+                                    "
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >badge</span
+                                    >
+                                    Issue BST Identity
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- Filter & Search Control Toolbar (Pill Neomorphic) -->
+                    <section
+                        class="w-full bg-surface-container-lowest rounded-3xl p-4 shadow-sm mb-6 flex flex-col gap-3.5"
+                    >
+                        <div
+                            class="flex flex-col lg:flex-row lg:items-center justify-between gap-3"
+                        >
+                            <!-- Search Box with BST Code support -->
+                            <div class="relative flex-1 min-w-0">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline"
+                                    >search</span
+                                >
+                                <input
+                                    class="w-full pl-11 pr-4 py-2.5 rounded-full bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none transition-all"
+                                    placeholder="Search by Employee Name, BST Code (e.g. BST-00012), corporate email, or title..."
+                                    type="text"
+                                />
+                            </div>
+                            <!-- Quick Filter Pills -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <!-- Department Filter -->
+                                <div class="relative">
+                                    <select
+                                        class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none cursor-pointer"
+                                    >
+                                        <option>All Departments</option>
+                                        <option>Engineering</option>
+                                        <option>Product &amp; Design</option>
+                                        <option>
+                                            People &amp; Culture (HR)
+                                        </option>
+                                        <option>
+                                            Operations &amp; Security
+                                        </option>
+                                        <option>FinOps &amp; Compliance</option>
+                                        <option>Quality Assurance</option>
+                                    </select>
+                                    <span
+                                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-base"
+                                        >expand_more</span
+                                    >
+                                </div>
+                                <!-- Role Filter -->
+                                <div class="relative">
+                                    <select
+                                        class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none cursor-pointer"
+                                    >
+                                        <option>All Roles (RBAC)</option>
+                                        <option>Super Admin</option>
+                                        <option>HR Admin</option>
+                                        <option>Dept Head</option>
+                                        <option>Employee</option>
+                                    </select>
+                                    <span
+                                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-base"
+                                        >expand_more</span
+                                    >
+                                </div>
+                                <!-- Employment Type -->
+                                <div class="relative">
+                                    <select
+                                        class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none cursor-pointer"
+                                    >
+                                        <option>Employment: All</option>
+                                        <option>Full-Time Regular</option>
+                                        <option>Probationary</option>
+                                        <option>Contract</option>
+                                        <option>Remote Consultant</option>
+                                    </select>
+                                    <span
+                                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-base"
+                                        >expand_more</span
+                                    >
+                                </div>
+                                <!-- Status Filter -->
+                                <div class="relative">
+                                    <select
+                                        class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md focus:outline-none cursor-pointer"
+                                    >
+                                        <option>Status: All Statuses</option>
+                                        <option>Active</option>
+                                        <option>Onboarding</option>
+                                        <option>Probation / Review</option>
+                                        <option>On Leave</option>
+                                        <option>Suspended</option>
+                                    </select>
+                                    <span
+                                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-base"
+                                        >expand_more</span
+                                    >
+                                </div>
+                                <button
+                                    class="p-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-all"
+                                    title="Reset Filters"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >filter_alt_off</span
+                                    >
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Active Filter Tags / Chips -->
+                        <div
+                            class="flex items-center gap-2 pt-1 overflow-x-auto text-on-surface-variant"
+                        >
+                            <span
+                                class="font-label-sm text-label-sm uppercase tracking-wider text-outline"
+                                >Active Constraints:</span
+                            >
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                            >
+                                Tenant: BisTech Core Org
+                            </span>
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                            >
+                                State: Exclude Archived
+                                <span
+                                    class="material-symbols-outlined text-xs cursor-pointer"
+                                    >close</span
+                                >
+                            </span>
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                            >
+                                Sort: Joining Date (Newest first)
+                                <span
+                                    class="material-symbols-outlined text-xs cursor-pointer"
+                                    >arrow_downward</span
+                                >
+                            </span>
+                            <span
+                                class="text-on-surface-variant font-label-sm text-label-sm ml-auto"
+                            >
+                                Showing
+                                <strong
+                                    class="text-primary font-label-md text-label-md"
+                                    >512</strong
+                                >
+                                records
+                            </span>
+                        </div>
+                    </section>
+                    <!-- Comprehensive Data Table Card -->
+                    <section
+                        class="w-full bg-surface-container-lowest rounded-3xl shadow-sm overflow-hidden mb-6 flex flex-col"
+                    >
+                        <!-- Table Responsive Wrapper -->
+                        <div class="w-full overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md select-none"
+                                    >
+                                        <th class="py-4 pl-6 pr-3 w-10">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            BST Code
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            Employee / Identity
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            Department &amp; Designation
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            RBAC Role
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            Joining &amp; Tenure
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            Work Mode &amp; Hub
+                                        </th>
+                                        <th
+                                            class="py-4 px-3 tracking-wider font-label-md text-label-md"
+                                        >
+                                            Status
+                                        </th>
+                                        <th
+                                            class="py-4 pl-3 pr-6 text-right font-label-md text-label-md"
+                                        >
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody
+                                    class="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface"
+                                >
+                                    <!-- Row 1: Sarah Jenkins -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00012
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-secondary-fixed-dim/40"
+                                                    data-alt="Portrait of Sarah Jenkins, female enterprise VP of engineering with a calm confident expression, dressed in minimal dark workwear with sage background"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMtbNdFhdUHjuY_okLUC_PrEjfNORbbu0k8epKC2ync69lZgAAcf5fYdANmPpUxJvEeK9o8L9_67UPjZYQchhM9p9TddLChH6LVwaCvQWDkuVKckHKsKDToWkfeTxuV7sRxIZ4USHgAe3TK5nokQ5vteTJwfHJ32dU4xf_93LK2OlUTlEjeIwkeZvoSPIMUJSSEp7sgMaohXXvqz4mmmL-38AY94Jkf6ThZsQ9qcU"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Sarah Jenkins</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@sarah.jenkins •
+                                                        s.jenkins@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Engineering</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >VP of Engineering</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container text-white font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >shield</span
+                                                >
+                                                Super Admin
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Jan 12, 2021</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >4.8 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >corporate_fare</span
+                                                >
+                                                Gulshan-2 Hub
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    title="View Full Profile"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    title="Edit Permissions"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    title="More Options"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 2: Tariq Rahman -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00042
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-secondary-fixed-dim/40"
+                                                    data-alt="Portrait of Tariq Rahman, South Asian male Lead HR Operations Specialist, studio lighting, friendly confident stance, neutral sage backdrop"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHtbTKSjlD8GVjGUfUEGjRR-Imqq1q5j0YhafAlZ4ZaSco-DC0trfkxxkSFnGXOkJn0u87WoeW8BKleK0oCl1bDtlPhL9goyyzQwZ7uisFyVLgUUzafNDp808DiCuhPsStA1XskYcTDgxAj8yTegXV3JNc7UzWpWlx9Tbf2nM2fq1rS1lrGJXdqlH8UhcmcEnSkEmE8RLtEsqvGH8776onDnGmjZS3ByHxhjrLtiU"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Tariq Rahman</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@tariq.rahman •
+                                                        t.rahman@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >People &amp; Culture</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Principal HR Operations
+                                                    Lead</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >manage_accounts</span
+                                                >
+                                                HR Admin
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Aug 04, 2021</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >3.3 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >domain</span
+                                                >
+                                                DAC-04 On-site
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 3: Rafiqul Islam -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00088
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-secondary-fixed-dim/40"
+                                                    data-alt="Portrait of Rafiqul Islam, senior software architect, smart glasses, neat beard, soft overhead ambient illumination, corporate profile shot"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuIYmLyUKxwc6Gp8yUmQukZi4C6noZFPqovKpWjGi5ynEd7-A_zlmuJrQ0Z2mV9Ib9ZjuHN3kmHe8C5RlGtdy8hl76_fNOJGkTr0eJYT8SRrrN2scP0BGwXlasanGjIH7oMSVp200T_DepQxlLH685bs_v2tdCK9OH1XNj2qxWd8EYm5gs5TPJ0Cvw2k0xoQjQHsP8b_kgpfQgkUKp7iety24sACCXK7xxAAEfcds"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Rafiqul Islam</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@rafiqul.islam •
+                                                        r.islam@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Engineering</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Staff Cloud Architect</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >supervisor_account</span
+                                                >
+                                                Dept Head
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Mar 15, 2022</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >2.7 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >public</span
+                                                >
+                                                Remote Global
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 4: Farhana Ahmed -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00104
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-tertiary-fixed/60"
+                                                    data-alt="Portrait of Farhana Ahmed, South Asian female Product Director with elegant contemporary office attire, warm ambient light, high resolution"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBrNj0A4ZnbUNh0scFFvS3fBkguMDeyd9ZwqxlQ84efHpsDgFnI8YWkvsiZa46gdx_VsLI5Ef6EvpGhQ3amvVgTL8IUAPZjzugfxe8U4Qow1g_EpD_IPDsjKapVdzkWmz0SJdezS8rpMde_h7Gb5pwWSIVliTZWZhJKhvdgRAwnAa6xw3HMm8_VFWSHIfPmF0RHukEUsDCmO-G4jH3E5i0QCzYr6q40mFjDq6FsQI"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Farhana Ahmed</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@farhana.ahmed •
+                                                        f.ahmed@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Product &amp; Design</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Director of Product
+                                                    Design</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >supervisor_account</span
+                                                >
+                                                Dept Head
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Nov 01, 2022</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >2.1 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >sync_alt</span
+                                                >
+                                                Hybrid (DAC/Rem)
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 5: Tanvir Hossain -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00219
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary-fixed-dim/40"
+                                                    data-alt="Portrait of Tanvir Hossain, male front-end technical lead smiling gently with warm rim lighting in modern architectural office space"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5Vex6YW0FykqNB8xf68Qxpiuxf8YDV7Vct9PPXalQDkw25diFr95Jv5K3sIzG6cldq5eCC0hwOam787M9eQFlQUsZqGOK4qdPjYVVsi-YiunWiXTMWWo47wz7JjmrGOU1eVxJ9B7NMRTxE3Xiykr4AWtiJOpF40UbbGMuJP--m5dEI1e80lcP-hnW63bD-rrsAA7pfBGThTWlPiAGgpogm2cSGXrOuksKcANrEuo"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Tanvir Hossain</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@tanvir.hossain •
+                                                        t.hossain@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Engineering</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Senior Frontend
+                                                    Engineer</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >person</span
+                                                >
+                                                Employee
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Feb 10, 2023</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >1.8 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >domain</span
+                                                >
+                                                DAC-04 On-site
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 6: Natasha Roman (Onboarding) -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00508
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary-fixed-dim/40"
+                                                    data-alt="Portrait of Natasha Roman, female cybersecurity analyst, professional headshot with cool studio lighting, modern minimalist attire"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTrrRxR9eNQFmh4tukElQPxAjdFH7rrhT8BBIThAUqMBr3tqCiSQ95Eseh8QGr5fMsLEazRXI9yCtAUiW6rwx46u8INYrAX9SAH_yPebRYSYfES9WYexcLeExnqr0Y1D_bhQpp_96DxAt7er5hizhT5o-NU3-joHGg59g1jotB0xn4cXdNpDsGl7-0ywxXKeoHyGDRptfx49MlzS5rMQVywP6EZsXJMcXu8EMRBzg"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Natasha Roman</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@natasha.roman •
+                                                        n.roman@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Operations &amp;
+                                                    Security</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >InfoSec Operations
+                                                    Specialist</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >person</span
+                                                >
+                                                Employee
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Oct 28, 2024</span
+                                                >
+                                                <span
+                                                    class="text-on-primary-container font-body-sm text-body-sm"
+                                                    >14 days (New)</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >domain</span
+                                                >
+                                                DAC-04 On-site
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"
+                                                ></span>
+                                                Onboarding
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 7: Arshad Khan (Probation) -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00495
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary-fixed-dim/40"
+                                                    data-alt="Portrait of Arshad Khan, male data engineer with clean background and focused thoughtful professional pose"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFLwaj2XOVMw9l6c1JYQf-FIahUn93lDhN001j-YW-NXbe2eCmwH40RkgNNbsgzc1TW7JL0yVu6DBRYJBcn1Xz52cFMPGoW_WcOduwbXRyrcUkN-oU0c0wPe29Sdutp08Ri3Q_5j12TcOHEMB5PhpsrA9bu-Dwq_nQz0jd2eCDvGxcaMQkAK_TwyAcdWwCDAyVqvvLqazOhkNoIeCZqwkj1yUWw3gEUTEXhLrZFeU"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Arshad Khan</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@arshad.khan •
+                                                        a.khan@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Engineering</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Data Pipeline
+                                                    Engineer</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >person</span
+                                                >
+                                                Employee
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Sep 01, 2024</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >2.2 mos (Probation)</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >sync_alt</span
+                                                >
+                                                Hybrid (DAC/Rem)
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-tertiary-container"
+                                                ></span>
+                                                Probation / Review
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 8: Nusrat Jahan -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00331
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary-fixed-dim/40"
+                                                    data-alt="Portrait of Nusrat Jahan, female Lead QA Engineer, warm focused studio light, smiling professionally, soft warm background"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo334RZXf33HXdxI_f86e-ovD8lo13skOFOcBERw8-bsl6gG9Ntdlu-Tv_4OP3r6RcjRtNW8Ls9wS1h8m8A23opcNskidZobfvnhlFg-EBCrfyBYMM1y0HNDRRQeBKV3Ww5sXyfLxOOTKp-41643rWA1SEIrpIQUCaNhNMVfrYVcI2LUPKvprDtfzI0ShXcDwZSKL2U6s_d9rayCMSC7aZn63TcZ3mNckujakxsAY"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Nusrat Jahan</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@nusrat.jahan •
+                                                        n.jahan@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Quality Assurance</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Lead Automation QA</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >person</span
+                                                >
+                                                Employee
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >May 19, 2023</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >1.5 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >public</span
+                                                >
+                                                Remote Global
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-secondary"
+                                                ></span>
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Row 9: Marcus Vance -->
+                                    <tr
+                                        class="hover:bg-surface-container/50 transition-colors group"
+                                    >
+                                        <td class="py-4 pl-6 pr-3">
+                                            <input
+                                                class="rounded bg-surface text-primary focus:ring-0 cursor-pointer"
+                                                type="checkbox"
+                                            />
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md"
+                                            >
+                                                BST-00174
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <img
+                                                    class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-primary-fixed-dim/40"
+                                                    data-alt="Portrait of Marcus Vance, mature male FinOps executive in professional crisp attire, soft architectural blur in background"
+                                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuALHJ4sk-eAgUaP69ol4Yl7EVBeURMpeHCQTEh-8tO4W-00u695TEkIxD_Uk9JOnoUDt_EILg8DUq2PvrXCZBNxZWbkgAX7b81a3NTjiOVRaePgEGL_gjVXE_rbHp3f2ULRHUDeSWdtd6zQF8b-pOMqlkBFDCCP9_eH6vxiIPupTslsDxKgv5ZPgLJn-t6BINykeK-mGqBh_5uo3_2AKO4dp51XlwIqETTH7CvLrUE"
+                                                />
+                                                <div
+                                                    class="flex flex-col min-w-0"
+                                                >
+                                                    <span
+                                                        class="font-label-lg text-label-lg text-primary truncate"
+                                                        >Marcus Vance</span
+                                                    >
+                                                    <span
+                                                        class="text-on-surface-variant font-body-sm text-body-sm truncate"
+                                                        >@marcus.vance •
+                                                        m.vance@bistech.internal</span
+                                                    >
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >FinOps &amp;
+                                                    Compliance</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >Global Compliance
+                                                    Manager</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >supervisor_account</span
+                                                >
+                                                Dept Head
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="font-label-md text-label-md text-primary"
+                                                    >Jan 09, 2023</span
+                                                >
+                                                <span
+                                                    class="text-on-surface-variant font-body-sm text-body-sm"
+                                                    >1.9 yrs tenure</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >domain</span
+                                                >
+                                                DAC-04 On-site
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-3 whitespace-nowrap">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm"
+                                            >
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full bg-outline"
+                                                ></span>
+                                                On Leave
+                                            </span>
+                                        </td>
+                                        <td
+                                            class="py-4 pl-3 pr-6 text-right whitespace-nowrap"
+                                        >
+                                            <div
+                                                class="inline-flex items-center gap-1"
+                                            >
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >badge</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >admin_panel_settings</span
+                                                    >
+                                                </button>
+                                                <button
+                                                    class="p-1.5 rounded-full text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+                                                    type="button"
+                                                >
+                                                    <span
+                                                        class="material-symbols-outlined text-lg"
+                                                        >more_horiz</span
+                                                    >
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Server-Side Pagination Footer (TanStack Table Style) -->
+                        <div
+                            class="p-4 bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="text-on-surface-variant font-body-md text-body-md"
+                                >
+                                    Showing
+                                    <span
+                                        class="font-label-md text-label-md text-primary"
+                                        >1 to 9</span
+                                    >
+                                    of
+                                    <span
+                                        class="font-label-md text-label-md text-primary"
+                                        >512</span
+                                    >
+                                    employees
+                                </span>
+                                <span
+                                    class="text-outline font-label-sm text-label-sm"
+                                    >•</span
+                                >
+                                <div class="flex items-center gap-1.5">
+                                    <span
+                                        class="text-on-surface-variant font-body-sm text-body-sm"
+                                        >Per page:</span
+                                    >
+                                    <select
+                                        class="appearance-none pl-2.5 pr-6 py-1 rounded-full bg-surface-container-lowest text-primary font-label-sm text-label-sm cursor-pointer focus:outline-none"
+                                    >
+                                        <option>10</option>
+                                        <option>25</option>
+                                        <option>50</option>
+                                        <option>100</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Pagination Nav Pills -->
+                            <div
+                                class="flex items-center gap-1.5 self-center sm:self-auto"
+                            >
+                                <button
+                                    class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant flex items-center justify-center hover:bg-surface-container transition-all"
+                                    title="Previous Page"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >chevron_left</span
+                                    >
+                                </button>
+                                <button
+                                    class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shadow-sm"
+                                    type="button"
+                                >
+                                    1
+                                </button>
+                                <button
+                                    class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md flex items-center justify-center hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    2
+                                </button>
+                                <button
+                                    class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md flex items-center justify-center hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    3
+                                </button>
+                                <span
+                                    class="px-1 text-outline font-label-sm text-label-sm"
+                                    >...</span
+                                >
+                                <button
+                                    class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md flex items-center justify-center hover:bg-surface-container transition-all"
+                                    type="button"
+                                >
+                                    52
+                                </button>
+                                <button
+                                    class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant flex items-center justify-center hover:bg-surface-container transition-all"
+                                    title="Next Page"
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-base"
+                                        >chevron_right</span
+                                    >
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- MODAL: + NEW EMPLOYEE PROFILE DIALOG (TAD.md Section 7 Transaction) -->
+                    <!-- Rendered open by default to satisfy prompt requirements; backdrop dismissable -->
+                    <div
+                        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm overflow-y-auto"
+                        id="new-employee-modal"
+                    >
+                        <div
+                            class="relative w-full max-w-3xl bg-surface-container-lowest rounded-3xl shadow-2xl p-6 sm:p-8 my-8 flex flex-col gap-6 max-h-[921px] overflow-y-auto"
+                        >
+                            <!-- Modal Header -->
+                            <div
+                                class="flex items-start justify-between gap-4 pb-2 border-b border-surface-container-low"
+                            >
+                                <div class="flex items-center gap-3.5">
+                                    <div
+                                        class="w-12 h-12 rounded-2xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center shadow-sm"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-2xl"
+                                            >person_add</span
+                                        >
+                                    </div>
+                                    <div>
+                                        <div
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm mb-1"
+                                        >
+                                            TAD.md §7 • Identity Provisioning
+                                        </div>
+                                        <h3
+                                            class="text-primary font-headline-md text-headline-md tracking-tight"
+                                        >
+                                            Create New Employee Profile (BST
+                                            Identity)
+                                        </h3>
+                                        <p
+                                            class="text-on-surface-variant font-body-sm text-body-sm mt-0.5"
+                                        >
+                                            Generate identity credentials,
+                                            allocate department, and assign
+                                            initial RBAC security roles
+                                            according to organizational policy.
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Close Button -->
+                                <button
+                                    class="w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-all"
+                                    onclick="
+                                        document
+                                            .getElementById(
+                                                'new-employee-modal',
+                                            )
+                                            .classList.add('hidden')
+                                    "
+                                    type="button"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-xl"
+                                        >close</span
+                                    >
+                                </button>
+                            </div>
+                            <!-- Structured Form Sections -->
+                            <form class="flex flex-col gap-6">
+                                <!-- 1. Basic Identity Section -->
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-base"
+                                            >badge</span
+                                        >
+                                        <span
+                                            class="text-primary font-label-lg text-label-lg"
+                                            >1. Basic Identity Credentials</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+                                    >
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Full Legal Name *</label
+                                            >
+                                            <input
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none"
+                                                placeholder="e.g. Ayesha Siddiqua"
+                                                required=""
+                                                type="text"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Desired Username / Handle
+                                                *</label
+                                            >
+                                            <div class="relative">
+                                                <span
+                                                    class="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline font-label-md text-label-md"
+                                                    >@</span
+                                                >
+                                                <input
+                                                    class="w-full pl-8 pr-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none"
+                                                    placeholder="ayesha.siddiqua"
+                                                    required=""
+                                                    type="text"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Personal Primary Email *</label
+                                            >
+                                            <input
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none"
+                                                placeholder="ayesha.personal@gmail.com"
+                                                required=""
+                                                type="email"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Generated Corporate Work
+                                                Email</label
+                                            >
+                                            <input
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container text-primary font-label-md text-label-md select-all focus:outline-none"
+                                                readonly=""
+                                                type="email"
+                                                value="a.siddiqua@bistech.internal"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 2. Employment Specs Section -->
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-base"
+                                            >corporate_fare</span
+                                        >
+                                        <span
+                                            class="text-primary font-label-lg text-label-lg"
+                                            >2. Employment Specifications &amp;
+                                            Allocation</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-3 gap-3.5"
+                                    >
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Auto BST Code</label
+                                            >
+                                            <div
+                                                class="px-4 py-2.5 rounded-xl bg-primary-fixed text-on-primary-fixed-variant font-label-md text-label-md flex items-center justify-between"
+                                            >
+                                                <span>BST-00513</span>
+                                                <span
+                                                    class="material-symbols-outlined text-xs"
+                                                    >lock</span
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Department *</label
+                                            >
+                                            <select
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none cursor-pointer"
+                                            >
+                                                <option>Engineering</option>
+                                                <option>
+                                                    Product &amp; Design
+                                                </option>
+                                                <option>
+                                                    People Ops &amp; Culture
+                                                </option>
+                                                <option>
+                                                    FinOps &amp; Compliance
+                                                </option>
+                                                <option>
+                                                    Operations &amp; Security
+                                                </option>
+                                                <option>
+                                                    Quality Assurance
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Designation / Title *</label
+                                            >
+                                            <input
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline focus:bg-surface-container-lowest focus:outline-none"
+                                                placeholder="e.g. Senior Security Analyst"
+                                                required=""
+                                                type="text"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Official Joining Date *</label
+                                            >
+                                            <input
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none cursor-pointer"
+                                                type="date"
+                                                value="2024-11-20"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Employment Type</label
+                                            >
+                                            <select
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none cursor-pointer"
+                                            >
+                                                <option>
+                                                    Full-time Regular
+                                                </option>
+                                                <option>
+                                                    Probationary (6 Months)
+                                                </option>
+                                                <option>
+                                                    Fixed-term Contract
+                                                </option>
+                                                <option>
+                                                    Executive Fellow
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Assigned Hub / Shift</label
+                                            >
+                                            <select
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none cursor-pointer"
+                                            >
+                                                <option>
+                                                    Gulshan-2 Core Gate-04
+                                                    (General Shift)
+                                                </option>
+                                                <option>
+                                                    Remote Global (Flexible)
+                                                </option>
+                                                <option>
+                                                    Hybrid (3 Days On-site)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 3. Security, RBAC & Supervisor Section -->
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-base"
+                                            >security</span
+                                        >
+                                        <span
+                                            class="text-primary font-label-lg text-label-lg"
+                                            >3. Security Permissions &amp;
+                                            Reporting Line</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+                                    >
+                                        <!-- RBAC Role Radio Pills -->
+                                        <div
+                                            class="flex flex-col gap-1.5 sm:col-span-2"
+                                        >
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Initial RBAC Role Grant
+                                                *</label
+                                            >
+                                            <div
+                                                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+                                            >
+                                                <label
+                                                    class="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-all"
+                                                >
+                                                    <input
+                                                        checked=""
+                                                        class="text-primary focus:ring-0"
+                                                        name="rbac-role"
+                                                        type="radio"
+                                                        value="employee"
+                                                    />
+                                                    <div class="flex flex-col">
+                                                        <span
+                                                            class="font-label-md text-label-md text-primary"
+                                                            >Employee</span
+                                                        >
+                                                        <span
+                                                            class="text-outline font-label-sm text-label-sm"
+                                                            >Standard
+                                                            portal</span
+                                                        >
+                                                    </div>
+                                                </label>
+                                                <label
+                                                    class="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-all"
+                                                >
+                                                    <input
+                                                        class="text-primary focus:ring-0"
+                                                        name="rbac-role"
+                                                        type="radio"
+                                                        value="dept-head"
+                                                    />
+                                                    <div class="flex flex-col">
+                                                        <span
+                                                            class="font-label-md text-label-md text-primary"
+                                                            >Dept Head</span
+                                                        >
+                                                        <span
+                                                            class="text-outline font-label-sm text-label-sm"
+                                                            >Approvals &amp;
+                                                            sync</span
+                                                        >
+                                                    </div>
+                                                </label>
+                                                <label
+                                                    class="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-all"
+                                                >
+                                                    <input
+                                                        class="text-primary focus:ring-0"
+                                                        name="rbac-role"
+                                                        type="radio"
+                                                        value="hr-admin"
+                                                    />
+                                                    <div class="flex flex-col">
+                                                        <span
+                                                            class="font-label-md text-label-md text-primary"
+                                                            >HR Admin</span
+                                                        >
+                                                        <span
+                                                            class="text-outline font-label-sm text-label-sm"
+                                                            >Registry &amp;
+                                                            roster</span
+                                                        >
+                                                    </div>
+                                                </label>
+                                                <label
+                                                    class="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-all opacity-70"
+                                                >
+                                                    <input
+                                                        class="text-primary focus:ring-0"
+                                                        name="rbac-role"
+                                                        type="radio"
+                                                        value="super-admin"
+                                                    />
+                                                    <div class="flex flex-col">
+                                                        <span
+                                                            class="font-label-md text-label-md text-primary"
+                                                            >Super Admin</span
+                                                        >
+                                                        <span
+                                                            class="text-outline font-label-sm text-label-sm"
+                                                            >Requires 2FA
+                                                            MFA</span
+                                                        >
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!-- Direct Manager Dropdown -->
+                                        <div
+                                            class="flex flex-col gap-1.5 sm:col-span-2"
+                                        >
+                                            <label
+                                                class="text-on-surface font-label-md text-label-md"
+                                                >Direct Manager / Reporting Lead
+                                                *</label
+                                            >
+                                            <select
+                                                class="px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none cursor-pointer"
+                                            >
+                                                <option>
+                                                    Sarah Jenkins (BST-00012) —
+                                                    VP of Engineering
+                                                </option>
+                                                <option>
+                                                    Tariq Rahman (BST-00042) —
+                                                    Principal HR Operations Lead
+                                                </option>
+                                                <option>
+                                                    Rafiqul Islam (BST-00088) —
+                                                    Staff Cloud Architect
+                                                </option>
+                                                <option>
+                                                    Farhana Ahmed (BST-00104) —
+                                                    Director of Product Design
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 4. Automation & Dispatch Toggles -->
+                                <div
+                                    class="p-4 rounded-2xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="material-symbols-outlined text-secondary text-2xl"
+                                            >mark_email_read</span
+                                        >
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-label-md text-label-md text-primary"
+                                                >Auto-dispatch Magic Link
+                                                Onboarding</span
+                                            >
+                                            <span
+                                                class="text-on-surface-variant font-body-sm text-body-sm"
+                                                >Send secure cryptographic
+                                                one-time onboarding link to
+                                                personal email</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <input
+                                        checked=""
+                                        class="w-5 h-5 rounded text-secondary focus:ring-0 cursor-pointer self-start sm:self-center"
+                                        type="checkbox"
+                                    />
+                                </div>
+                                <div
+                                    class="p-4 rounded-2xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="material-symbols-outlined text-primary text-2xl"
+                                            >fingerprint</span
+                                        >
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-label-md text-label-md text-primary"
+                                                >Enable Biometric Kiosk Terminal
+                                                Sync</span
+                                            >
+                                            <span
+                                                class="text-on-surface-variant font-body-sm text-body-sm"
+                                                >Provision access profile to
+                                                Gulshan-2 Core Gate biometric
+                                                scanners</span
+                                            >
+                                        </div>
+                                    </div>
+                                    <input
+                                        checked=""
+                                        class="w-5 h-5 rounded text-primary focus:ring-0 cursor-pointer self-start sm:self-center"
+                                        type="checkbox"
+                                    />
+                                </div>
+                                <!-- Modal Action Footer Buttons -->
+                                <div
+                                    class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-3"
+                                >
+                                    <button
+                                        class="w-full sm:w-auto px-6 py-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md transition-all"
+                                        onclick="
+                                            document
+                                                .getElementById(
+                                                    'new-employee-modal',
+                                                )
+                                                .classList.add('hidden')
+                                        "
+                                        type="button"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        class="w-full sm:w-auto px-7 py-3 rounded-full bg-tertiary-fixed-dim text-on-tertiary-fixed font-label-lg text-label-lg shadow-lg hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        onclick="
+                                            alert(
+                                                'Profile BST-00513 created and cryptographic magic link dispatched.',
+                                            );
+                                            document
+                                                .getElementById(
+                                                    'new-employee-modal',
+                                                )
+                                                .classList.add('hidden');
+                                        "
+                                        type="button"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-xl"
+                                            >send</span
+                                        >
+                                        Create Employee &amp; Dispatch Invite
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </body>
+</html>

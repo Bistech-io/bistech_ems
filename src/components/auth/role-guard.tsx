@@ -30,7 +30,15 @@ export function RoleGuard({
   permission,
   minScope = 'org',
 }: RoleGuardProps) {
-  const { user, activeRole } = useAuth();
+  const { user, activeRole, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#23302B] border-t-[#4CAF7D]" />
+      </div>
+    );
+  }
 
   const roleAllowed = hasAnyRole(user, allowedRoles);
   const permissionAllowed = permission ? can(user, permission, minScope) : true;
@@ -58,7 +66,10 @@ export function RoleGuard({
               {allowedRoles.map((r) => ROLE_LABELS[r]).join(' or ')}
             </span>
             . Your current active role is{' '}
-            <span className="font-medium text-[#4CAF7D]">{ROLE_LABELS[activeRole]}</span>.
+            <span className="font-medium text-[#4CAF7D]">
+              {activeRole ? ROLE_LABELS[activeRole] : 'Unauthenticated'}
+            </span>
+            .
           </p>
           <div className="mt-6 flex justify-center">
             <Link
