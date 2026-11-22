@@ -35,6 +35,7 @@ export async function serverApiRequest<TDataSchema extends z.ZodTypeAny>(
       },
       body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
       cache: 'no-store',
+      signal: AbortSignal.timeout(3000),
     });
   } catch {
     throw new ApiError('SERVICE_UNAVAILABLE', 503, [], 'server-fetch-failed');
