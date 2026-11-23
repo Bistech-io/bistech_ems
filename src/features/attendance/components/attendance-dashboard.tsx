@@ -312,6 +312,16 @@ export function AttendanceDashboard() {
   }, []);
 
   useEffect(() => {
+    const handleAutoCheckIn = () => {
+      void loadBoard(viewYear, viewMonth);
+    };
+    window.addEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+    return () => {
+      window.removeEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+    };
+  }, [loadBoard, viewYear, viewMonth]);
+
+  useEffect(() => {
     let cancelled = false;
     const bounds = getMonthBounds(viewYear, viewMonth);
     fetchMyAttendanceBoard(bounds)

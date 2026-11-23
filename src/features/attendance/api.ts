@@ -77,6 +77,19 @@ export async function fetchMyAttendanceBoard(params?: {
   return res.data;
 }
 
+export async function queryHasUserEverCheckedIn(): Promise<boolean> {
+  const board = await fetchMyAttendanceBoard({
+    from: '2020-01-01',
+  });
+
+  if (board.today.status !== 'not_checked_in' && Boolean(board.today.checkInAt)) {
+    return true;
+  }
+
+  return board.records.some((record) => !record.isDerived && Boolean(record.checkInAt));
+}
+
+
 export async function postCheckIn(note?: string): Promise<AttendanceRecordDto> {
   const res = await apiRequest('/attendance/check-in', {
     method: 'POST',

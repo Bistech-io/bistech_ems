@@ -6,6 +6,8 @@ import {
   loginResponseSchema,
   logoutResponseSchema,
   refreshResponseSchema,
+  resetPasswordRequestSchema,
+  resetPasswordResponseSchema,
   type AuthMeData,
 } from '@ems/contracts';
 import {
@@ -201,6 +203,29 @@ export const authHandlers = [
     const payload = logoutResponseSchema.parse({
       success: true,
       message: 'Signed out',
+      data: null,
+      meta: null,
+    });
+
+    return HttpResponse.json(payload, { status: 200 });
+  }),
+
+  http.post('/api/v1/auth/reset-password', async ({ request }) => {
+    const body = await request.json().catch(() => null);
+    const parsedReq = resetPasswordRequestSchema.safeParse(body);
+
+    if (!parsedReq.success) {
+      return HttpResponse.json(
+        buildErrorEnvelope('VALIDATION_ERROR', 'Password must be 12 to 128 characters', [
+          { field: 'newPassword', message: 'Password must be 12 to 128 characters' },
+        ]),
+        { status: ERROR_CODE_HTTP_STATUS.VALIDATION_ERROR },
+      );
+    }
+
+    const payload = resetPasswordResponseSchema.parse({
+      success: true,
+      message: 'Password reset successfully. Please log in with your new password.',
       data: null,
       meta: null,
     });
