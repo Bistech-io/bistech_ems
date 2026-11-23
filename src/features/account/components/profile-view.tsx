@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   Briefcase,
@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock,
   IdCard,
+  Loader2,
   Lock,
   Mail,
   Network,
@@ -88,16 +89,26 @@ export function ProfileView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPublicId, setAvatarPublicId] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarSaved, setAvatarSaved] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [lastUserId, setLastUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (avatarUrl) {
-        URL.revokeObjectURL(avatarUrl);
+  const currentUserId = user?.userId ?? 'default';
+  if (lastUserId !== currentUserId) {
+    setLastUserId(currentUserId);
+    if (typeof window !== 'undefined') {
+      try {
+        const savedUrl = localStorage.getItem(`bistech_avatar_${currentUserId}`);
+        const savedPid = localStorage.getItem(`bistech_avatar_pid_${currentUserId}`);
+        if (savedUrl) setAvatarUrl(savedUrl);
+        if (savedPid) setAvatarPublicId(savedPid);
+      } catch {
+        // LocalStorage may be blocked or unavailable
       }
-    };
-  }, [avatarUrl]);
+    }
+  }
 
   const roleKey: RoleName = activeRole ?? 'employee';
   const defaults = ROLE_DEFAULTS[roleKey];
@@ -108,7 +119,7 @@ export function ProfileView() {
   const displayRole = activeRole ? ROLE_LABELS[activeRole] : '—';
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setAvatarError(null);
     setAvatarSaved(false);
 
@@ -127,22 +138,75 @@ export function ProfileView() {
       return;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-    setAvatarUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return nextUrl;
-    });
-    setAvatarSaved(true);
-    event.target.value = '';
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload photo to Cloudinary.');
+      }
+
+      setAvatarUrl(data.url);
+      setAvatarPublicId(data.publicId);
+
+      const storageKey = `bistech_avatar_${user?.userId ?? 'default'}`;
+      const pidKey = `bistech_avatar_pid_${user?.userId ?? 'default'}`;
+      try {
+        localStorage.setItem(storageKey, data.url);
+        if (data.publicId) {
+          localStorage.setItem(pidKey, data.publicId);
+        }
+      } catch {
+        // LocalStorage may be blocked or unavailable
+      }
+
+      setAvatarSaved(true);
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : 'Upload failed. Please try again.',
+      );
+    } finally {
+      setIsUploading(false);
+      event.target.value = '';
+    }
   }
 
-  function handleRemoveAvatar() {
+  async function handleRemoveAvatar() {
     setAvatarError(null);
     setAvatarSaved(false);
-    setAvatarUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
+
+    const pidToDelete = avatarPublicId;
+    setAvatarUrl(null);
+    setAvatarPublicId(null);
+
+    const storageKey = `bistech_avatar_${user?.userId ?? 'default'}`;
+    const pidKey = `bistech_avatar_pid_${user?.userId ?? 'default'}`;
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(pidKey);
+    } catch {
+      // Ignore
+    }
+
+    if (pidToDelete) {
+      try {
+        await fetch('/api/upload/avatar', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicId: pidToDelete }),
+        });
+      } catch {
+        // Best effort deletion on Cloudinary
+      }
+    }
   }
 
   if (isLoading) {
@@ -186,7 +250,7 @@ export function ProfileView() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             {/* Avatar with Change Overlay */}
             <div className="relative h-24 w-24 shrink-0">
-              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#2E8B57]/60 bg-[#1A2420] shadow-lg">
+              <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#2E8B57]/60 bg-[#1A2420] shadow-lg">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -199,15 +263,26 @@ export function ProfileView() {
                     {initials}
                   </span>
                 )}
+
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-[#0B0F0E]/75 backdrop-blur-xs">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#4CAF7D]" />
+                  </div>
+                )}
               </div>
 
               <button
                 type="button"
+                disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Change profile picture"
-                className="absolute -right-1.5 -bottom-1.5 flex h-9 w-9 items-center justify-center rounded-xl border border-[#23302B] bg-[#2E8B57] text-[#F0F5F2] shadow-md transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+                className="absolute -right-1.5 -bottom-1.5 flex h-9 w-9 items-center justify-center rounded-xl border border-[#23302B] bg-[#2E8B57] text-[#F0F5F2] shadow-md transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Camera className="h-4 w-4" />
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
 
               <input
@@ -251,18 +326,29 @@ export function ProfileView() {
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Camera className="h-3.5 w-3.5" />
-              <span>Change Photo</span>
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="h-3.5 w-3.5" />
+                  <span>Change Photo</span>
+                </>
+              )}
             </button>
 
             {avatarUrl && (
               <button
                 type="button"
+                disabled={isUploading}
                 onClick={handleRemoveAvatar}
-                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-[#23302B] bg-[#0B0F0E] px-3.5 text-xs font-medium text-[#A3B3AC] transition-colors hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 hover:text-[#EF4444]"
+                className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-[#23302B] bg-[#0B0F0E] px-3.5 text-xs font-medium text-[#A3B3AC] transition-colors hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Remove</span>

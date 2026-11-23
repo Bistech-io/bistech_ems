@@ -19,6 +19,7 @@ const serverEnvSchema = z.object({
       : DEFAULT_DEV_SERVER_ORIGIN,
   ),
   SESSION_COOKIE_NAME: z.string().min(1).default('ems_access'),
+  CLOUDINARY_URL: z.string().optional(),
 });
 
 export const publicEnv = publicEnvSchema.parse({
@@ -45,5 +46,6 @@ export function getServerEnv() {
   return serverEnvSchema.parse({
     API_INTERNAL_URL: normalizedUrl,
     SESSION_COOKIE_NAME: process.env.SESSION_COOKIE_NAME ?? 'ems_access',
+    CLOUDINARY_URL: process.env.CLOUDINARY_URL,
   });
 }
