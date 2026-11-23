@@ -236,6 +236,20 @@ html.light select option {
   color: #272521 !important;
 }
 
+/* Keep the login page wave mesh lines clearly visible on warm cream light background */
+html.light .login-wave-svg {
+  opacity: 1 !important;
+}
+
+html.light .login-wave-svg g {
+  stroke: #1F5C3A !important;
+  stroke-width: 1.45 !important;
+}
+
+html.light .login-wave-svg path {
+  opacity: 0.42 !important;
+}
+
 /* Subtle custom scrollbar */
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px;

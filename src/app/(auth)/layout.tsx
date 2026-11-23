@@ -25,18 +25,18 @@ function WaveMeshBackground() {
       <svg
         viewBox="0 0 1500 800"
         preserveAspectRatio="none"
-        className="h-full w-full opacity-95"
+        className="login-wave-svg h-full w-full opacity-95"
       >
         <defs>
           <linearGradient id="bistech-wave-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#1F5C3A" stopOpacity="0.55" />
-            <stop offset="32%" stopColor="#4CAF7D" stopOpacity="0.9" />
-            <stop offset="56%" stopColor="#6EE7B7" stopOpacity="0.95" />
-            <stop offset="80%" stopColor="#2E8B57" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#4CAF7D" stopOpacity="0.85" />
+            <stop offset="0%" stopColor="#1F5C3A" stopOpacity="0.65" />
+            <stop offset="32%" stopColor="#2E8B57" stopOpacity="0.95" />
+            <stop offset="56%" stopColor="#4CAF7D" stopOpacity="1" />
+            <stop offset="80%" stopColor="#2E8B57" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#1F5C3A" stopOpacity="0.9" />
           </linearGradient>
         </defs>
-        <g fill="none" stroke="url(#bistech-wave-grad)" strokeWidth="1.15">
+        <g fill="none" stroke="url(#bistech-wave-grad)" strokeWidth="1.25">
           {lines.map((line) => (
             <path key={line.key} d={line.d} opacity={line.opacity} />
           ))}
