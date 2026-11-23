@@ -21,6 +21,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'BisTech EMS',
   description: 'BisTech Employee Management System',
+  icons: {
+    icon: '/bistech-logo.png',
+    shortcut: '/bistech-logo.png',
+    apple: '/bistech-logo.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -112,19 +112,23 @@ describe('LoginForm', () => {
     });
   });
 
-  it('fills demo credentials when clicking a quick demo role button', async () => {
+  it('switches focus between username and password using ArrowDown, ArrowUp, and Enter', async () => {
     const user = userEvent.setup();
     renderLoginForm();
 
-    await user.click(screen.getByRole('button', { name: /hr manager/i }));
+    const usernameInput = screen.getByLabelText(/username/i);
+    const passwordInput = screen.getByLabelText(/^password$/i);
 
-    expect(screen.getByLabelText(/username/i)).toHaveValue('hr');
-    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
-    expect(screen.queryByText(/must be at least 3 characters/i)).not.toBeInTheDocument();
+    usernameInput.focus();
+    expect(usernameInput).toHaveFocus();
 
-    await user.click(screen.getByRole('button', { name: /dept head/i }));
+    await user.keyboard('{ArrowDown}');
+    expect(passwordInput).toHaveFocus();
 
-    expect(screen.getByLabelText(/username/i)).toHaveValue('head');
-    expect(screen.getByLabelText(/^password$/i)).toHaveValue('Password123!');
+    await user.keyboard('{ArrowUp}');
+    expect(usernameInput).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(passwordInput).toHaveFocus();
   });
 });

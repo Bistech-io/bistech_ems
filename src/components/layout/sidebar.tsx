@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
-  Layers,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -78,8 +77,13 @@ export function Sidebar() {
             onClick={onNavigate}
             className="flex items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] text-[#4CAF7D] shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
-              <Layers className="h-5 w-5" strokeWidth={2} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] p-2 shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bistech-logo.png"
+                alt="BisTech Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
 
             <AnimatePresence initial={false}>
