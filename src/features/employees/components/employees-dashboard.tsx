@@ -250,6 +250,42 @@ export function EmployeesDashboard() {
     );
   }
 
+  function handleDepartmentUpdated(
+    employeeId: string,
+    nextDepartment: { id: string; name: string },
+  ) {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === employeeId ? { ...emp, department: nextDepartment } : emp,
+      ),
+    );
+    setSelectedEmployee((prev) =>
+      prev && prev.id === employeeId
+        ? { ...prev, department: nextDepartment }
+        : prev,
+    );
+  }
+
+  function handleRoleUpdated(
+    employeeId: string,
+    _assignment: string,
+    _departmentId: string,
+    nextRoles: string[],
+  ) {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === employeeId
+          ? { ...emp, user: { ...emp.user, roles: nextRoles } }
+          : emp,
+      ),
+    );
+    setSelectedEmployee((prev) =>
+      prev && prev.id === employeeId
+        ? { ...prev, user: { ...prev.user, roles: nextRoles } }
+        : prev,
+    );
+  }
+
   function handleLiveStatusChange(
     employeeId: string,
     status: EmployeeLiveStatus | 'auto',
@@ -471,14 +507,17 @@ export function EmployeesDashboard() {
         onCreated={handleCreated}
       />
 
-      {/* Employee Profile & Change Designation Modal */}
+      {/* Employee Profile Right-Side Slide Drawer */}
       <EmployeeProfileModal
         employee={selectedEmployee}
         liveStatus={selectedEmployee ? deriveLiveStatus(selectedEmployee) : 'available'}
         designations={designations}
+        departments={departments}
         canEditDesignation={canUpdate}
         onClose={() => setSelectedEmployee(null)}
         onDesignationUpdated={handleDesignationUpdated}
+        onDepartmentUpdated={handleDepartmentUpdated}
+        onRoleUpdated={handleRoleUpdated}
         onLiveStatusChange={handleLiveStatusChange}
       />
     </motion.div>
