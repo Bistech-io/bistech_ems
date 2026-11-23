@@ -58,17 +58,23 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'workspace',
-    label: 'Workspace',
+    id: 'attendance-zone',
+    label: 'Attendance',
     items: [
       {
         id: 'attendance',
-        label: 'Attendance',
+        label: 'Own Attendance',
         href: '/attendance',
         icon: Clock,
         permission: 'attendance.self',
         minScope: 'own',
       },
+    ],
+  },
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
       {
         id: 'tasks',
         label: 'Tasks',
