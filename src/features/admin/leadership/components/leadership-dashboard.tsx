@@ -193,7 +193,7 @@ export function LeadershipDashboard() {
       fetchEmployees().catch(() => [] as EmployeeItem[]),
       fetchDesignations().catch(() => [] as DesignationOption[]),
       fetchOrganizationSettings().catch(() => null),
-      fetchMyAttendanceBoard().catch(() => null),
+      currentEmployeeId ? fetchMyAttendanceBoard().catch(() => null) : Promise.resolve(null),
       fetchTodayOrgAttendance(todayIso).catch(() => [] as OrgAttendanceItem[]),
     ]);
 
@@ -246,7 +246,7 @@ export function LeadershipDashboard() {
       fetchEmployees().catch(() => [] as EmployeeItem[]),
       fetchDesignations().catch(() => [] as DesignationOption[]),
       fetchOrganizationSettings().catch(() => null),
-      fetchMyAttendanceBoard().catch(() => null),
+      currentEmployeeId ? fetchMyAttendanceBoard().catch(() => null) : Promise.resolve(null),
       fetchTodayOrgAttendance(todayIso).catch(() => [] as OrgAttendanceItem[]),
     ])
       .then(

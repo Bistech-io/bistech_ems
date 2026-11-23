@@ -116,13 +116,14 @@ export function EmployeesDashboard() {
   useEffect(() => {
     let cancelled = false;
     const todayIso = new Date().toISOString().slice(0, 10);
+    const hasEmployeeRecord = Boolean(user?.employeeId);
 
     Promise.all([
       fetchEmployees().catch(() => [] as EmployeeItem[]),
       fetchDepartments().catch(() => [] as DepartmentOption[]),
       fetchDesignations().catch(() => [] as DesignationOption[]),
       fetchOrganizationSettings().catch(() => null),
-      fetchMyAttendanceBoard().catch(() => null),
+      hasEmployeeRecord ? fetchMyAttendanceBoard().catch(() => null) : Promise.resolve(null),
       fetchTodayOrgAttendance(todayIso).catch(() => [] as OrgAttendanceItem[]),
     ])
       .then(([empList, deptList, desigList, orgSettings, myBoard, todayOrgAtt]) => {
