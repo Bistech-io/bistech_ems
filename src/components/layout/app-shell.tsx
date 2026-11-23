@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
+import { FirstLoginPasswordModal } from '@/features/auth/components/first-login-password-modal';
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -8,6 +9,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="min-w-0 flex-1 rounded-[2rem] border border-[#23302B]/70 bg-[#131A17]/40 p-5 md:p-7">
         {children}
       </main>
+      <FirstLoginPasswordModal />
     </div>
   );
 }
+

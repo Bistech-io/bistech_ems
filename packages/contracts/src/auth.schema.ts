@@ -96,3 +96,16 @@ export const authMeResponseSchema = successEnvelopeSchema(authMeDataSchema);
 export const loginResponseSchema = successEnvelopeSchema(authMeDataSchema);
 export const refreshResponseSchema = successEnvelopeSchema(authMeDataSchema);
 export const logoutResponseSchema = successEnvelopeSchema(z.null());
+
+export const resetPasswordRequestSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(12, 'Password must be at least 12 characters')
+      .max(128, 'Password must be 128 characters or fewer'),
+  })
+  .strict();
+
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+export const resetPasswordResponseSchema = successEnvelopeSchema(z.null());
+
