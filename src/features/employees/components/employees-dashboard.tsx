@@ -442,54 +442,15 @@ export function EmployeesDashboard() {
                       <td className="truncate px-6 py-4 text-xs font-medium text-[#F0F5F2]">
                         {emp.designation.title}
                       </td>
-                      <td
-                        className="px-6 py-4 text-right"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {canUpdate ? (
-                          <select
-                            value={liveStatus}
-                            onChange={(e) =>
-                              handleLiveStatusChange(
-                                emp.id,
-                                e.target.value as EmployeeLiveStatus | 'auto',
-                              )
-                            }
-                            aria-label={`Change status for ${emp.fullName}`}
-                            className={cn(
-                              'cursor-pointer rounded-full border px-3 py-1 text-[11px] font-medium outline-none',
-                              style.badge,
-                            )}
-                          >
-                            <option value="auto" className="bg-[#131A17] text-[#4CAF7D]">
-                              Auto (Attendance)
-                            </option>
-                            <option value="available" className="bg-[#131A17] text-[#F0F5F2]">
-                              Available
-                            </option>
-                            <option value="arriving" className="bg-[#131A17] text-[#F0F5F2]">
-                              Arriving
-                            </option>
-                            <option value="absent" className="bg-[#131A17] text-[#F0F5F2]">
-                              Absent
-                            </option>
-                            <option value="on_vacation" className="bg-[#131A17] text-[#F0F5F2]">
-                              On Vacation
-                            </option>
-                            <option value="after_hours" className="bg-[#131A17] text-[#F0F5F2]">
-                              Working Hour Ended
-                            </option>
-                          </select>
-                        ) : (
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium',
-                              style.badge,
-                            )}
-                          >
-                            {style.label}
-                          </span>
-                        )}
+                      <td className="px-6 py-4 text-right">
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium',
+                            style.badge,
+                          )}
+                        >
+                          {style.label}
+                        </span>
                       </td>
                     </tr>
                   );
