@@ -377,7 +377,7 @@ export function EmployeeDashboard() {
                       (hr?.todayAttendance.lateCount ?? 0)}
                   </p>
                   <p className="mt-1 text-xs text-[#6E8078]">
-                    {hr?.todayAttendance.notCheckedInCount ?? 0} arriving ·{' '}
+                    {hr?.todayAttendance.notCheckedInCount ?? 0} not arrived yet ·{' '}
                     {hr?.todayAttendance.absentCount ?? 0} absent
                   </p>
                 </div>

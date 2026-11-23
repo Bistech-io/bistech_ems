@@ -378,7 +378,7 @@ export function EmployeeProfileModal({
                     >
                       <option value="auto">Auto (From Attendance)</option>
                       <option value="available">Available</option>
-                      <option value="arriving">Arriving</option>
+                      <option value="arriving">Not Arrived Yet</option>
                       <option value="absent">Absent</option>
                       <option value="on_vacation">On Vacation</option>
                       <option value="after_hours">Working Hour Ended</option>

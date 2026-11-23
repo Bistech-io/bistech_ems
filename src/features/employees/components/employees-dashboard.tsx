@@ -46,7 +46,7 @@ export const LIVE_STATUS_STYLES: Record<
   },
   arriving: {
     badge: 'border-[#38BDF8]/40 bg-[#38BDF8]/15 text-[#38BDF8]',
-    label: 'Arriving',
+    label: 'Not Arrived Yet',
   },
   absent: {
     badge: 'border-[#EF4444]/40 bg-[#EF4444]/15 text-[#EF4444]',
@@ -378,7 +378,7 @@ export function EmployeesDashboard() {
           >
             <option value="">All Status</option>
             <option value="available">Available</option>
-            <option value="arriving">Arriving</option>
+            <option value="arriving">Not Arrived Yet</option>
             <option value="absent">Absent</option>
             <option value="on_vacation">On Vacation</option>
             <option value="after_hours">Working Hour Ended</option>
