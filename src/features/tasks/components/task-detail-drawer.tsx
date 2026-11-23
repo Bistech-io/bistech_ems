@@ -158,7 +158,12 @@ export function TaskDetailDrawer({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!task) return;
+    if (!task) {
+      const clearTimer = setTimeout(() => {
+        setDetailedTask(null);
+      }, 0);
+      return () => clearTimeout(clearTimer);
+    }
 
     const initTimer = setTimeout(() => {
       setDetailedTask(task);
@@ -201,7 +206,18 @@ export function TaskDetailDrawer({
     };
   }, [task, currentStatus]);
 
-  const activeTask = detailedTask ?? task;
+  useEffect(() => {
+    if (!task) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [task, onClose]);
+
+  const activeTask = task ? (detailedTask?.id === task.id ? detailedTask : task) : null;
 
   async function handleUpdateStatus(nextStatus: TaskAssignmentStatus) {
     if (!activeTask || isUpdatingStatus) return;
