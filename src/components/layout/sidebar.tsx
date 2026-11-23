@@ -8,8 +8,10 @@ import {
   ChevronDown,
   LogOut,
   Menu,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
   X,
 } from 'lucide-react';
 import {
@@ -20,9 +22,12 @@ import {
 import { useSignOut } from '@/features/auth/hooks';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
+import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
+const SIDEBAR_WIDTH_DURATION = 0.42;
+const SIDEBAR_LABEL_DURATION = 0.32;
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 264;
 
@@ -41,6 +46,7 @@ function isItemOrChildActive(pathname: string, item: NavItem): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, activeRole } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { signOut, isPending: isSigningOut } = useSignOut();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -90,10 +96,10 @@ export function Sidebar() {
               {expanded && (
                 <motion.div
                   key="brand-text"
-                  initial={{ opacity: 0, x: -6 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -6 }}
-                  transition={{ duration: 0.16, ease: SIDEBAR_EASE }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                   className="flex flex-col overflow-hidden whitespace-nowrap"
                 >
                   <span
@@ -157,7 +163,7 @@ export function Sidebar() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.14 }}
+                  transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                   className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
                 >
                   {group.label}
@@ -203,10 +209,10 @@ export function Sidebar() {
                         <AnimatePresence initial={false}>
                           {expanded && (
                             <motion.span
-                              initial={{ opacity: 0, x: -6 }}
+                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -6 }}
-                              transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                              exit={{ opacity: 0, x: -8 }}
+                              transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                               className="flex-1 truncate whitespace-nowrap"
                             >
                               {item.label}
@@ -292,7 +298,7 @@ export function Sidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.14 }}
+              transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
               className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
             >
               Account
@@ -303,6 +309,48 @@ export function Sidebar() {
         </div>
 
         <ul className="space-y-1">
+          {/* Light / Dark Mode Switcher placed directly before Profile button */}
+          <li>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={!expanded ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
+              className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-200 hover:bg-[#1A2420]/90 hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+            >
+              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-[#4CAF7D]">
+                {theme === 'dark' ? (
+                  <Sun className="h-[19px] w-[19px]" strokeWidth={1.85} />
+                ) : (
+                  <Moon className="h-[19px] w-[19px]" strokeWidth={1.85} />
+                )}
+              </span>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
+                    className="flex flex-1 items-center justify-between truncate whitespace-nowrap"
+                  >
+                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                    <span
+                      className={cn(
+                        'flex h-5 w-9 items-center rounded-full border p-0.5 transition-colors duration-300',
+                        theme === 'light'
+                          ? 'border-[#2E8B57]/60 bg-[#2E8B57] justify-end'
+                          : 'border-[#23302B] bg-[#0B0F0E] justify-start',
+                      )}
+                    >
+                      <span className="h-3.5 w-3.5 rounded-full bg-[#F0F5F2] shadow-xs" />
+                    </span>
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          </li>
+
           {ACCOUNT_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isPathActive(pathname, item.href, true);
@@ -312,7 +360,7 @@ export function Sidebar() {
                 {active && (
                   <motion.span
                     layoutId="sidebar-active-pill"
-                    transition={{ duration: 0.22, ease: SIDEBAR_EASE }}
+                    transition={{ duration: 0.28, ease: SIDEBAR_EASE }}
                     className="absolute inset-0 rounded-2xl bg-[#2E8B57] shadow-[0_6px_20px_-4px_rgba(46,139,87,0.5)]"
                   />
                 )}
@@ -333,10 +381,10 @@ export function Sidebar() {
                   <AnimatePresence initial={false}>
                     {expanded && (
                       <motion.span
-                        initial={{ opacity: 0, x: -6 }}
+                        initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -6 }}
-                        transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                        exit={{ opacity: 0, x: -8 }}
+                        transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                         className="flex-1 truncate whitespace-nowrap"
                       >
                         {item.label}
@@ -362,10 +410,10 @@ export function Sidebar() {
               <AnimatePresence initial={false}>
                 {expanded && (
                   <motion.span
-                    initial={{ opacity: 0, x: -6 }}
+                    initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -6 }}
-                    transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                     className="truncate whitespace-nowrap"
                   >
                     {isSigningOut ? 'Signing Out...' : 'Sign Out'}
@@ -388,7 +436,7 @@ export function Sidebar() {
         onMouseLeave={() => setIsHovered(false)}
         initial={false}
         animate={{ width: isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH }}
-        transition={{ duration: 0.24, ease: SIDEBAR_EASE }}
+        transition={{ duration: SIDEBAR_WIDTH_DURATION, ease: SIDEBAR_EASE }}
         className="sticky top-4 z-40 hidden h-[calc(100vh-2rem)] shrink-0 rounded-[2rem] border border-[#23302B] bg-[#131A17]/95 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.65)] backdrop-blur-md md:block"
       >
         {renderSidebarBody(isExpanded)}

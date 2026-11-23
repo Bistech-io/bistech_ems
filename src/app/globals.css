@@ -27,6 +27,32 @@
   --color-info: #38BDF8;
 }
 
+html.light {
+  color-scheme: light;
+
+  /* Clean Mint-Tinted Light Theme (Sea Green Brand Family) */
+  --color-bg: #F4F7F5;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-elevated: #EAF2ED;
+  --color-border: #D5E2DB;
+
+  /* Sea Green Brand Accents */
+  --color-primary: #2E8B57;
+  --color-primary-light: #237045;
+  --color-primary-dark: #1F5C3A;
+
+  /* Text & Foreground Hierarchy */
+  --color-text-primary: #0F1D17;
+  --color-text-secondary: #43574E;
+  --color-text-muted: #687B72;
+
+  /* Semantic Status Colors */
+  --color-success: #237045;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #0284C7;
+}
+
 @theme inline {
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text-primary);
@@ -48,6 +74,9 @@
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     overscroll-behavior: none;
+    transition:
+      background-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 380ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   h1,
@@ -61,7 +90,145 @@
   }
 }
 
-/* Subtle custom scrollbar for dark mode sidebar & panels */
+/* Smooth black <-> white theme switching transition across all surfaces & typography */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ============================================================================
+   Light Mode Surface, Border & Text Mapping (Preserving Sea Green Brand Identity)
+   ============================================================================ */
+html.light .bg-\[\#0B0F0E\],
+html.light .bg-\[\#080C0A\] {
+  background-color: #F4F7F5 !important;
+}
+
+html.light .bg-\[\#0B0F0E\]\/90,
+html.light .bg-\[\#0B0F0E\]\/85,
+html.light .bg-\[\#0B0F0E\]\/80,
+html.light .bg-\[\#0B0F0E\]\/75,
+html.light .bg-\[\#0B0F0E\]\/70,
+html.light .bg-\[\#0B0F0E\]\/65,
+html.light .bg-\[\#0B0F0E\]\/60,
+html.light .bg-\[\#0B0F0E\]\/50,
+html.light .bg-\[\#0B0F0E\]\/40 {
+  background-color: #EEF3F0 !important;
+}
+
+html.light .bg-\[\#131A17\],
+html.light .bg-\[\#131A17\]\/95,
+html.light .bg-\[\#131A17\]\/92,
+html.light .bg-\[\#131A17\]\/80,
+html.light .bg-\[\#131A17\]\/60 {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 10px 30px -14px rgba(15, 29, 23, 0.12);
+}
+
+html.light .bg-\[\#131A17\]\/40 {
+  background-color: #FAFDFB !important;
+}
+
+html.light .bg-\[\#1A2420\],
+html.light .bg-\[\#1A2420\]\/90,
+html.light .bg-\[\#1A2420\]\/75,
+html.light .bg-\[\#1A2420\]\/70,
+html.light .bg-\[\#1A2420\]\/60,
+html.light .bg-\[\#1A2420\]\/40 {
+  background-color: #EAF2ED !important;
+}
+
+html.light .hover\:bg-\[\#1A2420\]:hover,
+html.light .hover\:bg-\[\#1A2420\]\/90:hover,
+html.light .hover\:bg-\[\#1A2420\]\/75:hover,
+html.light .hover\:bg-\[\#1A2420\]\/70:hover,
+html.light .hover\:bg-\[\#1A2420\]\/60:hover {
+  background-color: #E2ECE6 !important;
+}
+
+html.light .from-\[\#131A17\],
+html.light .via-\[\#131A17\] {
+  --tw-gradient-from: #FFFFFF !important;
+  --tw-gradient-via: #FFFFFF !important;
+}
+
+html.light .to-\[\#1A2420\]\/70 {
+  --tw-gradient-to: #EAF2ED !important;
+}
+
+html.light .bg-\[\#1F5C3A\]\/55,
+html.light .bg-\[\#1F5C3A\]\/50,
+html.light .bg-\[\#1F5C3A\]\/45,
+html.light .bg-\[\#1F5C3A\]\/40,
+html.light .bg-\[\#1F5C3A\]\/35,
+html.light .bg-\[\#1F5C3A\]\/30,
+html.light .bg-\[\#1F5C3A\]\/15 {
+  background-color: rgba(46, 139, 87, 0.12) !important;
+}
+
+html.light .border-\[\#23302B\],
+html.light .border-\[\#23302B\]\/90,
+html.light .border-\[\#23302B\]\/80,
+html.light .border-\[\#23302B\]\/70,
+html.light .border-\[\#23302B\]\/60 {
+  border-color: #D5E2DB !important;
+}
+
+html.light .divide-\[\#23302B\]\/70 > :not(:last-child),
+html.light .divide-\[\#23302B\]\/60 > :not(:last-child) {
+  border-color: #E1ECE6 !important;
+}
+
+html.light .text-\[\#F0F5F2\],
+html.light .text-\[\#D8E5DF\] {
+  color: #0F1D17 !important;
+}
+
+/* Keep crisp white text on solid Sea Green primary buttons and active pills */
+html.light .bg-\[\#2E8B57\],
+html.light .bg-\[\#2E8B57\]\/90,
+html.light .bg-\[\#2E8B57\] .text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\]\/90 .text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\].text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\]\/90.text-\[\#F0F5F2\],
+html.light .text-\[\#F0F5F2\][aria-selected="true"] {
+  color: #FFFFFF !important;
+}
+
+html.light .text-\[\#A3B3AC\] {
+  color: #43574E !important;
+}
+
+html.light .text-\[\#6E8078\] {
+  color: #687B72 !important;
+}
+
+html.light .text-\[\#4CAF7D\] {
+  color: #237045 !important;
+}
+
+html.light .hover\:text-\[\#F0F5F2\]:hover {
+  color: #0F1D17 !important;
+}
+
+html.light .placeholder-\[\#6E8078\]::placeholder {
+  color: #7D9187 !important;
+}
+
+html.light select option {
+  background-color: #FFFFFF !important;
+  color: #0F1D17 !important;
+}
+
+/* Subtle custom scrollbar for dark & light sidebar & panels */
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px;
 }
@@ -71,10 +238,10 @@
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(163, 179, 172, 0.16);
+  background: rgba(163, 179, 172, 0.22);
   border-radius: 9999px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 175, 125, 0.35);
+  background: rgba(76, 175, 125, 0.45);
 }
