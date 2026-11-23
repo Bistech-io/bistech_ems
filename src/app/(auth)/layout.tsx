@@ -16,7 +16,10 @@ function WaveMeshBackground() {
   });
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 hidden overflow-hidden lg:block"
+    >
       {/* Subtle Sea Green ambient radial glows */}
       <div className="absolute top-1/2 left-[24%] h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2E8B57]/12 blur-[140px]" />
       <div className="absolute top-1/2 right-[8%] h-[360px] w-[360px] -translate-y-1/2 rounded-full bg-[#4CAF7D]/10 blur-[130px]" />
@@ -48,12 +51,12 @@ function WaveMeshBackground() {
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080C0A] px-6 py-10 text-[#F0F5F2] md:px-12">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#080C0A] px-4 py-6 text-[#F0F5F2] sm:px-6 md:px-12">
       <WaveMeshBackground />
 
-      <main className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-12 lg:gap-8">
-        {/* Left Brand Showcase */}
-        <section className="flex flex-col items-center justify-center text-center lg:col-span-6">
+      <main className="relative z-10 mx-auto grid w-full max-w-6xl items-center lg:grid-cols-12 lg:gap-8">
+        {/* Left Brand Showcase (Desktop only) */}
+        <section className="hidden flex-col items-center justify-center text-center lg:col-span-6 lg:flex">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/bistech-logo.png"
@@ -67,11 +70,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </h1>
         </section>
 
-        {/* Right Sign-In Card */}
-        <section className="flex justify-center lg:col-span-6 lg:justify-end">
-          <div className="w-full max-w-[440px] rounded-[2rem] border border-[#23302B]/90 bg-[#131A17]/92 p-7 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.85)] backdrop-blur-md sm:p-9">
+        {/* Right Sign-In Card (Full-width clean mobile layout on small screens) */}
+        <section className="flex w-full justify-center lg:col-span-6 lg:justify-end">
+          <div className="w-full max-w-[440px] rounded-3xl border border-[#23302B]/90 bg-[#131A17]/95 p-6 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.85)] backdrop-blur-md sm:rounded-[2rem] sm:p-9">
             <div className="mb-6 flex items-center justify-between gap-3">
-              <h2 className="font-heading text-2xl font-medium tracking-[-0.02em] text-[#D8E5DF]">
+              <h2 className="font-heading text-xl font-medium tracking-[-0.02em] text-[#D8E5DF] sm:text-2xl">
                 Sign in to your account
               </h2>
               <AuthThemeToggle />
