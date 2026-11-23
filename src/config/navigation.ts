@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Clock, Crown, IdCard, LayoutGrid, UserCircle } from 'lucide-react';
+import { CheckSquare, Clock, Crown, IdCard, LayoutGrid, UserCircle } from 'lucide-react';
 import {
   can,
   hasAnyRole,
@@ -67,6 +67,14 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         href: '/attendance',
         icon: Clock,
         permission: 'attendance.self',
+        minScope: 'own',
+      },
+      {
+        id: 'tasks',
+        label: 'Tasks',
+        href: '/tasks',
+        icon: CheckSquare,
+        permission: 'task.read',
         minScope: 'own',
       },
       {
