@@ -100,7 +100,7 @@ export function TasksDashboard() {
       fetchEmployees().catch(() => [] as EmployeeItem[]),
       fetchDepartments().catch(() => [] as DepartmentOption[]),
       isSuperAdmin || isHrManager
-        ? fetchCompanyAndSummaryOverview().catch(() => null)
+        ? fetchCompanyAndSummaryOverview(isSuperAdmin).catch(() => null)
         : Promise.resolve(null),
     ])
       .then(([tasksList, myList, deptList, teamList, empList, deptOpts, overview]) => {

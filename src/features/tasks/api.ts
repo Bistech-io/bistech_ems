@@ -110,43 +110,17 @@ export async function fetchTasks(params?: ListTasksParams): Promise<TaskItem[]> 
 }
 
 export async function fetchMyTasks(employeeId?: string | null): Promise<TaskItem[]> {
-  try {
-    const res = await apiRequest('/tasks/me', {
-      method: 'GET',
-      schema: tasksListResponseSchema,
-    });
-    return res.data;
-  } catch {
-    return fetchTasks(employeeId ? { assigneeId: employeeId } : undefined);
-  }
+  return fetchTasks(employeeId ? { assigneeId: employeeId } : undefined);
 }
 
 export async function fetchDepartmentTaskBoard(
   departmentId?: string | null,
 ): Promise<TaskItem[]> {
-  try {
-    const qs = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : '';
-    const res = await apiRequest(`/tasks/board/department${qs}`, {
-      method: 'GET',
-      schema: tasksListResponseSchema,
-    });
-    return res.data;
-  } catch {
-    return fetchTasks(departmentId ? { departmentId } : undefined);
-  }
+  return fetchTasks(departmentId ? { departmentId } : undefined);
 }
 
 export async function fetchTeamTaskBoard(teamId?: string | null): Promise<TaskItem[]> {
-  try {
-    const qs = teamId ? `?teamId=${encodeURIComponent(teamId)}` : '';
-    const res = await apiRequest(`/tasks/board/team${qs}`, {
-      method: 'GET',
-      schema: tasksListResponseSchema,
-    });
-    return res.data;
-  } catch {
-    return fetchTasks(teamId ? { teamId } : undefined);
-  }
+  return fetchTasks(teamId ? { teamId } : undefined);
 }
 
 export async function fetchTaskById(taskId: string): Promise<TaskItem> {
@@ -288,31 +262,16 @@ const summaryDashboardResponseSchema = successEnvelopeSchema(
   }),
 );
 
-export async function fetchCompanyAndSummaryOverview(): Promise<CompanyOverviewMetrics | null> {
-  try {
-    const companyRes = await apiRequest('/dashboard/company', {
-      method: 'GET',
-      schema: companyDashboardResponseSchema,
-    });
-    const d = companyRes.data;
-    return {
-      activeEmployees: d.workforce?.activeEmployees ?? 0,
-      attendanceRatePercent: d.todayAttendance?.attendanceRatePercent ?? 0,
-      openTasksCount: d.tasks?.openCount ?? 0,
-      overdueTasksCount: d.tasks?.overdueCount ?? 0,
-      completionRatePercent: d.tasks?.completionRatePercent ?? 0,
-      totalDepartments: d.governance?.totalDepartments ?? 0,
-      departmentsWithHead: d.governance?.departmentsWithHead ?? 0,
-      pendingReviewsCount: d.governance?.pendingReviewsCount ?? 0,
-    };
-  } catch {
+export async function fetchCompanyAndSummaryOverview(
+  isSuperAdmin: boolean,
+): Promise<CompanyOverviewMetrics | null> {
+  if (isSuperAdmin) {
     try {
-      const summaryRes = await apiRequest('/dashboard/summary', {
+      const companyRes = await apiRequest('/dashboard/company', {
         method: 'GET',
-        schema: summaryDashboardResponseSchema,
+        schema: companyDashboardResponseSchema,
       });
-      const d = summaryRes.data.company ?? summaryRes.data.hr;
-      if (!d) return null;
+      const d = companyRes.data;
       return {
         activeEmployees: d.workforce?.activeEmployees ?? 0,
         attendanceRatePercent: d.todayAttendance?.attendanceRatePercent ?? 0,
@@ -324,8 +283,29 @@ export async function fetchCompanyAndSummaryOverview(): Promise<CompanyOverviewM
         pendingReviewsCount: d.governance?.pendingReviewsCount ?? 0,
       };
     } catch {
-      return null;
+      // Fallback to /dashboard/summary below
     }
+  }
+
+  try {
+    const summaryRes = await apiRequest('/dashboard/summary', {
+      method: 'GET',
+      schema: summaryDashboardResponseSchema,
+    });
+    const d = summaryRes.data.company ?? summaryRes.data.hr;
+    if (!d) return null;
+    return {
+      activeEmployees: d.workforce?.activeEmployees ?? 0,
+      attendanceRatePercent: d.todayAttendance?.attendanceRatePercent ?? 0,
+      openTasksCount: d.tasks?.openCount ?? 0,
+      overdueTasksCount: d.tasks?.overdueCount ?? 0,
+      completionRatePercent: d.tasks?.completionRatePercent ?? 0,
+      totalDepartments: d.governance?.totalDepartments ?? 0,
+      departmentsWithHead: d.governance?.departmentsWithHead ?? 0,
+      pendingReviewsCount: d.governance?.pendingReviewsCount ?? 0,
+    };
+  } catch {
+    return null;
   }
 }
 
