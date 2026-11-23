@@ -26,14 +26,14 @@ import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
-const SIDEBAR_WIDTH_DURATION = 0.42;
-const SIDEBAR_LABEL_DURATION = 0.32;
+const SIDEBAR_WIDTH_DURATION = 0.55;
+const SIDEBAR_LABEL_DURATION = 0.42;
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 264;
 
 function isPathActive(pathname: string, href: string, exact = false): boolean {
   if (exact) return pathname === href;
-  if (href === '/dashboard') return pathname === '/dashboard';
+  if (href === '/dashboard' || href === '/attendance') return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

@@ -30,27 +30,27 @@
 html.light {
   color-scheme: light;
 
-  /* Clean Mint-Tinted Light Theme (Sea Green Brand Family) */
-  --color-bg: #F4F7F5;
-  --color-bg-secondary: #FFFFFF;
-  --color-bg-elevated: #EAF2ED;
-  --color-border: #D5E2DB;
+  /* Warm Creamy Ivory Light Theme (Easy on the eyes + Sea Green Brand) */
+  --color-bg: #F6F3EC;
+  --color-bg-secondary: #FCFBF7;
+  --color-bg-elevated: #EFECE3;
+  --color-border: #E2DDD0;
 
   /* Sea Green Brand Accents */
   --color-primary: #2E8B57;
   --color-primary-light: #237045;
   --color-primary-dark: #1F5C3A;
 
-  /* Text & Foreground Hierarchy */
-  --color-text-primary: #0F1D17;
-  --color-text-secondary: #43574E;
-  --color-text-muted: #687B72;
+  /* Warm Charcoal Text Hierarchy */
+  --color-text-primary: #1F2420;
+  --color-text-secondary: #565C55;
+  --color-text-muted: #7C827A;
 
   /* Semantic Status Colors */
   --color-success: #237045;
-  --color-warning: #D97706;
-  --color-danger: #DC2626;
-  --color-info: #0284C7;
+  --color-warning: #C97A10;
+  --color-danger: #C93B3B;
+  --color-info: #1D7EA8;
 }
 
 @theme inline {
@@ -75,8 +75,8 @@ html.light {
     font-family: var(--font-sans);
     overscroll-behavior: none;
     transition:
-      background-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
-      color 380ms cubic-bezier(0.22, 1, 0.36, 1);
+      background-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 420ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   h1,
@@ -90,26 +90,26 @@ html.light {
   }
 }
 
-/* Smooth black <-> white theme switching transition across all surfaces & typography */
+/* Smooth dark <-> creamy light theme switching transition */
 html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
   transition:
-    background-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    fill 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    stroke 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+    background-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 /* ============================================================================
-   Light Mode Surface, Border & Text Mapping (Preserving Sea Green Brand Identity)
+   Warm Creamy Light Mode Surface, Border & Text Mapping
    ============================================================================ */
 html.light .bg-\[\#0B0F0E\],
 html.light .bg-\[\#080C0A\] {
-  background-color: #F4F7F5 !important;
+  background-color: #F6F3EC !important;
 }
 
 html.light .bg-\[\#0B0F0E\]\/90,
@@ -121,7 +121,7 @@ html.light .bg-\[\#0B0F0E\]\/65,
 html.light .bg-\[\#0B0F0E\]\/60,
 html.light .bg-\[\#0B0F0E\]\/50,
 html.light .bg-\[\#0B0F0E\]\/40 {
-  background-color: #EEF3F0 !important;
+  background-color: #F1EDE4 !important;
 }
 
 html.light .bg-\[\#131A17\],
@@ -129,12 +129,12 @@ html.light .bg-\[\#131A17\]\/95,
 html.light .bg-\[\#131A17\]\/92,
 html.light .bg-\[\#131A17\]\/80,
 html.light .bg-\[\#131A17\]\/60 {
-  background-color: #FFFFFF !important;
-  box-shadow: 0 10px 30px -14px rgba(15, 29, 23, 0.12);
+  background-color: #FCFBF7 !important;
+  box-shadow: 0 12px 32px -16px rgba(42, 38, 28, 0.12);
 }
 
 html.light .bg-\[\#131A17\]\/40 {
-  background-color: #FAFDFB !important;
+  background-color: #FAF8F2 !important;
 }
 
 html.light .bg-\[\#1A2420\],
@@ -143,7 +143,7 @@ html.light .bg-\[\#1A2420\]\/75,
 html.light .bg-\[\#1A2420\]\/70,
 html.light .bg-\[\#1A2420\]\/60,
 html.light .bg-\[\#1A2420\]\/40 {
-  background-color: #EAF2ED !important;
+  background-color: #EFECE3 !important;
 }
 
 html.light .hover\:bg-\[\#1A2420\]:hover,
@@ -151,17 +151,17 @@ html.light .hover\:bg-\[\#1A2420\]\/90:hover,
 html.light .hover\:bg-\[\#1A2420\]\/75:hover,
 html.light .hover\:bg-\[\#1A2420\]\/70:hover,
 html.light .hover\:bg-\[\#1A2420\]\/60:hover {
-  background-color: #E2ECE6 !important;
+  background-color: #E7E2D6 !important;
 }
 
 html.light .from-\[\#131A17\],
 html.light .via-\[\#131A17\] {
-  --tw-gradient-from: #FFFFFF !important;
-  --tw-gradient-via: #FFFFFF !important;
+  --tw-gradient-from: #FCFBF7 !important;
+  --tw-gradient-via: #FCFBF7 !important;
 }
 
 html.light .to-\[\#1A2420\]\/70 {
-  --tw-gradient-to: #EAF2ED !important;
+  --tw-gradient-to: #EFECE3 !important;
 }
 
 html.light .bg-\[\#1F5C3A\]\/55,
@@ -179,20 +179,20 @@ html.light .border-\[\#23302B\]\/90,
 html.light .border-\[\#23302B\]\/80,
 html.light .border-\[\#23302B\]\/70,
 html.light .border-\[\#23302B\]\/60 {
-  border-color: #D5E2DB !important;
+  border-color: #E2DDD0 !important;
 }
 
 html.light .divide-\[\#23302B\]\/70 > :not(:last-child),
 html.light .divide-\[\#23302B\]\/60 > :not(:last-child) {
-  border-color: #E1ECE6 !important;
+  border-color: #EAE5D9 !important;
 }
 
 html.light .text-\[\#F0F5F2\],
 html.light .text-\[\#D8E5DF\] {
-  color: #0F1D17 !important;
+  color: #1F2420 !important;
 }
 
-/* Keep crisp white text on solid Sea Green primary buttons and active pills */
+/* Keep crisp cream-white text on solid Sea Green primary buttons and active pills */
 html.light .bg-\[\#2E8B57\],
 html.light .bg-\[\#2E8B57\]\/90,
 html.light .bg-\[\#2E8B57\] .text-\[\#F0F5F2\],
@@ -200,15 +200,20 @@ html.light .bg-\[\#2E8B57\]\/90 .text-\[\#F0F5F2\],
 html.light .bg-\[\#2E8B57\].text-\[\#F0F5F2\],
 html.light .bg-\[\#2E8B57\]\/90.text-\[\#F0F5F2\],
 html.light .text-\[\#F0F5F2\][aria-selected="true"] {
-  color: #FFFFFF !important;
+  color: #FCFBF7 !important;
+}
+
+html.light .bg-\[\#3CA36E\] {
+  background-color: #2E8B57 !important;
+  color: #FCFBF7 !important;
 }
 
 html.light .text-\[\#A3B3AC\] {
-  color: #43574E !important;
+  color: #565C55 !important;
 }
 
 html.light .text-\[\#6E8078\] {
-  color: #687B72 !important;
+  color: #7C827A !important;
 }
 
 html.light .text-\[\#4CAF7D\] {
@@ -216,19 +221,19 @@ html.light .text-\[\#4CAF7D\] {
 }
 
 html.light .hover\:text-\[\#F0F5F2\]:hover {
-  color: #0F1D17 !important;
+  color: #1F2420 !important;
 }
 
 html.light .placeholder-\[\#6E8078\]::placeholder {
-  color: #7D9187 !important;
+  color: #8D9289 !important;
 }
 
 html.light select option {
-  background-color: #FFFFFF !important;
-  color: #0F1D17 !important;
+  background-color: #FCFBF7 !important;
+  color: #1F2420 !important;
 }
 
-/* Subtle custom scrollbar for dark & light sidebar & panels */
+/* Subtle custom scrollbar */
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px;
 }
@@ -238,10 +243,10 @@ html.light select option {
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(163, 179, 172, 0.22);
+  background: rgba(140, 145, 135, 0.28);
   border-radius: 9999px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 175, 125, 0.45);
+  background: rgba(46, 139, 87, 0.45);
 }

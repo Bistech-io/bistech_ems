@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AuthThemeToggle } from '@/features/auth/components/auth-theme-toggle';
 
 function WaveMeshBackground() {
   const lines = Array.from({ length: 24 }, (_, idx) => {
@@ -69,9 +70,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         {/* Right Sign-In Card */}
         <section className="flex justify-center lg:col-span-6 lg:justify-end">
           <div className="w-full max-w-[440px] rounded-[2rem] border border-[#23302B]/90 bg-[#131A17]/92 p-7 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.85)] backdrop-blur-md sm:p-9">
-            <h2 className="mb-6 font-heading text-2xl font-medium tracking-[-0.02em] text-[#D8E5DF]">
-              Sign in to your account
-            </h2>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <h2 className="font-heading text-2xl font-medium tracking-[-0.02em] text-[#D8E5DF]">
+                Sign in to your account
+              </h2>
+              <AuthThemeToggle />
+            </div>
             {children}
           </div>
         </section>
