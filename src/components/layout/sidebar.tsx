@@ -31,10 +31,19 @@ const SIDEBAR_LABEL_DURATION = 0.42;
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 264;
 
+function normalizePathname(p: string): string {
+  if (!p) return '/';
+  const cleaned = p.replace(/\/+$/, '');
+  return cleaned || '/';
+}
+
 function isPathActive(pathname: string, href: string, exact = false): boolean {
-  if (exact) return pathname === href;
-  if (href === '/dashboard' || href === '/attendance') return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const current = normalizePathname(pathname);
+  const target = normalizePathname(href);
+  if (exact || target === '/dashboard' || target === '/attendance') {
+    return current === target;
+  }
+  return current === target || current.startsWith(`${target}/`);
 }
 
 function isItemOrChildActive(pathname: string, item: NavItem): boolean {
@@ -186,7 +195,7 @@ export function Sidebar() {
                       {active && (
                         <motion.span
                           layoutId="sidebar-active-pill"
-                          transition={{ duration: 0.22, ease: SIDEBAR_EASE }}
+                          transition={{ duration: 0.28, ease: SIDEBAR_EASE }}
                           className="absolute inset-0 rounded-2xl bg-[#2E8B57] shadow-[0_6px_20px_-4px_rgba(46,139,87,0.5)]"
                         />
                       )}
@@ -195,10 +204,11 @@ export function Sidebar() {
                         href={item.href}
                         onClick={onNavigate}
                         title={!expanded ? item.label : undefined}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                           'relative z-10 flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
                           active
-                            ? 'text-[#F0F5F2]'
+                            ? 'sidebar-nav-active text-[#F0F5F2]'
                             : 'text-[#A3B3AC] hover:bg-[#1A2420]/90 hover:text-[#F0F5F2]',
                         )}
                       >
@@ -368,10 +378,11 @@ export function Sidebar() {
                   href={item.href}
                   onClick={onNavigate}
                   title={!expanded ? item.label : undefined}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
                     'relative z-10 flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
                     active
-                      ? 'text-[#F0F5F2]'
+                      ? 'sidebar-nav-active text-[#F0F5F2]'
                       : 'text-[#A3B3AC] hover:bg-[#1A2420]/90 hover:text-[#F0F5F2]',
                   )}
                 >

@@ -30,27 +30,27 @@
 html.light {
   color-scheme: light;
 
-  /* Warm Creamy Ivory Light Theme (Easy on the eyes + Sea Green Brand) */
-  --color-bg: #F6F3EC;
-  --color-bg-secondary: #FCFBF7;
-  --color-bg-elevated: #EFECE3;
-  --color-border: #E2DDD0;
+  /* Rich Warm Cream & Linen Beige Palette (Inspired by Soft Cream / Cloud White / Linen Beige) */
+  --color-bg: #EFE9DD;
+  --color-bg-secondary: #F8F4EC;
+  --color-bg-elevated: #E8E0D1;
+  --color-border: #D9CFC0;
 
-  /* Sea Green Brand Accents */
+  /* Sea Green Brand Accents (Harmonized with Warm Cream) */
   --color-primary: #2E8B57;
-  --color-primary-light: #237045;
+  --color-primary-light: #246F45;
   --color-primary-dark: #1F5C3A;
 
-  /* Warm Charcoal Text Hierarchy */
-  --color-text-primary: #1F2420;
-  --color-text-secondary: #565C55;
-  --color-text-muted: #7C827A;
+  /* Warm Espresso / Deep Olive-Charcoal Text Hierarchy */
+  --color-text-primary: #272521;
+  --color-text-secondary: #5B564D;
+  --color-text-muted: #847E73;
 
   /* Semantic Status Colors */
-  --color-success: #237045;
-  --color-warning: #C97A10;
-  --color-danger: #C93B3B;
-  --color-info: #1D7EA8;
+  --color-success: #246F45;
+  --color-warning: #B86E0B;
+  --color-danger: #C03939;
+  --color-info: #1F7499;
 }
 
 @theme inline {
@@ -105,11 +105,11 @@ html.theme-transitioning *::after {
 }
 
 /* ============================================================================
-   Warm Creamy Light Mode Surface, Border & Text Mapping
+   Warm Cream & Linen Light Mode Mapping (Soft Cream + Cloud White + Sea Green)
    ============================================================================ */
 html.light .bg-\[\#0B0F0E\],
 html.light .bg-\[\#080C0A\] {
-  background-color: #F6F3EC !important;
+  background-color: #EFE9DD !important;
 }
 
 html.light .bg-\[\#0B0F0E\]\/90,
@@ -121,7 +121,7 @@ html.light .bg-\[\#0B0F0E\]\/65,
 html.light .bg-\[\#0B0F0E\]\/60,
 html.light .bg-\[\#0B0F0E\]\/50,
 html.light .bg-\[\#0B0F0E\]\/40 {
-  background-color: #F1EDE4 !important;
+  background-color: #EAE2D4 !important;
 }
 
 html.light .bg-\[\#131A17\],
@@ -129,12 +129,12 @@ html.light .bg-\[\#131A17\]\/95,
 html.light .bg-\[\#131A17\]\/92,
 html.light .bg-\[\#131A17\]\/80,
 html.light .bg-\[\#131A17\]\/60 {
-  background-color: #FCFBF7 !important;
-  box-shadow: 0 12px 32px -16px rgba(42, 38, 28, 0.12);
+  background-color: #F8F4EC !important;
+  box-shadow: 0 12px 32px -16px rgba(68, 56, 40, 0.14);
 }
 
 html.light .bg-\[\#131A17\]\/40 {
-  background-color: #FAF8F2 !important;
+  background-color: #F4EFE5 !important;
 }
 
 html.light .bg-\[\#1A2420\],
@@ -143,7 +143,7 @@ html.light .bg-\[\#1A2420\]\/75,
 html.light .bg-\[\#1A2420\]\/70,
 html.light .bg-\[\#1A2420\]\/60,
 html.light .bg-\[\#1A2420\]\/40 {
-  background-color: #EFECE3 !important;
+  background-color: #E8E0D1 !important;
 }
 
 html.light .hover\:bg-\[\#1A2420\]:hover,
@@ -151,17 +151,17 @@ html.light .hover\:bg-\[\#1A2420\]\/90:hover,
 html.light .hover\:bg-\[\#1A2420\]\/75:hover,
 html.light .hover\:bg-\[\#1A2420\]\/70:hover,
 html.light .hover\:bg-\[\#1A2420\]\/60:hover {
-  background-color: #E7E2D6 !important;
+  background-color: #DFD5C4 !important;
 }
 
 html.light .from-\[\#131A17\],
 html.light .via-\[\#131A17\] {
-  --tw-gradient-from: #FCFBF7 !important;
-  --tw-gradient-via: #FCFBF7 !important;
+  --tw-gradient-from: #F8F4EC !important;
+  --tw-gradient-via: #F8F4EC !important;
 }
 
 html.light .to-\[\#1A2420\]\/70 {
-  --tw-gradient-to: #EFECE3 !important;
+  --tw-gradient-to: #E8E0D1 !important;
 }
 
 html.light .bg-\[\#1F5C3A\]\/55,
@@ -171,7 +171,7 @@ html.light .bg-\[\#1F5C3A\]\/40,
 html.light .bg-\[\#1F5C3A\]\/35,
 html.light .bg-\[\#1F5C3A\]\/30,
 html.light .bg-\[\#1F5C3A\]\/15 {
-  background-color: rgba(46, 139, 87, 0.12) !important;
+  background-color: rgba(46, 139, 87, 0.14) !important;
 }
 
 html.light .border-\[\#23302B\],
@@ -179,20 +179,23 @@ html.light .border-\[\#23302B\]\/90,
 html.light .border-\[\#23302B\]\/80,
 html.light .border-\[\#23302B\]\/70,
 html.light .border-\[\#23302B\]\/60 {
-  border-color: #E2DDD0 !important;
+  border-color: #D9CFC0 !important;
 }
 
 html.light .divide-\[\#23302B\]\/70 > :not(:last-child),
 html.light .divide-\[\#23302B\]\/60 > :not(:last-child) {
-  border-color: #EAE5D9 !important;
+  border-color: #E3DACB !important;
 }
 
 html.light .text-\[\#F0F5F2\],
 html.light .text-\[\#D8E5DF\] {
-  color: #1F2420 !important;
+  color: #272521 !important;
 }
 
-/* Keep crisp cream-white text on solid Sea Green primary buttons and active pills */
+/* Keep crisp cream-white text on solid Sea Green primary buttons and active sidebar links */
+html.light .sidebar-nav-active,
+html.light .sidebar-nav-active span,
+html.light .sidebar-nav-active svg,
 html.light .bg-\[\#2E8B57\],
 html.light .bg-\[\#2E8B57\]\/90,
 html.light .bg-\[\#2E8B57\] .text-\[\#F0F5F2\],
@@ -200,37 +203,37 @@ html.light .bg-\[\#2E8B57\]\/90 .text-\[\#F0F5F2\],
 html.light .bg-\[\#2E8B57\].text-\[\#F0F5F2\],
 html.light .bg-\[\#2E8B57\]\/90.text-\[\#F0F5F2\],
 html.light .text-\[\#F0F5F2\][aria-selected="true"] {
-  color: #FCFBF7 !important;
+  color: #FAF7F0 !important;
 }
 
 html.light .bg-\[\#3CA36E\] {
   background-color: #2E8B57 !important;
-  color: #FCFBF7 !important;
+  color: #FAF7F0 !important;
 }
 
 html.light .text-\[\#A3B3AC\] {
-  color: #565C55 !important;
+  color: #5B564D !important;
 }
 
 html.light .text-\[\#6E8078\] {
-  color: #7C827A !important;
+  color: #847E73 !important;
 }
 
 html.light .text-\[\#4CAF7D\] {
-  color: #237045 !important;
+  color: #246F45 !important;
 }
 
 html.light .hover\:text-\[\#F0F5F2\]:hover {
-  color: #1F2420 !important;
+  color: #272521 !important;
 }
 
 html.light .placeholder-\[\#6E8078\]::placeholder {
-  color: #8D9289 !important;
+  color: #918A7E !important;
 }
 
 html.light select option {
-  background-color: #FCFBF7 !important;
-  color: #1F2420 !important;
+  background-color: #F8F4EC !important;
+  color: #272521 !important;
 }
 
 /* Subtle custom scrollbar */
@@ -243,7 +246,7 @@ html.light select option {
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(140, 145, 135, 0.28);
+  background: rgba(145, 138, 126, 0.32);
   border-radius: 9999px;
 }
 
