@@ -21,6 +21,7 @@ interface CreateEmployeeModalProps {
   designations: DesignationOption[];
   onClose: () => void;
   onCreated: (employee: EmployeeItem) => void;
+  onDesignationCreated?: (designation: DesignationOption) => void;
 }
 
 function generateIdempotencyKey(): string {
@@ -36,6 +37,7 @@ export function CreateEmployeeModal({
   designations,
   onClose,
   onCreated,
+  onDesignationCreated,
 }: CreateEmployeeModalProps) {
   const [idempotencyKey, setIdempotencyKey] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,12 +106,9 @@ export function CreateEmployeeModal({
     );
     if (matched) return matched.id;
 
-    try {
-      const createdDesig = await createDesignation(typedTitle.trim());
-      return createdDesig.id;
-    } catch {
-      return designations[0]?.id ?? '';
-    }
+    const createdDesig = await createDesignation(typedTitle.trim());
+    onDesignationCreated?.(createdDesig);
+    return createdDesig.id;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,7 +124,19 @@ export function CreateEmployeeModal({
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const resolvedDesignationId = await resolveDesignationId(trimmedDesignation);
+    let resolvedDesignationId: string;
+    try {
+      resolvedDesignationId = await resolveDesignationId(trimmedDesignation);
+    } catch (err) {
+      setIsSubmitting(false);
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message || 'Failed to create new designation.');
+      } else {
+        setErrorMessage('Failed to create or verify designation. Please check your network and try again.');
+      }
+      return;
+    }
+
     if (!resolvedDesignationId) {
       setErrorMessage('No designation available in organization.');
       setIsSubmitting(false);
@@ -407,10 +418,20 @@ export function CreateEmployeeModal({
                       id="emp-designation-input"
                       type="text"
                       required
+                      list="designations-datalist"
+                      placeholder="Select or type a designation"
                       value={designationTitle}
                       onChange={(e) => setDesignationTitle(e.target.value)}
                       className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
                     />
+                    <datalist id="designations-datalist">
+                      {designations.map((d) => (
+                        <option key={d.id} value={d.title} />
+                      ))}
+                    </datalist>
+                    <p className="mt-1 text-[11px] text-[#6E8078]">
+                      Pick an existing title or type a new one to create it.
+                    </p>
                   </div>
 
                   <div>

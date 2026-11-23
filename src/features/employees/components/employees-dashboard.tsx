@@ -505,6 +505,20 @@ export function EmployeesDashboard() {
         designations={designations}
         onClose={() => setCreateOpen(false)}
         onCreated={handleCreated}
+        onDesignationCreated={(newDesig) => {
+          setDesignations((prev) => {
+            if (
+              prev.some(
+                (d) =>
+                  d.id === newDesig.id ||
+                  d.title.trim().toLowerCase() === newDesig.title.trim().toLowerCase(),
+              )
+            ) {
+              return prev;
+            }
+            return [...prev, newDesig];
+          });
+        }}
       />
 
       {/* Employee Profile Right-Side Slide Drawer */}

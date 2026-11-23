@@ -160,7 +160,7 @@ export async function apiRequest<TDataSchema extends z.ZodTypeAny>(
       onUnauthenticatedCallback?.();
     }
 
-    throw new ApiError(error.code, response.status, error.details ?? [], requestId);
+    throw new ApiError(error.code, response.status, error.details ?? [], requestId, error.message);
   }
 
   const parsedSuccess = options.schema.safeParse(raw);
