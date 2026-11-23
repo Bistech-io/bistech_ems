@@ -27,6 +27,32 @@
   --color-info: #38BDF8;
 }
 
+html.light {
+  color-scheme: light;
+
+  /* Subtle Soft Cream & Cloud White Palette (Balanced, warm, and airy) */
+  --color-bg: #F5F2EB;
+  --color-bg-secondary: #FBF9F5;
+  --color-bg-elevated: #EFECE4;
+  --color-border: #E3DED4;
+
+  /* Sea Green Brand Accents (Harmonized with Soft Cream) */
+  --color-primary: #2E8B57;
+  --color-primary-light: #246F45;
+  --color-primary-dark: #1F5C3A;
+
+  /* Warm Charcoal Text Hierarchy */
+  --color-text-primary: #232421;
+  --color-text-secondary: #585A54;
+  --color-text-muted: #82837C;
+
+  /* Semantic Status Colors */
+  --color-success: #246F45;
+  --color-warning: #B86E0B;
+  --color-danger: #C03939;
+  --color-info: #1F7499;
+}
+
 @theme inline {
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text-primary);
@@ -48,6 +74,9 @@
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     overscroll-behavior: none;
+    transition:
+      background-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 420ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   h1,
@@ -61,7 +90,167 @@
   }
 }
 
-/* Subtle custom scrollbar for dark mode sidebar & panels */
+/* Smooth dark <-> creamy light theme switching transition */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ============================================================================
+   Subtle Soft Cream & Cloud White Light Mode Mapping
+   ============================================================================ */
+html.light .bg-\[\#0B0F0E\],
+html.light .bg-\[\#080C0A\] {
+  background-color: #F5F2EB !important;
+}
+
+html.light .bg-\[\#0B0F0E\]\/90,
+html.light .bg-\[\#0B0F0E\]\/85,
+html.light .bg-\[\#0B0F0E\]\/80,
+html.light .bg-\[\#0B0F0E\]\/75,
+html.light .bg-\[\#0B0F0E\]\/70,
+html.light .bg-\[\#0B0F0E\]\/65,
+html.light .bg-\[\#0B0F0E\]\/60,
+html.light .bg-\[\#0B0F0E\]\/50,
+html.light .bg-\[\#0B0F0E\]\/40 {
+  background-color: #F0EDE5 !important;
+}
+
+html.light .bg-\[\#131A17\],
+html.light .bg-\[\#131A17\]\/95,
+html.light .bg-\[\#131A17\]\/92,
+html.light .bg-\[\#131A17\]\/80,
+html.light .bg-\[\#131A17\]\/60 {
+  background-color: #FBF9F5 !important;
+  box-shadow: 0 10px 28px -16px rgba(56, 48, 36, 0.11);
+}
+
+html.light .bg-\[\#131A17\]\/40 {
+  background-color: #F8F6F0 !important;
+}
+
+html.light .bg-\[\#1A2420\],
+html.light .bg-\[\#1A2420\]\/90,
+html.light .bg-\[\#1A2420\]\/75,
+html.light .bg-\[\#1A2420\]\/70,
+html.light .bg-\[\#1A2420\]\/60,
+html.light .bg-\[\#1A2420\]\/40 {
+  background-color: #EFECE4 !important;
+}
+
+html.light .hover\:bg-\[\#1A2420\]:hover,
+html.light .hover\:bg-\[\#1A2420\]\/90:hover,
+html.light .hover\:bg-\[\#1A2420\]\/75:hover,
+html.light .hover\:bg-\[\#1A2420\]\/70:hover,
+html.light .hover\:bg-\[\#1A2420\]\/60:hover {
+  background-color: #E7E3D8 !important;
+}
+
+html.light .from-\[\#131A17\],
+html.light .via-\[\#131A17\] {
+  --tw-gradient-from: #FBF9F5 !important;
+  --tw-gradient-via: #FBF9F5 !important;
+}
+
+html.light .to-\[\#1A2420\]\/70 {
+  --tw-gradient-to: #EFECE4 !important;
+}
+
+html.light .bg-\[\#1F5C3A\]\/55,
+html.light .bg-\[\#1F5C3A\]\/50,
+html.light .bg-\[\#1F5C3A\]\/45,
+html.light .bg-\[\#1F5C3A\]\/40,
+html.light .bg-\[\#1F5C3A\]\/35,
+html.light .bg-\[\#1F5C3A\]\/30,
+html.light .bg-\[\#1F5C3A\]\/15 {
+  background-color: rgba(46, 139, 87, 0.12) !important;
+}
+
+html.light .border-\[\#23302B\],
+html.light .border-\[\#23302B\]\/90,
+html.light .border-\[\#23302B\]\/80,
+html.light .border-\[\#23302B\]\/70,
+html.light .border-\[\#23302B\]\/60 {
+  border-color: #E3DED4 !important;
+}
+
+html.light .divide-\[\#23302B\]\/70 > :not(:last-child),
+html.light .divide-\[\#23302B\]\/60 > :not(:last-child) {
+  border-color: #EAE6DD !important;
+}
+
+html.light .text-\[\#F0F5F2\],
+html.light .text-\[\#D8E5DF\] {
+  color: #272521 !important;
+}
+
+/* Keep crisp cream-white text on solid Sea Green primary buttons and active sidebar links */
+html.light .sidebar-nav-active,
+html.light .sidebar-nav-active span,
+html.light .sidebar-nav-active svg,
+html.light .bg-\[\#2E8B57\],
+html.light .bg-\[\#2E8B57\]\/90,
+html.light .bg-\[\#2E8B57\] .text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\]\/90 .text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\].text-\[\#F0F5F2\],
+html.light .bg-\[\#2E8B57\]\/90.text-\[\#F0F5F2\],
+html.light .text-\[\#F0F5F2\][aria-selected="true"] {
+  color: #FAF7F0 !important;
+}
+
+html.light .bg-\[\#3CA36E\] {
+  background-color: #2E8B57 !important;
+  color: #FAF7F0 !important;
+}
+
+html.light .text-\[\#A3B3AC\] {
+  color: #5B564D !important;
+}
+
+html.light .text-\[\#6E8078\] {
+  color: #847E73 !important;
+}
+
+html.light .text-\[\#4CAF7D\] {
+  color: #246F45 !important;
+}
+
+html.light .hover\:text-\[\#F0F5F2\]:hover {
+  color: #272521 !important;
+}
+
+html.light .placeholder-\[\#6E8078\]::placeholder {
+  color: #918A7E !important;
+}
+
+html.light select option {
+  background-color: #F8F4EC !important;
+  color: #272521 !important;
+}
+
+/* Keep the login page wave mesh lines clearly visible on warm cream light background */
+html.light .login-wave-svg {
+  opacity: 1 !important;
+}
+
+html.light .login-wave-svg g {
+  stroke: #1F5C3A !important;
+  stroke-width: 1.45 !important;
+}
+
+html.light .login-wave-svg path {
+  opacity: 0.42 !important;
+}
+
+/* Subtle custom scrollbar */
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px;
 }
@@ -71,10 +260,10 @@
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: rgba(163, 179, 172, 0.16);
+  background: rgba(145, 138, 126, 0.32);
   border-radius: 9999px;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 175, 125, 0.35);
+  background: rgba(46, 139, 87, 0.45);
 }

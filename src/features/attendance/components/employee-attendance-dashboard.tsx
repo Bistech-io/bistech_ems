@@ -19,9 +19,9 @@ function formatDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function getLast5Days(baseDate: Date): string[] {
+function getLast7Days(baseDate: Date): string[] {
   const dates: string[] = [];
-  for (let offset = 4; offset >= 0; offset -= 1) {
+  for (let offset = 6; offset >= 0; offset -= 1) {
     const d = new Date(baseDate);
     d.setDate(d.getDate() - offset);
     dates.push(formatDateKey(d));
@@ -94,12 +94,12 @@ export function EmployeeAttendanceDashboard() {
   }, []);
 
   const todayKey = useMemo(() => (today ? formatDateKey(today) : '2026-11-23'), [today]);
-  const last5Days = useMemo(() => getLast5Days(today ?? new Date(2026, 10, 23)), [today]);
+  const last7Days = useMemo(() => getLast7Days(today ?? new Date(2026, 10, 23)), [today]);
 
   useEffect(() => {
     if (!today) return;
     let cancelled = false;
-    const days = getLast5Days(today);
+    const days = getLast7Days(today);
     const from = days[0];
     const to = days[days.length - 1];
 
@@ -303,7 +303,7 @@ export function EmployeeAttendanceDashboard() {
                   <th className="px-6 py-4">Code</th>
                   <th className="px-6 py-4">Employee</th>
                   <th className="px-6 py-4">Department</th>
-                  {last5Days.map((dayIso) => {
+                  {last7Days.map((dayIso) => {
                     const h = formatShortDayHeader(dayIso);
                     return (
                       <th key={dayIso} className="px-3 py-4 text-center">
@@ -340,7 +340,7 @@ export function EmployeeAttendanceDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-[#A3B3AC]">{emp.department.name}</td>
-                    {last5Days.map((dayIso) => {
+                    {last7Days.map((dayIso) => {
                       const rec = fiveDayLookup.get(`${emp.id}:${dayIso}`);
                       const [y, m, d] = dayIso.split('-').map(Number);
                       const weekday = new Date(y, (m || 1) - 1, d || 1).getDay();

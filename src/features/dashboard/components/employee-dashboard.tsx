@@ -173,8 +173,10 @@ export function EmployeeDashboard() {
           <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
             {meta.title}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2.5 text-xs">
-            <span className="font-medium text-[#F0F5F2]">{persona.fullName}</span>
+          <div className="mt-2.5 flex flex-wrap items-center gap-3">
+            <span className="font-heading text-lg font-semibold tracking-[-0.01em] text-[#F0F5F2] md:text-xl">
+              {persona.fullName}
+            </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/50 bg-gradient-to-r from-[#1F5C3A]/60 to-[#2E8B57]/25 px-3 py-1 text-xs font-semibold tracking-wide text-[#4CAF7D] shadow-[0_4px_14px_-4px_rgba(46,139,87,0.45)]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
               {persona.designation}
@@ -375,7 +377,7 @@ export function EmployeeDashboard() {
                       (hr?.todayAttendance.lateCount ?? 0)}
                   </p>
                   <p className="mt-1 text-xs text-[#6E8078]">
-                    {hr?.todayAttendance.notCheckedInCount ?? 0} arriving ·{' '}
+                    {hr?.todayAttendance.notCheckedInCount ?? 0} not arrived yet ·{' '}
                     {hr?.todayAttendance.absentCount ?? 0} absent
                   </p>
                 </div>
