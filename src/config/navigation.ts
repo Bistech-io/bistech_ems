@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Clock, Crown, IdCard, LayoutGrid, UserCircle } from 'lucide-react';
+import { CheckSquare, Clock, Crown, IdCard, LayoutGrid, UserCircle } from 'lucide-react';
 import {
   can,
   hasAnyRole,
@@ -70,6 +70,14 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         minScope: 'own',
       },
       {
+        id: 'tasks',
+        label: 'Tasks',
+        href: '/tasks',
+        icon: CheckSquare,
+        permission: 'task.read',
+        minScope: 'own',
+      },
+      {
         id: 'employees',
         label: 'Employees',
         href: '/employees',
@@ -88,9 +96,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         label: 'HR & Dept Heads',
         href: '/admin/leadership',
         icon: Crown,
-        permission: 'role.manage',
-        minScope: 'org',
-        allowedRoles: ['super_admin'],
+        allowedRoles: ['super_admin', 'hr_manager'],
       },
     ],
   },
