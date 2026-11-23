@@ -51,12 +51,24 @@ export const employeeItemSchema = z.object({
   }),
 });
 
-export const orgAttendanceItemSchema = z.object({
-  employeeId: z.string(),
-  workDate: z.string(),
-  status: z.enum(['present', 'late', 'absent']),
-  checkInAt: z.string().nullable().optional(),
-});
+export const orgAttendanceItemSchema = z
+  .object({
+    employeeId: z.string().optional(),
+    employee: z
+      .object({
+        id: z.string(),
+      })
+      .optional(),
+    workDate: z.string(),
+    status: z.enum(['present', 'late', 'absent']),
+    checkInAt: z.string().nullable().optional(),
+  })
+  .transform((val) => ({
+    employeeId: val.employeeId ?? val.employee?.id ?? '',
+    workDate: val.workDate,
+    status: val.status,
+    checkInAt: val.checkInAt,
+  }));
 
 export type OrgAttendanceItem = z.infer<typeof orgAttendanceItemSchema>;
 
@@ -112,7 +124,7 @@ export async function createDesignation(title: string): Promise<DesignationOptio
 }
 
 export async function fetchTodayOrgAttendance(workDate: string): Promise<OrgAttendanceItem[]> {
-  const res = await apiRequest(`/attendance?from=${workDate}&to=${workDate}`, {
+  const res = await apiRequest(`/attendance?from=${workDate}&to=${workDate}&limit=100`, {
     method: 'GET',
     schema: orgAttendanceListResponseSchema,
   });
