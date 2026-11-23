@@ -1,29 +1,35 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Building2,
+  CalendarCheck,
+  CheckCircle2,
+  CheckSquare,
+  Clock,
+  Crown,
+  Layers,
+  ShieldCheck,
+  TrendingUp,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
-import { EMPLOYEE_DASHBOARD_MOCK } from '../mock-data';
-import type { EmployeeDashboardData, EmployeeProfileSummary } from '../types';
-import { ActivityFeedCard } from './activity-feed-card';
-import { AttendanceChartCard } from './attendance-chart-card';
-import { DueSoonCard } from './due-soon-card';
-import { EmployeeHeroBanner } from './employee-hero-banner';
-import { EmployeeKpiGrid } from './employee-kpi-grid';
+import { fetchDashboardSummary, type SummaryDashboardData } from '../api';
+import type { EmployeeTaskItem } from '../types';
 import { MyTasksTable } from './my-tasks-table';
-import { ScheduleCalendarStrip } from './schedule-calendar-strip';
 
-interface EmployeeDashboardProps {
-  initialData?: EmployeeDashboardData;
-}
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-const ROLE_DASHBOARD_CONFIG: Record<
+const ROLE_DASHBOARD_META: Record<
   RoleName,
   {
     title: string;
-    subtitle: string;
     badge: string;
     defaultPersona: {
       designation: string;
@@ -35,7 +41,6 @@ const ROLE_DASHBOARD_CONFIG: Record<
 > = {
   super_admin: {
     title: 'Super Admin Dashboard',
-    subtitle: 'System governance, user administration, organization structure, and platform audit logs.',
     badge: 'Super Admin Workspace',
     defaultPersona: {
       designation: 'Super Administrator',
@@ -46,7 +51,6 @@ const ROLE_DASHBOARD_CONFIG: Record<
   },
   hr_manager: {
     title: 'HR Manager Dashboard',
-    subtitle: 'Workforce attendance, employee directory, people operations, and department oversight.',
     badge: 'HR Manager Workspace',
     defaultPersona: {
       designation: 'HR Manager',
@@ -57,7 +61,6 @@ const ROLE_DASHBOARD_CONFIG: Record<
   },
   dept_head: {
     title: 'Department Head Dashboard',
-    subtitle: 'Department task management, team attendance tracking, review approvals, and project operations.',
     badge: 'Department Head Workspace',
     defaultPersona: {
       designation: 'Lead Engineer & Department Head',
@@ -67,8 +70,7 @@ const ROLE_DASHBOARD_CONFIG: Record<
     },
   },
   employee: {
-    title: 'Employee Dashboard',
-    subtitle: 'Daily attendance check-in, personal task assignments, and upcoming deadlines.',
+    title: 'Dashboard',
     badge: 'Employee Workspace',
     defaultPersona: {
       designation: 'Senior Frontend Engineer',
@@ -79,155 +81,521 @@ const ROLE_DASHBOARD_CONFIG: Record<
   },
 };
 
-export function EmployeeDashboard({
-  initialData = EMPLOYEE_DASHBOARD_MOCK,
-}: EmployeeDashboardProps) {
-  const { user, activeRole } = useAuth();
-  const [data, setData] = useState<EmployeeDashboardData>(initialData);
+export function EmployeeDashboard() {
+  const { user, isAuthenticated, activeRole } = useAuth();
+  const [summary, setSummary] = useState<SummaryDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const config =
-    (activeRole ? ROLE_DASHBOARD_CONFIG[activeRole] : undefined) ??
-    ROLE_DASHBOARD_CONFIG.employee;
+  const role: RoleName = activeRole ?? 'employee';
+  const meta = ROLE_DASHBOARD_META[role] ?? ROLE_DASHBOARD_META.employee;
 
-  const currentEmployee: EmployeeProfileSummary = useMemo(() => {
-    const fullName = user?.name || data.employee.fullName;
-    const initials =
-      fullName
-        .split(' ')
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || 'BT';
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    const startTimer = setTimeout(() => {
+      if (!cancelled) setIsLoading(true);
+    }, 0);
 
+    fetchDashboardSummary()
+      .then((res) => {
+        if (!cancelled) {
+          setSummary(res);
+        }
+      })
+      .catch(() => {
+        // Keep dashboard resilient if backend summary is unavailable
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      clearTimeout(startTimer);
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const persona = useMemo(() => {
+    const emp = summary?.me?.employee;
+    const fullName = emp?.fullName || user?.name || 'Team Member';
     const employeeCode =
+      emp?.employeeCode ||
       (user?.employeeId && user.employeeId.startsWith('BST-') ? user.employeeId : null) ||
-      (user?.username === 'admin'
-        ? 'BST-0001'
-        : user?.username === 'hr'
-          ? 'BST-1001'
-          : user?.username === 'head'
-            ? 'BST-1002'
-            : user?.username === 'employee'
-              ? 'BST-1003'
-              : config.defaultPersona.employeeCode);
+      meta.defaultPersona.employeeCode;
+    const department = emp?.department || meta.defaultPersona.department;
+    const teamName = emp?.teams?.[0] || meta.defaultPersona.teamName;
+    const designation = emp?.designation || user?.roleTitle || meta.defaultPersona.designation;
 
     return {
-      ...data.employee,
       fullName,
-      initials,
       employeeCode,
-      designation: user?.roleTitle || config.defaultPersona.designation,
-      department: config.defaultPersona.department,
-      teamName: config.defaultPersona.teamName,
+      department,
+      teamName,
+      designation,
     };
-  }, [user, data.employee, config]);
+  }, [summary, user, meta]);
 
-  const handleCheckIn = () => {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const formattedTime = `${hh}:${mm}`;
-
-    setData((prev) => ({
-      ...prev,
-      todayAttendance: {
-        workDate: prev.todayAttendance.workDate,
-        status: 'present',
-        checkInAt: formattedTime,
-        lateMinutes: 0,
-        source: 'web',
-      },
-      monthlyAttendance: {
-        ...prev.monthlyAttendance,
-        presentDays: prev.monthlyAttendance.presentDays + 1,
-        expectedWorkingDays: prev.monthlyAttendance.expectedWorkingDays + 1,
-      },
-      weeklyAttendanceChart: prev.weeklyAttendanceChart.map((pt, idx, arr) =>
-        idx === arr.length - 1
-          ? {
-              ...pt,
-              status: 'present',
-              checkInTime: formattedTime,
-              barHeight: 90,
-            }
-          : pt,
-      ),
-      activityFeed: [
-        {
-          id: `act-checkin-${now.getTime()}`,
-          title: `Checked in at ${formattedTime}`,
-          description: 'Web self-service check-in recorded',
-          timestampLabel: 'Just now',
-          category: 'attendance',
-          tone: 'success',
-        },
-        ...prev.activityFeed,
-      ],
+  const myTaskRows: EmployeeTaskItem[] = useMemo(() => {
+    const items = summary?.me?.tasks.items ?? [];
+    return items.map((t) => ({
+      id: t.taskId,
+      title: t.title,
+      projectOrTeam: t.teamName || t.departmentName || 'Workspace',
+      assignmentType: t.assignmentType,
+      status: t.status,
+      priority: t.priority,
+      dueDate: t.dueDate ?? '',
+      dueLabel: t.dueDate ?? 'No deadline',
+      isOverdue: t.isOverdue,
+      isDueSoon: t.isDueSoon,
     }));
-  };
+  }, [summary]);
+
+  const company = summary?.company;
+  const hr = summary?.hr ?? summary?.company;
+  const me = summary?.me;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.22, ease: EASE }}
       className="space-y-6"
     >
+      {/* Clean Role Header with Eye-Catchy Dynamic Designation */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
         <div>
           <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
-            {config.badge}
+            {meta.badge}
           </p>
           <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-            {config.title}
+            {meta.title}
           </h1>
-          <p className="mt-1 text-sm text-[#A3B3AC]">
-            {config.subtitle}
-          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2.5 text-xs">
+            <span className="font-medium text-[#F0F5F2]">{persona.fullName}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/50 bg-gradient-to-r from-[#1F5C3A]/60 to-[#2E8B57]/25 px-3 py-1 text-xs font-semibold tracking-wide text-[#4CAF7D] shadow-[0_4px_14px_-4px_rgba(46,139,87,0.45)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
+              {persona.designation}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
           <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
-          <span className="text-xs font-medium text-[#A3B3AC]">Active Role:</span>
-          <span className="text-xs font-semibold text-[#F0F5F2]">
-            {activeRole ? ROLE_LABELS[activeRole] : '—'}
-          </span>
+          <span className="text-xs font-medium text-[#A3B3AC]">Role:</span>
+          <span className="text-xs font-semibold text-[#F0F5F2]">{ROLE_LABELS[role]}</span>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
-        <div className="flex flex-col gap-6 xl:col-span-8">
-          <EmployeeHeroBanner
-            employee={currentEmployee}
-            todayAttendance={data.todayAttendance}
-            onCheckIn={handleCheckIn}
-          />
-
-          <EmployeeKpiGrid
-            todayAttendance={data.todayAttendance}
-            monthlyAttendance={data.monthlyAttendance}
-            tasks={data.tasks}
-            completionRatePercent={data.completionRatePercent}
-            openFeedbackCount={data.openFeedbackCount}
-          />
-
-          <AttendanceChartCard
-            weeklyPoints={data.weeklyAttendanceChart}
-            twoWeekPoints={data.twoWeekAttendanceChart}
-            monthlySummary={data.monthlyAttendance}
-            graceCutoffLabel={`${currentEmployee.workStartTime} (+${currentEmployee.graceMinutes}m)`}
-          />
-
-          <MyTasksTable tasks={data.tasks} />
+      {isLoading ? (
+        <div className="flex h-56 items-center justify-center rounded-3xl border border-[#23302B] bg-[#131A17]">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#23302B] border-t-[#4CAF7D]" />
         </div>
+      ) : (
+        <>
+          {/* SUPER ADMIN VIEW */}
+          {role === 'super_admin' && (
+            <div className="space-y-6">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Active Workforce</span>
+                    <Users className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {company?.workforce.activeEmployees ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    +{company?.workforce.joinersThisMonth ?? 0} joined this month
+                  </p>
+                </div>
 
-        <div className="flex flex-col gap-6 xl:col-span-4">
-          <ScheduleCalendarStrip days={data.scheduleStrip} />
-          <DueSoonCard tasks={data.tasks} />
-          <ActivityFeedCard items={data.activityFeed} />
-        </div>
-      </div>
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Today Attendance</span>
+                    <CalendarCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {company?.todayAttendance.attendanceRatePercent ?? 0}%
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {company?.todayAttendance.presentCount ?? 0} present ·{' '}
+                    {company?.todayAttendance.lateCount ?? 0} late
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Departments Covered</span>
+                    <Building2 className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {company?.governance.departmentsWithHead ?? 0} /{' '}
+                    {company?.governance.totalDepartments ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {company?.governance.activeTeamsCount ?? 0} active teams
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Open Org Tasks</span>
+                    <Layers className="h-4 w-4 text-[#38BDF8]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {company?.tasks.openCount ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {company?.tasks.overdueCount ?? 0} overdue ·{' '}
+                    {company?.governance.pendingReviewsCount ?? 0} pending review
+                  </p>
+                </div>
+              </section>
+
+              <div className="grid gap-6 lg:grid-cols-12">
+                {/* Department Breakdown */}
+                <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-7">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Department Headcount
+                    </h2>
+                    <Link
+                      href="/admin/leadership"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#4CAF7D] hover:underline"
+                    >
+                      <span>Manage Leadership</span>
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 divide-y divide-[#23302B]/70">
+                    {(company?.workforce.departmentSummary ?? []).length === 0 ? (
+                      <p className="py-6 text-center text-xs text-[#6E8078]">
+                        No departments recorded yet.
+                      </p>
+                    ) : (
+                      company!.workforce.departmentSummary.map((dept) => (
+                        <div
+                          key={dept.departmentId}
+                          className="flex items-center justify-between py-3 text-sm"
+                        >
+                          <span className="font-medium text-[#F0F5F2]">
+                            {dept.departmentName}
+                          </span>
+                          <span className="rounded-full border border-[#23302B] bg-[#0B0F0E] px-3 py-0.5 text-xs font-semibold text-[#4CAF7D]">
+                            {dept.activeCount} active
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                {/* Recent Audit Events & Quick Actions */}
+                <section className="flex flex-col gap-5 rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Recent Governance Activity
+                    </h2>
+                    <Crown className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {(company?.recentAuditLogs ?? []).length === 0 ? (
+                      <p className="py-4 text-center text-xs text-[#6E8078]">
+                        No recent audit events.
+                      </p>
+                    ) : (
+                      company!.recentAuditLogs.slice(0, 5).map((log) => (
+                        <div
+                          key={log.id}
+                          className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/70 px-3.5 py-2.5 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono font-medium text-[#4CAF7D]">
+                              {log.action}
+                            </span>
+                            <span className="text-[11px] text-[#6E8078]">
+                              {log.actorName ?? 'System'}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="mt-auto grid grid-cols-2 gap-2.5 border-t border-[#23302B] pt-4">
+                    <Link
+                      href="/tasks"
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
+                    >
+                      <CheckSquare className="h-3.5 w-3.5" />
+                      <span>Full Task Board</span>
+                    </Link>
+                    <Link
+                      href="/employees"
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      <span>Directory</span>
+                    </Link>
+                  </div>
+                </section>
+              </div>
+            </div>
+          )}
+
+          {/* HR MANAGER VIEW */}
+          {role === 'hr_manager' && (
+            <div className="space-y-6">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Active Employees</span>
+                    <UserCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {hr?.workforce.activeEmployees ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {hr?.workforce.joinersThisMonth ?? 0} new this month
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Checked In Today</span>
+                    <CalendarCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {(hr?.todayAttendance.presentCount ?? 0) +
+                      (hr?.todayAttendance.lateCount ?? 0)}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {hr?.todayAttendance.notCheckedInCount ?? 0} arriving ·{' '}
+                    {hr?.todayAttendance.absentCount ?? 0} absent
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Attendance Rate</span>
+                    <TrendingUp className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {hr?.monthlyAttendance.attendanceRatePercent ?? 0}%
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">Monthly organization average</p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Ongoing Tasks</span>
+                    <Clock className="h-4 w-4 text-[#38BDF8]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {hr?.tasks.openCount ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {hr?.tasks.completionRatePercent ?? 0}% completion rate
+                  </p>
+                </div>
+              </section>
+
+              <div className="grid gap-6 lg:grid-cols-12">
+                <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-7">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Recent Joiners
+                    </h2>
+                    <Link
+                      href="/employees"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#4CAF7D] hover:underline"
+                    >
+                      <span>Manage Employees</span>
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 divide-y divide-[#23302B]/70">
+                    {(hr?.recentJoiners ?? []).length === 0 ? (
+                      <p className="py-6 text-center text-xs text-[#6E8078]">
+                        No recent onboarding records.
+                      </p>
+                    ) : (
+                      hr!.recentJoiners.slice(0, 6).map((emp) => (
+                        <div
+                          key={emp.id}
+                          className="flex items-center justify-between py-3 text-sm"
+                        >
+                          <div>
+                            <p className="font-medium text-[#F0F5F2]">{emp.fullName}</p>
+                            <p className="text-xs text-[#6E8078]">
+                              {emp.designationTitle} · {emp.departmentName}
+                            </p>
+                          </div>
+                          <span className="font-mono text-xs text-[#4CAF7D]">
+                            {emp.employeeCode}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Department Distribution
+                    </h2>
+                    <Building2 className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+
+                  <div className="mt-4 space-y-2.5">
+                    {(hr?.workforce.departmentSummary ?? []).length === 0 ? (
+                      <p className="py-6 text-center text-xs text-[#6E8078]">
+                        No departments available.
+                      </p>
+                    ) : (
+                      hr!.workforce.departmentSummary.map((dept) => (
+                        <div
+                          key={dept.departmentId}
+                          className="flex items-center justify-between rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/70 px-3.5 py-2.5 text-xs"
+                        >
+                          <span className="font-medium text-[#F0F5F2]">
+                            {dept.departmentName}
+                          </span>
+                          <span className="font-semibold text-[#4CAF7D]">
+                            {dept.activeCount} staff
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          )}
+
+          {/* DEPARTMENT HEAD VIEW */}
+          {role === 'dept_head' && (
+            <div className="space-y-6">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Open Tasks</span>
+                    <CheckSquare className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.tasks.openCount ?? 0}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">In Review</span>
+                    <Clock className="h-4 w-4 text-[#38BDF8]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.tasks.countsByStatus.inReview ?? 0}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Overdue</span>
+                    <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.tasks.overdueCount ?? 0}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Monthly Attendance</span>
+                    <CalendarCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.monthlyAttendance.attendanceRatePercent ?? 100}%
+                  </p>
+                </div>
+              </section>
+
+              <MyTasksTable tasks={myTaskRows} />
+            </div>
+          )}
+
+          {/* EMPLOYEE VIEW */}
+          {role === 'employee' && (
+            <div className="space-y-6">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Attendance Rate</span>
+                    <CalendarCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.monthlyAttendance.attendanceRatePercent ?? 100}%
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {me?.monthlyAttendance.presentDays ?? 0} present ·{' '}
+                    {me?.monthlyAttendance.lateDays ?? 0} late
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Active Tasks</span>
+                    <CheckSquare className="h-4 w-4 text-[#38BDF8]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.tasks.openCount ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {me?.tasks.dueSoonCount ?? 0} due soon
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Completed Tasks</span>
+                    <CheckCircle2 className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {me?.tasks.countsByStatus.done ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {me?.tasks.completionRatePercent ?? 0}% completion
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Today Status</span>
+                    <Clock className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-lg font-bold capitalize text-[#F0F5F2]">
+                    {(me?.todayAttendance.status ?? 'not_checked_in').replace('_', ' ')}
+                  </p>
+                  <Link
+                    href="/attendance"
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#4CAF7D] hover:underline"
+                  >
+                    <span>Open Attendance</span>
+                    <ArrowUpRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </section>
+
+              <MyTasksTable tasks={myTaskRows} />
+            </div>
+          )}
+        </>
+      )}
     </motion.div>
   );
 }

@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
-  Layers,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -78,8 +77,13 @@ export function Sidebar() {
             onClick={onNavigate}
             className="flex items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] text-[#4CAF7D] shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
-              <Layers className="h-5 w-5" strokeWidth={2} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] p-2 shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bistech-logo.png"
+                alt="BisTech Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
 
             <AnimatePresence initial={false}>
@@ -142,23 +146,26 @@ export function Sidebar() {
       {/* Main RBAC-Filtered Navigation (implemented routes only) */}
       <nav
         aria-label="Primary Navigation"
-        className="sidebar-scroll flex-1 space-y-4 overflow-y-auto px-3.5"
+        className="sidebar-scroll flex-1 space-y-3 overflow-y-auto px-3.5"
       >
         {navGroups.map((group) => (
           <div key={group.id} className="space-y-1">
-            {expanded ? (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.14 }}
-                className="px-3 pb-1 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
-              >
-                {group.label}
-              </motion.p>
-            ) : (
-              <div className="mx-auto my-2 h-px w-6 bg-[#23302B]/60 first:hidden" />
-            )}
+            {/* Fixed-height group header slot so icons never jump vertically between collapsed and expanded states */}
+            <div className="flex h-5 items-center">
+              {expanded ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.14 }}
+                  className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
+                >
+                  {group.label}
+                </motion.p>
+              ) : (
+                <div className="mx-auto h-px w-6 bg-[#23302B]/70" />
+              )}
+            </div>
 
             <ul className="space-y-1">
               {group.items.map((item) => {
@@ -279,17 +286,21 @@ export function Sidebar() {
 
       {/* Bottom Account & Sign Out Section */}
       <div className="mt-3 space-y-1.5 border-t border-[#23302B]/80 px-3.5 pt-3">
-        {expanded && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="px-3 pb-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
-          >
-            Account
-          </motion.p>
-        )}
+        <div className="flex h-5 items-center">
+          {expanded ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.14 }}
+              className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
+            >
+              Account
+            </motion.p>
+          ) : (
+            <div className="mx-auto h-px w-6 bg-[#23302B]/70" />
+          )}
+        </div>
 
         <ul className="space-y-1">
           {ACCOUNT_NAV_ITEMS.map((item) => {

@@ -101,7 +101,7 @@ export const resetPasswordRequestSchema = z
   .object({
     newPassword: z
       .string()
-      .min(12, 'Password must be at least 12 characters')
+      .min(6, 'Password must be at least 6 characters')
       .max(128, 'Password must be 128 characters or fewer'),
   })
   .strict();

@@ -230,7 +230,8 @@ function buildCalendarRecordsMap(
 }
 
 export function AttendanceDashboard() {
-  const { user, activeRole } = useAuth();
+  const { user, session, activeRole, isLoading: isAuthLoading } = useAuth();
+  const hasEmployeeProfile = Boolean(session?.employeeId);
   const canManageShift =
     activeRole === 'super_admin' || can(user, 'org.settings.manage', 'org');
 
@@ -293,23 +294,30 @@ export function AttendanceDashboard() {
     };
   }, []);
 
-  const loadBoard = useCallback(async (year: number, month: number) => {
-    try {
-      const bounds = getMonthBounds(year, month);
-      const data = await fetchMyAttendanceBoard(bounds);
-      setBoard(data);
-      setShiftSettings((prev) => ({
-        timezone: data.timezone || prev.timezone,
-        workStart: data.workStart || prev.workStart,
-        workEnd: data.workEnd || prev.workEnd,
-        graceMinutes: data.graceMinutes ?? prev.graceMinutes,
-      }));
-    } catch {
-      // Keep UI responsive if offline or user has no employee profile yet
-    } finally {
-      setIsLoadingBoard(false);
-    }
-  }, []);
+  const loadBoard = useCallback(
+    async (year: number, month: number) => {
+      if (!hasEmployeeProfile) {
+        setIsLoadingBoard(false);
+        return;
+      }
+      try {
+        const bounds = getMonthBounds(year, month);
+        const data = await fetchMyAttendanceBoard(bounds);
+        setBoard(data);
+        setShiftSettings((prev) => ({
+          timezone: data.timezone || prev.timezone,
+          workStart: data.workStart || prev.workStart,
+          workEnd: data.workEnd || prev.workEnd,
+          graceMinutes: data.graceMinutes ?? prev.graceMinutes,
+        }));
+      } catch {
+        // Keep UI responsive if offline or user has no employee profile yet
+      } finally {
+        setIsLoadingBoard(false);
+      }
+    },
+    [hasEmployeeProfile],
+  );
 
   useEffect(() => {
     const handleAutoCheckIn = () => {
@@ -322,6 +330,12 @@ export function AttendanceDashboard() {
   }, [loadBoard, viewYear, viewMonth]);
 
   useEffect(() => {
+    if (isAuthLoading) return;
+    if (!hasEmployeeProfile) {
+      const doneTimer = setTimeout(() => setIsLoadingBoard(false), 0);
+      return () => clearTimeout(doneTimer);
+    }
+
     let cancelled = false;
     const bounds = getMonthBounds(viewYear, viewMonth);
     fetchMyAttendanceBoard(bounds)
@@ -347,7 +361,7 @@ export function AttendanceDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, isAuthLoading, hasEmployeeProfile]);
 
   const recordsByDate = useMemo(
     () => buildCalendarRecordsMap(viewYear, viewMonth, todayKey, board, localCheckIn),

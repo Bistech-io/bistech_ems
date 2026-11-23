@@ -1,23 +1,31 @@
 'use client';
 
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
+  AlertCircle,
   Briefcase,
   Building2,
   Calendar,
   Camera,
   CheckCircle2,
   Clock,
+  Eye,
+  EyeOff,
   IdCard,
+  KeyRound,
   Loader2,
   Lock,
   Mail,
+  MapPin,
   Network,
+  Phone,
   ShieldCheck,
   Trash2,
   User,
 } from 'lucide-react';
+import { resetPassword } from '@/features/auth/api';
+import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -31,6 +39,26 @@ interface RoleProfileDefaults {
   employeeCode: string;
   joiningDate: string;
 }
+
+interface PersonalDetails {
+  personalEmail: string;
+  personalPhone: string;
+  dateOfBirth: string;
+  addressLine: string;
+  city: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+}
+
+const EMPTY_PERSONAL_DETAILS: PersonalDetails = {
+  personalEmail: '',
+  personalPhone: '',
+  dateOfBirth: '',
+  addressLine: '',
+  city: '',
+  emergencyContactName: '',
+  emergencyContactPhone: '',
+};
 
 const ROLE_DEFAULTS: Record<RoleName, RoleProfileDefaults> = {
   super_admin: {
@@ -79,7 +107,7 @@ function ReadOnlyField({ label, value, icon: Icon }: ReadOnlyFieldProps) {
         <Icon className="h-3.5 w-3.5 text-[#4CAF7D]" />
         <span>{label}</span>
       </div>
-      <p className="mt-1.5 text-sm font-medium text-[#F0F5F2]">{value}</p>
+      <p className="mt-1.5 truncate text-sm font-medium text-[#F0F5F2]">{value}</p>
     </div>
   );
 }
@@ -95,6 +123,20 @@ export function ProfileView() {
   const [isUploading, setIsUploading] = useState(false);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
 
+  // Personal Details (editable)
+  const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(EMPTY_PERSONAL_DETAILS);
+  const [isSavingPersonal, setIsSavingPersonal] = useState(false);
+  const [personalSavedNotice, setPersonalSavedNotice] = useState(false);
+
+  // Change Password Card state (6 to 128 chars)
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
   const currentUserId = user?.userId ?? 'default';
   if (lastUserId !== currentUserId) {
     setLastUserId(currentUserId);
@@ -104,6 +146,12 @@ export function ProfileView() {
         const savedPid = localStorage.getItem(`bistech_avatar_pid_${currentUserId}`);
         if (savedUrl) setAvatarUrl(savedUrl);
         if (savedPid) setAvatarPublicId(savedPid);
+
+        const savedPersonalRaw = localStorage.getItem(`bistech_personal_${currentUserId}`);
+        if (savedPersonalRaw) {
+          const parsed = JSON.parse(savedPersonalRaw) as Partial<PersonalDetails>;
+          setPersonalDetails({ ...EMPTY_PERSONAL_DETAILS, ...parsed });
+        }
       } catch {
         // LocalStorage may be blocked or unavailable
       }
@@ -209,6 +257,69 @@ export function ProfileView() {
     }
   }
 
+  function handleSavePersonalDetails(e: FormEvent) {
+    e.preventDefault();
+    setIsSavingPersonal(true);
+    setPersonalSavedNotice(false);
+
+    try {
+      localStorage.setItem(
+        `bistech_personal_${currentUserId}`,
+        JSON.stringify(personalDetails),
+      );
+    } catch {
+      // Ignore storage error
+    }
+
+    setIsSavingPersonal(false);
+    setPersonalSavedNotice(true);
+  }
+
+  async function handleChangePassword(e: FormEvent) {
+    e.preventDefault();
+    if (isUpdatingPassword) return;
+
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (newPassword.length < 6 || newPassword.length > 128) {
+      setPasswordError('Password must be between 6 and 128 characters.');
+      return;
+    }
+
+    const lowerPwd = newPassword.toLowerCase();
+    const tokens = [user?.username, user?.name, user?.email?.split('@')[0]]
+      .filter((t): t is string => Boolean(t && t.trim().length >= 3))
+      .map((t) => t.trim().toLowerCase());
+
+    if (tokens.some((t) => lowerPwd.includes(t))) {
+      setPasswordError('Password cannot contain your name, username, or email.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    try {
+      await resetPassword({ newPassword });
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordSuccess('Password updated successfully.');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setPasswordError(err.message || getErrorMessageForCode(err.code));
+      } else {
+        setPasswordError('Failed to update password. Please try again.');
+      }
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -225,32 +336,24 @@ export function ProfileView() {
       className="space-y-6"
     >
       {/* Page Header */}
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#23302B] pb-5">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
-            Account
-          </p>
-          <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-            My Profile
-          </h1>
-          <p className="mt-1 text-sm text-[#A3B3AC]">
-            View your organization profile and update your profile photo.
-          </p>
-        </div>
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
+        <h1 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
+          My Profile
+        </h1>
 
         <div className="inline-flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs text-[#A3B3AC]">
           <Lock className="h-3.5 w-3.5 text-[#4CAF7D]" />
-          <span>Profile fields are read-only</span>
+          <span>Professional details are read-only</span>
         </div>
       </header>
 
-      {/* Hero Profile Identity & Photo Card */}
-      <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            {/* Avatar with Change Overlay */}
-            <div className="relative h-24 w-24 shrink-0">
-              <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#2E8B57]/60 bg-[#1A2420] shadow-lg">
+      {/* Bigger Profile Photo + Name on Side Hero Card */}
+      <section className="rounded-3xl border border-[#23302B] bg-gradient-to-br from-[#131A17] via-[#131A17] to-[#1A2420]/70 p-6 md:p-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+            {/* Bigger Avatar */}
+            <div className="relative h-32 w-32 shrink-0 sm:h-36 sm:w-36">
+              <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[2rem] border-2 border-[#2E8B57]/70 bg-[#1A2420] shadow-[0_14px_36px_-10px_rgba(46,139,87,0.45)]">
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -259,14 +362,14 @@ export function ProfileView() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="font-heading text-2xl font-bold text-[#4CAF7D]">
+                  <span className="font-heading text-4xl font-bold text-[#4CAF7D]">
                     {initials}
                   </span>
                 )}
 
                 {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-[#0B0F0E]/75 backdrop-blur-xs">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#4CAF7D]" />
+                  <div className="absolute inset-0 flex items-center justify-center rounded-[2rem] bg-[#0B0F0E]/75 backdrop-blur-xs">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#4CAF7D]" />
                   </div>
                 )}
               </div>
@@ -276,7 +379,7 @@ export function ProfileView() {
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Change profile picture"
-                className="absolute -right-1.5 -bottom-1.5 flex h-9 w-9 items-center justify-center rounded-xl border border-[#23302B] bg-[#2E8B57] text-[#F0F5F2] shadow-md transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+                className="absolute -right-2 -bottom-2 flex h-10 w-10 items-center justify-center rounded-2xl border border-[#23302B] bg-[#2E8B57] text-[#F0F5F2] shadow-lg transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isUploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -295,40 +398,43 @@ export function ProfileView() {
               />
             </div>
 
-            {/* Identity Summary */}
-            <div>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h2 className="font-heading text-xl font-bold text-[#F0F5F2] md:text-2xl">
+            {/* Name & Identity on Side */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
                   {displayName}
                 </h2>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/40 bg-[#1F5C3A]/40 px-2.5 py-0.5 text-[11px] font-medium text-[#4CAF7D]">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/40 bg-[#1F5C3A]/40 px-3 py-0.5 text-xs font-medium text-[#4CAF7D]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
                   Active
                 </span>
               </div>
 
-              <p className="mt-1 text-sm text-[#A3B3AC]">
+              <p className="text-sm font-medium text-[#A3B3AC]">
                 {defaults.designation} · {defaults.department}
               </p>
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-[#6E8078]">
-                <span className="rounded-lg border border-[#23302B] bg-[#0B0F0E] px-2.5 py-1 font-medium text-[#A3B3AC]">
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="rounded-xl border border-[#23302B] bg-[#0B0F0E]/85 px-3 py-1 font-mono font-medium text-[#A3B3AC]">
                   {defaults.employeeCode}
                 </span>
-                <span className="rounded-lg border border-[#23302B] bg-[#0B0F0E] px-2.5 py-1 font-medium text-[#4CAF7D]">
+                <span className="rounded-xl border border-[#2E8B57]/40 bg-[#1F5C3A]/30 px-3 py-1 font-medium text-[#4CAF7D]">
                   {displayRole}
+                </span>
+                <span className="rounded-xl border border-[#23302B] bg-[#0B0F0E]/85 px-3 py-1 text-[#A3B3AC]">
+                  {displayUsername}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Photo Action Controls */}
+          {/* Photo Controls */}
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isUploading ? (
                 <>
@@ -357,7 +463,6 @@ export function ProfileView() {
           </div>
         </div>
 
-        {/* Feedback banners for avatar upload */}
         {avatarError && (
           <p role="alert" className="mt-4 text-xs text-[#EF4444]">
             {avatarError}
@@ -374,53 +479,368 @@ export function ProfileView() {
         )}
       </section>
 
-      {/* Read-Only Details Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Work Identity */}
-        <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
+      {/* Aligned 2-Column Grid:
+          Column 1: Professional Details (Read-Only) -> Personal Details (Editable)
+          Column 2: Identity & Role -> Change Password */}
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        {/* Column 1 */}
+        <div className="space-y-6 lg:col-span-7">
+          {/* Professional Details (Read-Only) */}
+          <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                Professional Details
+              </h3>
+              <Lock className="h-4 w-4 text-[#6E8078]" />
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <ReadOnlyField label="Designation" value={defaults.designation} icon={Briefcase} />
+              <ReadOnlyField label="Department" value={defaults.department} icon={Network} />
+              <ReadOnlyField label="Organization" value="BisTech" icon={Building2} />
+              <ReadOnlyField label="Joining Date" value={defaults.joiningDate} icon={Calendar} />
+              <ReadOnlyField label="Employee Code" value={defaults.employeeCode} icon={IdCard} />
+              <ReadOnlyField label="Work Shift" value="09:00 AM · Asia/Dhaka" icon={Clock} />
+            </div>
+          </section>
+
+          {/* Personal Details (Editable) */}
+          <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                  Personal Details
+                </h3>
+                <p className="mt-0.5 text-xs text-[#A3B3AC]">
+                  You can update your personal contact and emergency information
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSavePersonalDetails} className="mt-4 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="personal-email"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
+                  >
+                    <Mail className="h-3.5 w-3.5 text-[#4CAF7D]" />
+                    <span>Personal Email</span>
+                  </label>
+                  <input
+                    id="personal-email"
+                    type="email"
+                    value={personalDetails.personalEmail}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({ ...p, personalEmail: e.target.value }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    placeholder="you@gmail.com"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="personal-phone"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
+                  >
+                    <Phone className="h-3.5 w-3.5 text-[#4CAF7D]" />
+                    <span>Personal Phone</span>
+                  </label>
+                  <input
+                    id="personal-phone"
+                    type="tel"
+                    value={personalDetails.personalPhone}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({ ...p, personalPhone: e.target.value }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    placeholder="+880 1XXX-XXXXXX"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="personal-dob"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
+                  >
+                    <Calendar className="h-3.5 w-3.5 text-[#4CAF7D]" />
+                    <span>Date of Birth</span>
+                  </label>
+                  <input
+                    id="personal-dob"
+                    type="date"
+                    value={personalDetails.dateOfBirth}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({ ...p, dateOfBirth: e.target.value }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="personal-city"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-[#4CAF7D]" />
+                    <span>City</span>
+                  </label>
+                  <input
+                    id="personal-city"
+                    type="text"
+                    value={personalDetails.city}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({ ...p, city: e.target.value }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    placeholder="Dhaka"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="personal-address"
+                  className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                >
+                  Address
+                </label>
+                <input
+                  id="personal-address"
+                  type="text"
+                  value={personalDetails.addressLine}
+                  onChange={(e) => {
+                    setPersonalDetails((p) => ({ ...p, addressLine: e.target.value }));
+                    setPersonalSavedNotice(false);
+                  }}
+                  placeholder="House, Road, Area"
+                  className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="emergency-name"
+                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                  >
+                    Emergency Contact Name
+                  </label>
+                  <input
+                    id="emergency-name"
+                    type="text"
+                    value={personalDetails.emergencyContactName}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({
+                        ...p,
+                        emergencyContactName: e.target.value,
+                      }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    placeholder="Contact person name"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="emergency-phone"
+                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                  >
+                    Emergency Contact Phone
+                  </label>
+                  <input
+                    id="emergency-phone"
+                    type="tel"
+                    value={personalDetails.emergencyContactPhone}
+                    onChange={(e) => {
+                      setPersonalDetails((p) => ({
+                        ...p,
+                        emergencyContactPhone: e.target.value,
+                      }));
+                      setPersonalSavedNotice(false);
+                    }}
+                    placeholder="+880 1XXX-XXXXXX"
+                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  {personalSavedNotice && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Personal details saved.</span>
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingPersonal}
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:opacity-50"
+                >
+                  <span>Save Personal Details</span>
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        {/* Column 2: Identity & Role -> Change Password */}
+        <div className="space-y-6 lg:col-span-5">
+          {/* Identity & Role */}
+          <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
+            <div className="flex items-center justify-between">
               <h3 className="font-heading text-base font-semibold text-[#F0F5F2]">
                 Identity &amp; Role
               </h3>
-              <p className="text-xs text-[#6E8078]">
-                Managed by your organization administrator
-              </p>
+              <Lock className="h-4 w-4 text-[#6E8078]" />
             </div>
-            <Lock className="h-4 w-4 text-[#6E8078]" />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ReadOnlyField label="Full Name" value={displayName} icon={User} />
-            <ReadOnlyField label="Username" value={displayUsername} icon={IdCard} />
-            <ReadOnlyField label="Work Email" value={displayEmail} icon={Mail} />
-            <ReadOnlyField label="Assigned Role" value={displayRole} icon={ShieldCheck} />
-          </div>
-        </section>
-
-        {/* Organization & Employment */}
-        <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-heading text-base font-semibold text-[#F0F5F2]">
-                Employment Details
-              </h3>
-              <p className="text-xs text-[#6E8078]">
-                Contact HR if any work information needs updating
-              </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <ReadOnlyField label="Full Name" value={displayName} icon={User} />
+              <ReadOnlyField label="Username" value={displayUsername} icon={IdCard} />
+              <ReadOnlyField label="Work Email" value={displayEmail} icon={Mail} />
+              <ReadOnlyField label="Assigned Role" value={displayRole} icon={ShieldCheck} />
             </div>
-            <Lock className="h-4 w-4 text-[#6E8078]" />
-          </div>
+          </section>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ReadOnlyField label="Designation" value={defaults.designation} icon={Briefcase} />
-            <ReadOnlyField label="Department" value={defaults.department} icon={Network} />
-            <ReadOnlyField label="Organization" value="BisTech" icon={Building2} />
-            <ReadOnlyField label="Joining Date" value={defaults.joiningDate} icon={Calendar} />
-            <ReadOnlyField label="Employee Code" value={defaults.employeeCode} icon={IdCard} />
-            <ReadOnlyField label="Work Shift" value="09:00 AM · Asia/Dhaka" icon={Clock} />
-          </div>
-        </section>
+          {/* Change Password */}
+          <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#2E8B57]/40 bg-[#1F5C3A]/35 text-[#4CAF7D]">
+                <KeyRound className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                  Change Password
+                </h3>
+                <p className="text-xs text-[#A3B3AC]">
+                  Update your account password securely
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
+              <div>
+                <label
+                  htmlFor="profile-new-password"
+                  className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                >
+                  New Password
+                </label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+                  <input
+                    id="profile-new-password"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    maxLength={128}
+                    className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6E8078] hover:text-[#F0F5F2]"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="profile-confirm-password"
+                  className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                >
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+                  <input
+                    id="profile-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    maxLength={128}
+                    className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    aria-label={
+                      showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                    }
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6E8078] hover:text-[#F0F5F2]"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 px-3.5 py-2.5 text-[11px] text-[#A3B3AC]">
+                Must be 6–128 characters and cannot contain your name or email.
+              </div>
+
+              {passwordError && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-2 rounded-2xl border border-[#EF4444]/40 bg-[#EF4444]/10 px-3.5 py-2.5 text-xs text-[#FCA5A5]"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-[#EF4444]" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div
+                  role="status"
+                  className="flex items-center gap-2 rounded-2xl border border-[#2E8B57]/40 bg-[#1F5C3A]/35 px-3.5 py-2.5 text-xs font-medium text-[#4CAF7D]"
+                >
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>{passwordSuccess}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isUpdatingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-4 w-4" />
+                    <span>Update Password</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </section>
+        </div>
       </div>
     </motion.div>
   );

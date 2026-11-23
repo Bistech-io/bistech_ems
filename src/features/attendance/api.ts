@@ -99,6 +99,53 @@ export async function postCheckIn(note?: string): Promise<AttendanceRecordDto> {
   return res.data;
 }
 
+export const orgAttendanceListItemSchema = z.object({
+  id: z.string().nullable().optional(),
+  workDate: z.string(),
+  checkInAt: z.string().nullable().optional(),
+  status: z.enum(['present', 'late', 'absent']),
+  source: z.enum(['web', 'hr_correction']).nullable().optional(),
+  lateMinutes: z.number().default(0),
+  note: z.string().nullable().optional(),
+  isDerived: z.boolean().default(false),
+  employee: z
+    .object({
+      id: z.string(),
+      employeeCode: z.string(),
+      fullName: z.string(),
+      department: z.object({ id: z.string(), name: z.string() }),
+      designation: z.object({ id: z.string(), title: z.string() }),
+    })
+    .optional(),
+  employeeId: z.string().optional(),
+});
+
+export type OrgAttendanceListItem = z.infer<typeof orgAttendanceListItemSchema>;
+const orgAttendanceRangeResponseSchema = successEnvelopeSchema(
+  z.array(orgAttendanceListItemSchema),
+);
+
+export async function fetchOrgAttendanceRange(params: {
+  from: string;
+  to: string;
+  employeeId?: string;
+  departmentId?: string;
+  limit?: number;
+}): Promise<OrgAttendanceListItem[]> {
+  const search = new URLSearchParams();
+  search.set('from', params.from);
+  search.set('to', params.to);
+  if (params.employeeId) search.set('employeeId', params.employeeId);
+  if (params.departmentId) search.set('departmentId', params.departmentId);
+  search.set('limit', String(params.limit ?? 100));
+
+  const res = await apiRequest(`/attendance?${search.toString()}`, {
+    method: 'GET',
+    schema: orgAttendanceRangeResponseSchema,
+  });
+  return res.data;
+}
+
 export async function fetchOrganizationSettings(): Promise<OrganizationShiftSettings> {
   const res = await apiRequest('/organization/settings', {
     method: 'GET',

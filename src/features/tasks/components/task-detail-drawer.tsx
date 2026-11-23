@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import {
   cancelTask,
   fetchTaskById,
+  fetchTaskComments,
   postTaskComment,
   submitTaskReviewRequest,
   updateTask,
@@ -137,6 +138,7 @@ export function TaskDetailDrawer({
   const [entryKind, setEntryKind] = useState<'comment' | 'suggestion'>('comment');
   const [entryBody, setEntryBody] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
+  const [fetchedComments, setFetchedComments] = useState<TaskCommentItem[]>([]);
 
   // Dept Head / Super Admin Assign Employee state
   const [assignEmployeeId, setAssignEmployeeId] = useState('');
@@ -200,6 +202,18 @@ export function TaskDetailDrawer({
         // Use summary task object if detail fetch fails
       });
 
+    fetchTaskComments(task.id)
+      .then((items) => {
+        if (!cancelled) {
+          setFetchedComments(items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFetchedComments([]);
+        }
+      });
+
     return () => {
       clearTimeout(initTimer);
       cancelled = true;
@@ -218,6 +232,7 @@ export function TaskDetailDrawer({
   }, [task, onClose]);
 
   const activeTask = task ? (detailedTask?.id === task.id ? detailedTask : task) : null;
+  const mergedComments = [...fetchedComments, ...comments];
 
   async function handleUpdateStatus(nextStatus: TaskAssignmentStatus) {
     if (!activeTask || isUpdatingStatus) return;
@@ -829,17 +844,17 @@ export function TaskDetailDrawer({
                   <span>Suggestions &amp; Comments</span>
                 </h3>
                 <span className="text-[11px] text-[#6E8078]">
-                  {comments.length} {comments.length === 1 ? 'entry' : 'entries'}
+                  {mergedComments.length} {mergedComments.length === 1 ? 'entry' : 'entries'}
                 </span>
               </div>
 
               <div className="mt-3 max-h-56 space-y-2.5 overflow-y-auto pr-1">
-                {comments.length === 0 ? (
+                {mergedComments.length === 0 ? (
                   <p className="py-4 text-center text-xs text-[#6E8078]">
                     No suggestions or comments yet.
                   </p>
                 ) : (
-                  comments.map((item) => (
+                  mergedComments.map((item) => (
                     <div
                       key={item.id}
                       className="rounded-xl border border-[#23302B] bg-[#131A17] p-3 text-xs"

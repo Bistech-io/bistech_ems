@@ -40,8 +40,7 @@ describe('Dynamic Dashboard per Role', () => {
     expect(screen.getByText(/super admin workspace/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /super admin dashboard/i })).toBeInTheDocument();
     expect(screen.getByText(/bistech admin/i)).toBeInTheDocument();
-    expect(screen.getByText('BST-0001')).toBeInTheDocument();
-    expect(screen.getByText(/management & operations — executive leadership/i)).toBeInTheDocument();
+    expect(screen.getByText(/super administrator/i)).toBeInTheDocument();
   });
 
   it('renders dynamic workspace and persona for hr_manager', async () => {
@@ -56,8 +55,7 @@ describe('Dynamic Dashboard per Role', () => {
     expect(screen.getByText(/hr manager workspace/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /hr manager dashboard/i })).toBeInTheDocument();
     expect(screen.getByText(/nadia rahman/i)).toBeInTheDocument();
-    expect(screen.getByText('BST-1001')).toBeInTheDocument();
-    expect(screen.getByText(/human resources — people operations/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/hr manager/i).length).toBeGreaterThan(0);
   });
 
   it('renders dynamic workspace and persona for dept_head', async () => {
@@ -72,8 +70,7 @@ describe('Dynamic Dashboard per Role', () => {
     expect(screen.getByText(/department head workspace/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /department head dashboard/i })).toBeInTheDocument();
     expect(screen.getByText(/farhan ahmed/i)).toBeInTheDocument();
-    expect(screen.getByText('BST-1002')).toBeInTheDocument();
-    expect(screen.getByText(/engineering — engineering leadership/i)).toBeInTheDocument();
+    expect(screen.getByText(/lead engineer & department head/i)).toBeInTheDocument();
   });
 
   it('renders dynamic workspace and persona for employee', async () => {
@@ -86,10 +83,9 @@ describe('Dynamic Dashboard per Role', () => {
     );
 
     expect(screen.getByText(/employee workspace/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: /employee dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /^dashboard$/i })).toBeInTheDocument();
     expect(screen.getByText(/mehedi alam/i)).toBeInTheDocument();
-    expect(screen.getByText('BST-1003')).toBeInTheDocument();
-    expect(screen.getByText(/engineering — core platform squad/i)).toBeInTheDocument();
+    expect(screen.getByText(/senior frontend engineer/i)).toBeInTheDocument();
   });
 });
 

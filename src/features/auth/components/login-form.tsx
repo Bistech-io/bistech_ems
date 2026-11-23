@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
@@ -11,22 +11,32 @@ import { useAuth } from '@/providers/auth-provider';
 import { useLoginMutation } from '../hooks';
 import { loginRequestSchema, type LoginRequest } from '../schemas';
 
+const LAST_USERNAME_STORAGE_KEY = 'ems_last_login_username';
+
+function readStoredUsername(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.localStorage?.getItem(LAST_USERNAME_STORAGE_KEY)?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeStoredUsername(username: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const trimmed = username.trim();
+    if (trimmed) {
+      window.localStorage?.setItem(LAST_USERNAME_STORAGE_KEY, trimmed);
+    }
+  } catch {
+    // Ignore storage quota or private mode errors
+  }
+}
+
 interface LoginFormProps {
   nextPath?: string;
 }
-
-export interface QuickDemoAccount {
-  label: string;
-  role: string;
-  username: string;
-}
-
-export const QUICK_DEMO_ACCOUNTS: QuickDemoAccount[] = [
-  { label: 'Super Admin', role: 'Full Access', username: 'admin' },
-  { label: 'HR Manager', role: 'People & Onboarding', username: 'hr' },
-  { label: 'Dept Head', role: 'Engineering Head', username: 'head' },
-  { label: 'Employee', role: 'Software Engineer', username: 'employee' },
-];
 
 export function getSafeNextPath(nextParam?: string | null): string {
   if (!nextParam) return '/dashboard';
@@ -61,17 +71,45 @@ export function LoginForm({ nextPath }: LoginFormProps) {
 
   const isBusy = isSubmitting || loginMutation.isPending;
 
+  // UX-LOGIN-01..04: Pre-fill last logged-in username from localStorage and autofocus password (or username if empty)
+  useEffect(() => {
+    const stored = readStoredUsername();
+    if (stored) {
+      setValue('username', stored, { shouldDirty: false, shouldTouch: false });
+      setFocus('password');
+    } else {
+      setFocus('username');
+    }
+  }, [setFocus, setValue]);
+
   useEffect(() => {
     if (formError) {
       errorBannerRef.current?.focus();
     }
   }, [formError]);
 
+  function handleUsernameKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // UX-LOGIN-05 & UX-LOGIN-07: Enter or ArrowDown in username moves focus to password without submitting
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocus('password');
+    }
+  }
+
+  function handlePasswordKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // UX-LOGIN-07: ArrowUp in password moves focus back to username
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocus('username');
+    }
+  }
+
   async function onSubmit(values: LoginRequest) {
     setFormError(null);
 
     try {
       const authMe = await loginMutation.mutateAsync(values);
+      writeStoredUsername(authMe.user.username || values.username);
       setSession(authMe);
       router.replace(getSafeNextPath(nextPath));
       router.refresh();
@@ -80,7 +118,11 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         if (err.code === 'VALIDATION_ERROR' && err.details.length > 0) {
           let focused = false;
           for (const detail of err.details) {
-            if (detail.field === 'username' || detail.field === 'password' || detail.field === 'organizationSlug') {
+            if (
+              detail.field === 'username' ||
+              detail.field === 'password' ||
+              detail.field === 'organizationSlug'
+            ) {
               setError(detail.field, { type: 'server', message: detail.message });
               if (!focused) {
                 setFocus(detail.field);
@@ -122,12 +164,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
       )}
 
       {/* Username */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label htmlFor="login-username" className="block text-xs font-medium text-[#A3B3AC]">
           Username
         </label>
         <div className="relative">
-          <User className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+          <User className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
           <input
             id="login-username"
             type="text"
@@ -136,8 +178,9 @@ export function LoginForm({ nextPath }: LoginFormProps) {
             aria-invalid={Boolean(errors.username)}
             aria-describedby={errors.username ? 'login-username-error' : undefined}
             placeholder="Enter your username"
+            onKeyDown={handleUsernameKeyDown}
             {...register('username')}
-            className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-4 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-12 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E]/90 pr-4 pl-11 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
         {errors.username && (
@@ -148,12 +191,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
       </div>
 
       {/* Password */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label htmlFor="login-password" className="block text-xs font-medium text-[#A3B3AC]">
           Password
         </label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+          <Lock className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
           <input
             id="login-password"
             type={showPassword ? 'text' : 'password'}
@@ -162,15 +205,16 @@ export function LoginForm({ nextPath }: LoginFormProps) {
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'login-password-error' : undefined}
             placeholder="Enter your password"
+            onKeyDown={handlePasswordKeyDown}
             {...register('password')}
-            className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-11 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-12 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E]/90 pr-12 pl-11 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
           <button
             type="button"
             disabled={isBusy}
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1 text-[#6E8078] transition-colors hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+            className="absolute top-1/2 right-3.5 -translate-y-1/2 rounded-lg p-1 text-[#6E8078] transition-colors hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -182,59 +226,21 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={isBusy}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-sm font-semibold text-[#0B0F0E] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isBusy ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Signing in...</span>
-          </>
-        ) : (
-          <span>Sign in</span>
-        )}
-      </button>
-
-      {/* Quick Demo Sign-In Roles */}
       <div className="pt-2">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#23302B]" />
-          </div>
-          <div className="relative bg-[#0E1512] px-3 text-[11px] font-medium uppercase tracking-wider text-[#A3B3AC]">
-            Quick Demo Sign-In
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {QUICK_DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.username}
-              type="button"
-              disabled={isBusy}
-              onClick={() => {
-                setValue('username', acc.username, { shouldValidate: true });
-                setValue('password', 'Password123!', { shouldValidate: true });
-                setFormError(null);
-              }}
-              className="group flex flex-col items-start rounded-xl border border-[#23302B] bg-[#131A17]/80 p-2.5 text-left transition-all hover:border-[#2E8B57] hover:bg-[#1A2420] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-xs font-semibold text-[#F0F5F2] group-hover:text-[#4CAF7D] transition-colors">
-                  {acc.label}
-                </span>
-                <span className="rounded bg-[#23302B] px-1.5 py-0.5 text-[10px] font-medium text-[#A3B3AC] group-hover:bg-[#2E8B57]/20 group-hover:text-[#4CAF7D] transition-colors">
-                  {acc.username}
-                </span>
-              </div>
-              <span className="mt-0.5 text-[11px] text-[#A3B3AC]">
-                {acc.role}
-              </span>
-            </button>
-          ))}
-        </div>
+        <button
+          type="submit"
+          disabled={isBusy}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#3CA36E] px-5 text-sm font-semibold text-[#0B0F0E] shadow-[0_10px_28px_-6px_rgba(60,163,110,0.6)] transition-colors hover:bg-[#4CAF7D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isBusy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Signing in...</span>
+            </>
+          ) : (
+            <span>Sign in</span>
+          )}
+        </button>
       </div>
     </motion.form>
   );

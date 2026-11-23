@@ -1,5 +1,15 @@
 import type { LucideIcon } from 'lucide-react';
-import { CheckSquare, Clock, Crown, IdCard, LayoutGrid, UserCircle } from 'lucide-react';
+import {
+  Building2,
+  CalendarCheck,
+  CheckSquare,
+  Clock,
+  Crown,
+  IdCard,
+  LayoutGrid,
+  UserCircle,
+  Users,
+} from 'lucide-react';
 import {
   can,
   hasAnyRole,
@@ -58,17 +68,31 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'workspace',
-    label: 'Workspace',
+    id: 'attendance-zone',
+    label: 'Attendance',
     items: [
       {
         id: 'attendance',
-        label: 'Attendance',
+        label: 'Own Attendance',
         href: '/attendance',
         icon: Clock,
         permission: 'attendance.self',
         minScope: 'own',
+        allowedRoles: ['hr_manager', 'dept_head', 'employee'],
       },
+      {
+        id: 'employee-attendance',
+        label: 'Employee Attendance',
+        href: '/attendance/employees',
+        icon: CalendarCheck,
+        allowedRoles: ['super_admin', 'hr_manager'],
+      },
+    ],
+  },
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
       {
         id: 'tasks',
         label: 'Tasks',
@@ -78,12 +102,20 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         minScope: 'own',
       },
       {
+        id: 'my-team',
+        label: 'My Team',
+        href: '/team',
+        icon: Users,
+        allowedRoles: ['dept_head'],
+      },
+      {
         id: 'employees',
         label: 'Employees',
         href: '/employees',
         icon: IdCard,
         permission: 'employee.read',
-        minScope: 'managed',
+        minScope: 'org',
+        allowedRoles: ['super_admin', 'hr_manager'],
       },
     ],
   },
@@ -91,6 +123,13 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
     id: 'administration',
     label: 'Administration',
     items: [
+      {
+        id: 'admin-organization',
+        label: 'Organization',
+        href: '/admin/organization',
+        icon: Building2,
+        allowedRoles: ['super_admin'],
+      },
       {
         id: 'admin-leadership',
         label: 'HR & Dept Heads',

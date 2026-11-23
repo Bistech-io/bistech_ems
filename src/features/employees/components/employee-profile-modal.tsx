@@ -88,6 +88,8 @@ export function EmployeeProfileModal({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [selectedRoleAssignment, setSelectedRoleAssignment] =
     useState<TeamRoleAssignment>('team_member');
+  const [draftStatus, setDraftStatus] = useState<EmployeeLiveStatus | 'auto'>(liveStatus);
+  const [savedStatusNotice, setSavedStatusNotice] = useState(false);
 
   const [isSavingDesignation, setIsSavingDesignation] = useState(false);
   const [savedDesignationNotice, setSavedDesignationNotice] = useState(false);
@@ -112,13 +114,22 @@ export function EmployeeProfileModal({
       setDesignationInput(employee.designation.title);
       setSelectedDepartmentId(employee.department.id);
       setSelectedRoleAssignment(resolveInitialRoleAssignment(employee.user.roles));
+      setDraftStatus(liveStatus);
+      setSavedStatusNotice(false);
       setSavedDesignationNotice(false);
       setSavedDepartmentNotice(false);
       setSavedRoleNotice(false);
       setRoleError(null);
     }, 0);
     return () => clearTimeout(timer);
-  }, [employee]);
+  }, [employee, liveStatus]);
+
+  function handleConfirmStatusChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (!employee) return;
+    onLiveStatusChange(employee.id, draftStatus);
+    setSavedStatusNotice(true);
+  }
 
   async function handleSaveDesignation(e: React.FormEvent) {
     e.preventDefault();
@@ -343,143 +354,165 @@ export function EmployeeProfileModal({
 
             {/* Editable Management Controls */}
             {canEditDesignation && (
-              <div className="mt-6 space-y-5 border-t border-[#23302B] pt-5">
-                {/* 1. Attendance / Presence Status */}
-                <div>
+              <div className="mt-6 space-y-4 border-t border-[#23302B] pt-5">
+                {/* 1. Separate Status Change Block with Confirm Button */}
+                <form
+                  onSubmit={handleConfirmStatusChange}
+                  className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-4"
+                >
                   <label
                     htmlFor="profile-live-status-select"
-                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                    className="mb-2 block text-xs font-semibold tracking-[0.04em] text-[#4CAF7D] uppercase"
                   >
-                    Attendance / Presence Status
-                  </label>
-                  <select
-                    id="profile-live-status-select"
-                    value={liveStatus}
-                    onChange={(e) =>
-                      onLiveStatusChange(
-                        employee.id,
-                        e.target.value as EmployeeLiveStatus | 'auto',
-                      )
-                    }
-                    className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
-                  >
-                    <option value="auto">Auto (From Attendance)</option>
-                    <option value="available">Available</option>
-                    <option value="arriving">Arriving</option>
-                    <option value="absent">Absent</option>
-                    <option value="on_vacation">On Vacation</option>
-                    <option value="after_hours">Working Hour Ended</option>
-                  </select>
-                </div>
-
-                {/* 2. Change Designation */}
-                <form onSubmit={handleSaveDesignation}>
-                  <label
-                    htmlFor="profile-designation-input"
-                    className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
-                  >
-                    Change Designation
-                  </label>
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      id="profile-designation-input"
-                      type="text"
-                      value={designationInput}
-                      onChange={(e) => {
-                        setDesignationInput(e.target.value);
-                        setSavedDesignationNotice(false);
-                      }}
-                      placeholder="Enter designation title"
-                      className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
-                    />
-
-                    <button
-                      type="submit"
-                      disabled={
-                        isSavingDesignation ||
-                        !designationInput.trim() ||
-                        designationInput.trim() === employee.designation.title
-                      }
-                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isSavingDesignation ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          <span>Saving</span>
-                        </>
-                      ) : (
-                        <span>Update</span>
-                      )}
-                    </button>
-                  </div>
-
-                  {savedDesignationNotice && (
-                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Designation updated.</span>
-                    </p>
-                  )}
-                </form>
-
-                {/* 3. Change Department */}
-                <form onSubmit={handleSaveDepartment}>
-                  <label
-                    htmlFor="profile-department-select"
-                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
-                  >
-                    <Building2 className="h-3.5 w-3.5 text-[#4CAF7D]" />
-                    <span>Change Department</span>
+                    Change Status
                   </label>
                   <div className="flex items-center gap-2.5">
                     <select
-                      id="profile-department-select"
-                      value={selectedDepartmentId}
+                      id="profile-live-status-select"
+                      value={draftStatus}
                       onChange={(e) => {
-                        setSelectedDepartmentId(e.target.value);
-                        setSavedDepartmentNotice(false);
+                        setDraftStatus(e.target.value as EmployeeLiveStatus | 'auto');
+                        setSavedStatusNotice(false);
                       }}
-                      className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                      className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#131A17] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
                     >
-                      {availableDepartments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </option>
-                      ))}
+                      <option value="auto">Auto (From Attendance)</option>
+                      <option value="available">Available</option>
+                      <option value="arriving">Arriving</option>
+                      <option value="absent">Absent</option>
+                      <option value="on_vacation">On Vacation</option>
+                      <option value="after_hours">Working Hour Ended</option>
                     </select>
 
                     <button
                       type="submit"
-                      disabled={
-                        isSavingDepartment ||
-                        !selectedDepartmentId ||
-                        selectedDepartmentId === employee.department.id
-                      }
-                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={draftStatus === liveStatus}
+                      className="inline-flex h-10 items-center rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isSavingDepartment ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          <span>Saving</span>
-                        </>
-                      ) : (
-                        <span>Update</span>
-                      )}
+                      Confirm
                     </button>
                   </div>
 
-                  {savedDepartmentNotice && (
+                  {savedStatusNotice && (
                     <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Department updated.</span>
+                      <span>Status updated.</span>
                     </p>
                   )}
                 </form>
 
-                {/* 4. Assign as Team Member or Manager */}
-                <form onSubmit={handleSaveRoleAssignment}>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]">
-                    <UserCog className="h-3.5 w-3.5 text-[#4CAF7D]" />
-                    <span>Assign as Team Member or Manager</span>
+                {/* 2. Change Designation & Department Block */}
+                <div className="space-y-4 rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-4">
+                  <form onSubmit={handleSaveDesignation}>
+                    <label
+                      htmlFor="profile-designation-input"
+                      className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                    >
+                      Change Designation
+                    </label>
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        id="profile-designation-input"
+                        type="text"
+                        value={designationInput}
+                        onChange={(e) => {
+                          setDesignationInput(e.target.value);
+                          setSavedDesignationNotice(false);
+                        }}
+                        placeholder="Enter designation title"
+                        className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#131A17] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                      />
+
+                      <button
+                        type="submit"
+                        disabled={
+                          isSavingDesignation ||
+                          !designationInput.trim() ||
+                          designationInput.trim() === employee.designation.title
+                        }
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSavingDesignation ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Saving</span>
+                          </>
+                        ) : (
+                          <span>Update</span>
+                        )}
+                      </button>
+                    </div>
+
+                    {savedDesignationNotice && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Designation updated.</span>
+                      </p>
+                    )}
+                  </form>
+
+                  <form onSubmit={handleSaveDepartment}>
+                    <label
+                      htmlFor="profile-department-select"
+                      className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#A3B3AC]"
+                    >
+                      <Building2 className="h-3.5 w-3.5 text-[#4CAF7D]" />
+                      <span>Change Department</span>
+                    </label>
+                    <div className="flex items-center gap-2.5">
+                      <select
+                        id="profile-department-select"
+                        value={selectedDepartmentId}
+                        onChange={(e) => {
+                          setSelectedDepartmentId(e.target.value);
+                          setSavedDepartmentNotice(false);
+                        }}
+                        className="h-10 flex-1 rounded-xl border border-[#23302B] bg-[#131A17] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                      >
+                        {availableDepartments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="submit"
+                        disabled={
+                          isSavingDepartment ||
+                          !selectedDepartmentId ||
+                          selectedDepartmentId === employee.department.id
+                        }
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSavingDepartment ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Saving</span>
+                          </>
+                        ) : (
+                          <span>Update</span>
+                        )}
+                      </button>
+                    </div>
+
+                    {savedDepartmentNotice && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Department updated.</span>
+                      </p>
+                    )}
+                  </form>
+                </div>
+
+                {/* 3. Role Assignment Block */}
+                <form
+                  onSubmit={handleSaveRoleAssignment}
+                  className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-4"
+                >
+                  <label className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] text-[#4CAF7D] uppercase">
+                    <UserCog className="h-3.5 w-3.5" />
+                    <span>Assign Role</span>
                   </label>
 
                   <div className="grid grid-cols-3 gap-2">
@@ -504,7 +537,7 @@ export function EmployeeProfileModal({
                             'rounded-xl border px-2.5 py-2 text-xs font-medium transition-colors',
                             active
                               ? 'border-[#2E8B57] bg-[#1F5C3A]/45 text-[#4CAF7D]'
-                              : 'border-[#23302B] bg-[#0B0F0E] text-[#A3B3AC] hover:border-[#2E8B57]/50 hover:text-[#F0F5F2]',
+                              : 'border-[#23302B] bg-[#131A17] text-[#A3B3AC] hover:border-[#2E8B57]/50 hover:text-[#F0F5F2]',
                           )}
                         >
                           {opt.label}
@@ -521,12 +554,12 @@ export function EmployeeProfileModal({
                     {isSavingRole ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Saving Role Assignment...</span>
+                        <span>Saving Role...</span>
                       </>
                     ) : (
                       <>
                         <ShieldCheck className="h-4 w-4" />
-                        <span>Confirm Role Assignment</span>
+                        <span>Confirm Role</span>
                       </>
                     )}
                   </button>
