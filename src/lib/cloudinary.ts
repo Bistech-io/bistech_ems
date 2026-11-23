@@ -132,3 +132,4 @@ export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
   const data = await res.json();
   return data.result === 'ok';
 }
+
