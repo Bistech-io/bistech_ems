@@ -30,21 +30,21 @@
 html.light {
   color-scheme: light;
 
-  /* Rich Warm Cream & Linen Beige Palette (Inspired by Soft Cream / Cloud White / Linen Beige) */
-  --color-bg: #EFE9DD;
-  --color-bg-secondary: #F8F4EC;
-  --color-bg-elevated: #E8E0D1;
-  --color-border: #D9CFC0;
+  /* Subtle Soft Cream & Cloud White Palette (Balanced, warm, and airy) */
+  --color-bg: #F5F2EB;
+  --color-bg-secondary: #FBF9F5;
+  --color-bg-elevated: #EFECE4;
+  --color-border: #E3DED4;
 
-  /* Sea Green Brand Accents (Harmonized with Warm Cream) */
+  /* Sea Green Brand Accents (Harmonized with Soft Cream) */
   --color-primary: #2E8B57;
   --color-primary-light: #246F45;
   --color-primary-dark: #1F5C3A;
 
-  /* Warm Espresso / Deep Olive-Charcoal Text Hierarchy */
-  --color-text-primary: #272521;
-  --color-text-secondary: #5B564D;
-  --color-text-muted: #847E73;
+  /* Warm Charcoal Text Hierarchy */
+  --color-text-primary: #232421;
+  --color-text-secondary: #585A54;
+  --color-text-muted: #82837C;
 
   /* Semantic Status Colors */
   --color-success: #246F45;
@@ -105,11 +105,11 @@ html.theme-transitioning *::after {
 }
 
 /* ============================================================================
-   Warm Cream & Linen Light Mode Mapping (Soft Cream + Cloud White + Sea Green)
+   Subtle Soft Cream & Cloud White Light Mode Mapping
    ============================================================================ */
 html.light .bg-\[\#0B0F0E\],
 html.light .bg-\[\#080C0A\] {
-  background-color: #EFE9DD !important;
+  background-color: #F5F2EB !important;
 }
 
 html.light .bg-\[\#0B0F0E\]\/90,
@@ -121,7 +121,7 @@ html.light .bg-\[\#0B0F0E\]\/65,
 html.light .bg-\[\#0B0F0E\]\/60,
 html.light .bg-\[\#0B0F0E\]\/50,
 html.light .bg-\[\#0B0F0E\]\/40 {
-  background-color: #EAE2D4 !important;
+  background-color: #F0EDE5 !important;
 }
 
 html.light .bg-\[\#131A17\],
@@ -129,12 +129,12 @@ html.light .bg-\[\#131A17\]\/95,
 html.light .bg-\[\#131A17\]\/92,
 html.light .bg-\[\#131A17\]\/80,
 html.light .bg-\[\#131A17\]\/60 {
-  background-color: #F8F4EC !important;
-  box-shadow: 0 12px 32px -16px rgba(68, 56, 40, 0.14);
+  background-color: #FBF9F5 !important;
+  box-shadow: 0 10px 28px -16px rgba(56, 48, 36, 0.11);
 }
 
 html.light .bg-\[\#131A17\]\/40 {
-  background-color: #F4EFE5 !important;
+  background-color: #F8F6F0 !important;
 }
 
 html.light .bg-\[\#1A2420\],
@@ -143,7 +143,7 @@ html.light .bg-\[\#1A2420\]\/75,
 html.light .bg-\[\#1A2420\]\/70,
 html.light .bg-\[\#1A2420\]\/60,
 html.light .bg-\[\#1A2420\]\/40 {
-  background-color: #E8E0D1 !important;
+  background-color: #EFECE4 !important;
 }
 
 html.light .hover\:bg-\[\#1A2420\]:hover,
@@ -151,17 +151,17 @@ html.light .hover\:bg-\[\#1A2420\]\/90:hover,
 html.light .hover\:bg-\[\#1A2420\]\/75:hover,
 html.light .hover\:bg-\[\#1A2420\]\/70:hover,
 html.light .hover\:bg-\[\#1A2420\]\/60:hover {
-  background-color: #DFD5C4 !important;
+  background-color: #E7E3D8 !important;
 }
 
 html.light .from-\[\#131A17\],
 html.light .via-\[\#131A17\] {
-  --tw-gradient-from: #F8F4EC !important;
-  --tw-gradient-via: #F8F4EC !important;
+  --tw-gradient-from: #FBF9F5 !important;
+  --tw-gradient-via: #FBF9F5 !important;
 }
 
 html.light .to-\[\#1A2420\]\/70 {
-  --tw-gradient-to: #E8E0D1 !important;
+  --tw-gradient-to: #EFECE4 !important;
 }
 
 html.light .bg-\[\#1F5C3A\]\/55,
@@ -171,7 +171,7 @@ html.light .bg-\[\#1F5C3A\]\/40,
 html.light .bg-\[\#1F5C3A\]\/35,
 html.light .bg-\[\#1F5C3A\]\/30,
 html.light .bg-\[\#1F5C3A\]\/15 {
-  background-color: rgba(46, 139, 87, 0.14) !important;
+  background-color: rgba(46, 139, 87, 0.12) !important;
 }
 
 html.light .border-\[\#23302B\],
@@ -179,12 +179,12 @@ html.light .border-\[\#23302B\]\/90,
 html.light .border-\[\#23302B\]\/80,
 html.light .border-\[\#23302B\]\/70,
 html.light .border-\[\#23302B\]\/60 {
-  border-color: #D9CFC0 !important;
+  border-color: #E3DED4 !important;
 }
 
 html.light .divide-\[\#23302B\]\/70 > :not(:last-child),
 html.light .divide-\[\#23302B\]\/60 > :not(:last-child) {
-  border-color: #E3DACB !important;
+  border-color: #EAE6DD !important;
 }
 
 html.light .text-\[\#F0F5F2\],
