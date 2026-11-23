@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
@@ -10,6 +10,29 @@ import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { useAuth } from '@/providers/auth-provider';
 import { useLoginMutation } from '../hooks';
 import { loginRequestSchema, type LoginRequest } from '../schemas';
+
+const LAST_USERNAME_STORAGE_KEY = 'ems_last_login_username';
+
+function readStoredUsername(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.localStorage?.getItem(LAST_USERNAME_STORAGE_KEY)?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeStoredUsername(username: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const trimmed = username.trim();
+    if (trimmed) {
+      window.localStorage?.setItem(LAST_USERNAME_STORAGE_KEY, trimmed);
+    }
+  } catch {
+    // Ignore storage quota or private mode errors
+  }
+}
 
 interface LoginFormProps {
   nextPath?: string;
@@ -61,17 +84,45 @@ export function LoginForm({ nextPath }: LoginFormProps) {
 
   const isBusy = isSubmitting || loginMutation.isPending;
 
+  // UX-LOGIN-01..04: Pre-fill last logged-in username from localStorage and autofocus password (or username if empty)
+  useEffect(() => {
+    const stored = readStoredUsername();
+    if (stored) {
+      setValue('username', stored, { shouldDirty: false, shouldTouch: false });
+      setFocus('password');
+    } else {
+      setFocus('username');
+    }
+  }, [setFocus, setValue]);
+
   useEffect(() => {
     if (formError) {
       errorBannerRef.current?.focus();
     }
   }, [formError]);
 
+  function handleUsernameKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // UX-LOGIN-05 & UX-LOGIN-07: Enter or ArrowDown in username moves focus to password without submitting
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocus('password');
+    }
+  }
+
+  function handlePasswordKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // UX-LOGIN-07: ArrowUp in password moves focus back to username
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocus('username');
+    }
+  }
+
   async function onSubmit(values: LoginRequest) {
     setFormError(null);
 
     try {
       const authMe = await loginMutation.mutateAsync(values);
+      writeStoredUsername(authMe.user.username || values.username);
       setSession(authMe);
       router.replace(getSafeNextPath(nextPath));
       router.refresh();
@@ -136,6 +187,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
             aria-invalid={Boolean(errors.username)}
             aria-describedby={errors.username ? 'login-username-error' : undefined}
             placeholder="Enter your username"
+            onKeyDown={handleUsernameKeyDown}
             {...register('username')}
             className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-4 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
@@ -162,6 +214,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'login-password-error' : undefined}
             placeholder="Enter your password"
+            onKeyDown={handlePasswordKeyDown}
             {...register('password')}
             className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-11 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] transition-colors outline-none focus:border-[#4CAF7D] disabled:cursor-not-allowed disabled:opacity-60"
           />
