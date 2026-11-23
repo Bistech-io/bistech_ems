@@ -6,6 +6,7 @@ import type {
   CreateTaskPayload,
   ListTasksParams,
   TaskAssignmentStatus,
+  TaskCommentItem,
   TaskItem,
   UpdateTaskPayload,
 } from './types';
@@ -109,18 +110,183 @@ export async function fetchTasks(params?: ListTasksParams): Promise<TaskItem[]> 
   return res.data;
 }
 
+const myTaskAssignmentRowSchema = z.object({
+  assignmentId: z.string(),
+  status: z.enum([
+    'todo',
+    'in_progress',
+    'in_review',
+    'changes_requested',
+    'done',
+    'cancelled',
+  ]),
+  task: z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().nullable().optional().default(null),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']),
+    dueDate: z.string().nullable().optional().default(null),
+    assignmentType: z.enum(['self', 'individual', 'team']),
+    requiresReview: z.boolean().default(false),
+    department: z
+      .object({ id: z.string(), name: z.string() })
+      .nullable()
+      .optional(),
+    team: z
+      .object({ id: z.string(), name: z.string() })
+      .nullable()
+      .optional(),
+  }),
+});
+
+const myTasksResponseSchema = successEnvelopeSchema(z.array(myTaskAssignmentRowSchema));
+
+const reducedBoardCardSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  status: z.enum(['todo', 'in_progress', 'in_review', 'done']),
+  dueDate: z.string().nullable().optional().default(null),
+  assignees: z.array(z.string()).default([]),
+});
+
+const reducedBoardResponseSchema = successEnvelopeSchema(z.array(reducedBoardCardSchema));
+
+const commentItemDtoSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['comment', 'suggestion', 'review_request']).optional().default('comment'),
+  body: z.string(),
+  createdAt: z.string(),
+  author: z
+    .object({
+      displayName: z.string().optional(),
+      name: z.string().optional(),
+    })
+    .optional(),
+  authorName: z.string().optional(),
+});
+
+const commentsListResponseSchema = successEnvelopeSchema(z.array(commentItemDtoSchema));
+
 export async function fetchMyTasks(employeeId?: string | null): Promise<TaskItem[]> {
-  return fetchTasks(employeeId ? { assigneeId: employeeId } : undefined);
+  try {
+    const res = await apiRequest('/tasks/me?limit=100', {
+      method: 'GET',
+      schema: myTasksResponseSchema,
+    });
+    return res.data.map((row) => ({
+      id: row.task.id,
+      title: row.task.title,
+      description: row.task.description,
+      priority: row.task.priority,
+      dueDate: row.task.dueDate,
+      assignmentType: row.task.assignmentType,
+      requiresReview: row.task.requiresReview,
+      status: 'active',
+      department: row.task.department,
+      team: row.task.team,
+      progress: { done: row.status === 'done' ? 1 : 0, total: 1 },
+      assignments: [
+        {
+          id: row.assignmentId,
+          status: row.status,
+          employee: {
+            id: employeeId ?? 'me',
+            employeeCode: '',
+            fullName: 'Me',
+          },
+        },
+      ],
+      createdAt: row.task.dueDate ?? '2026-11-23T00:00:00.000Z',
+    }));
+  } catch {
+    return fetchTasks(employeeId ? { assigneeId: employeeId } : undefined);
+  }
 }
 
 export async function fetchDepartmentTaskBoard(
   departmentId?: string | null,
 ): Promise<TaskItem[]> {
-  return fetchTasks(departmentId ? { departmentId } : undefined);
+  try {
+    const qs = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : '';
+    const res = await apiRequest(`/tasks/board/department${qs}`, {
+      method: 'GET',
+      schema: reducedBoardResponseSchema,
+    });
+    return res.data.map((card) => ({
+      id: card.id,
+      title: card.title,
+      description: null,
+      priority: 'medium',
+      dueDate: card.dueDate,
+      assignmentType: 'individual',
+      requiresReview: false,
+      status: 'active',
+      progress: { done: card.status === 'done' ? 1 : 0, total: 1 },
+      assignments: card.assignees.map((name, idx) => ({
+        id: `${card.id}-asg-${idx}`,
+        status: card.status,
+        employee: {
+          id: `${card.id}-emp-${idx}`,
+          employeeCode: '',
+          fullName: name,
+        },
+      })),
+      createdAt: card.dueDate ?? '2026-11-23T00:00:00.000Z',
+    }));
+  } catch {
+    return fetchTasks(departmentId ? { departmentId } : undefined);
+  }
 }
 
 export async function fetchTeamTaskBoard(teamId?: string | null): Promise<TaskItem[]> {
-  return fetchTasks(teamId ? { teamId } : undefined);
+  try {
+    const qs = teamId ? `?teamId=${encodeURIComponent(teamId)}` : '';
+    const res = await apiRequest(`/tasks/board/team${qs}`, {
+      method: 'GET',
+      schema: reducedBoardResponseSchema,
+    });
+    return res.data.map((card) => ({
+      id: card.id,
+      title: card.title,
+      description: null,
+      priority: 'medium',
+      dueDate: card.dueDate,
+      assignmentType: 'team',
+      requiresReview: false,
+      status: 'active',
+      progress: { done: card.status === 'done' ? 1 : 0, total: 1 },
+      assignments: card.assignees.map((name, idx) => ({
+        id: `${card.id}-asg-${idx}`,
+        status: card.status,
+        employee: {
+          id: `${card.id}-emp-${idx}`,
+          employeeCode: '',
+          fullName: name,
+        },
+      })),
+      createdAt: card.dueDate ?? '2026-11-23T00:00:00.000Z',
+    }));
+  } catch {
+    return fetchTasks(teamId ? { teamId } : undefined);
+  }
+}
+
+export async function fetchTaskComments(taskId: string): Promise<TaskCommentItem[]> {
+  try {
+    const res = await apiRequest(`/tasks/${taskId}/comments?limit=50`, {
+      method: 'GET',
+      schema: commentsListResponseSchema,
+    });
+    return res.data.map((item) => ({
+      id: item.id,
+      authorName: item.authorName ?? item.author?.displayName ?? item.author?.name ?? 'Team Member',
+      kind: item.kind,
+      body: item.body,
+      createdAt: item.createdAt.slice(0, 10),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTaskById(taskId: string): Promise<TaskItem> {

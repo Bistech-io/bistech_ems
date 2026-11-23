@@ -48,7 +48,6 @@ type TaskViewTab =
   | 'team_dept'
   | 'dept_assign'
   | 'dept_team'
-  | 'hr_ongoing'
   | 'admin_full';
 
 export function TasksDashboard() {
@@ -161,16 +160,12 @@ export function TasksDashboard() {
       );
     }
 
-    if (isHrManager || isSuperAdmin) {
-      tabs.push({ id: 'hr_ongoing', label: 'Ongoing Tasks Dashboard' });
-    }
-
     if (isSuperAdmin) {
       tabs.push({ id: 'admin_full', label: 'Full Task Dashboard' });
     }
 
     return tabs;
-  }, [isDeptHead, isHrManager, isSuperAdmin]);
+  }, [isDeptHead, isSuperAdmin]);
 
   const sourceTasksForTab = useMemo(() => {
     switch (activeTab) {
@@ -196,13 +191,13 @@ export function TasksDashboard() {
         });
       case 'dept_team':
         return teamBoardTasks;
-      case 'hr_ongoing':
+      case 'current':
+        // Current Task Dashboard (default for everyone): all active/ongoing tasks across departments
         return allTasks.filter((t) => {
           const st = deriveTaskStatus(t);
-          return t.status === 'active' && st !== 'done' && st !== 'cancelled';
+          return t.status === 'active' && st !== 'cancelled';
         });
       case 'admin_full':
-      case 'current':
       default:
         return allTasks;
     }
@@ -381,13 +376,11 @@ export function TasksDashboard() {
           <h1 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
             {activeTab === 'admin_full'
               ? 'Full Task Dashboard'
-              : activeTab === 'hr_ongoing'
-                ? 'Ongoing Tasks Dashboard'
-                : activeTab === 'dept_team'
-                  ? 'Team Task Dashboard'
-                  : activeTab === 'dept_assign'
-                    ? 'Task Assign Dashboard'
-                    : 'Task Dashboard'}
+              : activeTab === 'dept_team'
+                ? 'Team Task Dashboard'
+                : activeTab === 'dept_assign'
+                  ? 'Task Assign Dashboard'
+                  : 'Current Task Dashboard'}
           </h1>
         </div>
 
