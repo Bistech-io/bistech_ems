@@ -232,6 +232,8 @@ export function EmployeesDashboard() {
 
   function handleCreated(newEmp: EmployeeItem) {
     setEmployees((prev) => [newEmp, ...prev]);
+    fetchDesignations().then(setDesignations).catch(() => {});
+    fetchDepartments().then(setDepartments).catch(() => {});
   }
 
   function handleDesignationUpdated(

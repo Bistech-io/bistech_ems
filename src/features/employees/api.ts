@@ -22,34 +22,39 @@ export const designationOptionSchema = z.object({
   activeEmployeeCount: z.number().optional(),
 });
 
-export const employeeItemSchema = z.object({
-  id: z.string(),
-  employeeCode: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  fullName: z.string(),
-  workEmail: z.string(),
-  phone: z.string().nullable(),
-  department: z.object({
+export const employeeItemSchema = z
+  .object({
     id: z.string(),
-    name: z.string(),
-  }),
-  designation: z.object({
-    id: z.string(),
-    title: z.string(),
-  }),
-  employmentType: z.enum(['full_time', 'part_time', 'contract', 'intern']),
-  employmentStatus: z.enum(['active', 'inactive', 'suspended']),
-  joiningDate: z.string(),
-  user: z.object({
-    id: z.string(),
-    username: z.string(),
-    displayName: z.string(),
-    email: z.string(),
-    accountStatus: z.string(),
-    roles: z.array(z.string()),
-  }),
-});
+    employeeCode: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    fullName: z.string().optional(),
+    workEmail: z.string(),
+    phone: z.string().nullable(),
+    department: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+    designation: z.object({
+      id: z.string(),
+      title: z.string(),
+    }),
+    employmentType: z.enum(['full_time', 'part_time', 'contract', 'intern']),
+    employmentStatus: z.enum(['active', 'inactive', 'suspended']),
+    joiningDate: z.string(),
+    user: z.object({
+      id: z.string(),
+      username: z.string(),
+      displayName: z.string(),
+      email: z.string(),
+      accountStatus: z.string(),
+      roles: z.array(z.string()),
+    }),
+  })
+  .transform((val) => ({
+    ...val,
+    fullName: val.fullName ?? `${val.firstName} ${val.lastName}`.trim(),
+  }));
 
 export const orgAttendanceItemSchema = z
   .object({

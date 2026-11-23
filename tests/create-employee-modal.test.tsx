@@ -195,5 +195,35 @@ describe('CreateEmployeeModal', () => {
 
     createEmpSpy.mockRestore();
   });
+
+  it('parses employee item successfully and derives fullName when omitted', () => {
+    const raw = {
+      id: 'emp-1',
+      employeeCode: 'BST-1010',
+      firstName: 'Test Employee 03',
+      lastName: '.',
+      workEmail: 'testemp3@bistech.com',
+      phone: null,
+      department: { id: 'dept-1', name: 'Human Resources' },
+      designation: { id: 'desig-1', title: 'Junior HR' },
+      employmentType: 'full_time',
+      employmentStatus: 'active',
+      joiningDate: '2026-11-23T00:00:00.000Z',
+      user: {
+        id: 'u-1',
+        username: 'test-emp-3',
+        displayName: 'Test Employee 03 .',
+        email: 'testemp3@bistech.com',
+        accountStatus: 'active',
+        roles: ['employee'],
+      },
+    };
+
+    const parsed = api.employeeItemSchema.safeParse(raw);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.fullName).toBe('Test Employee 03 .');
+    }
+  });
 });
 
