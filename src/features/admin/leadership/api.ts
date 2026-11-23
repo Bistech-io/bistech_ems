@@ -84,6 +84,7 @@ const updateUserRolesResponseSchema = successEnvelopeSchema(updatedUserRolesSche
 const departmentsListResponseSchema = successEnvelopeSchema(
   z.array(leadershipDepartmentItemSchema),
 );
+const departmentSingleResponseSchema = successEnvelopeSchema(leadershipDepartmentItemSchema);
 const assignDepartmentHeadResponseSchema = successEnvelopeSchema(z.unknown());
 
 export async function fetchOrgUsers(params?: {
@@ -144,3 +145,16 @@ export async function putDepartmentHead(
     schema: assignDepartmentHeadResponseSchema,
   });
 }
+
+export async function createLeadershipDepartment(payload: {
+  name: string;
+  description?: string;
+}): Promise<LeadershipDepartmentItem> {
+  const res = await apiRequest('/departments', {
+    method: 'POST',
+    body: payload,
+    schema: departmentSingleResponseSchema,
+  });
+  return res.data;
+}
+

@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   UserCheck,
   UserMinus,
-  UserPlus,
   X,
 } from 'lucide-react';
 import {
@@ -28,7 +27,10 @@ import {
   fetchTodayOrgAttendance,
   type OrgAttendanceItem,
 } from '@/features/employees/api';
-import { EmployeeProfileModal } from '@/features/employees/components/employee-profile-modal';
+import {
+  EmployeeProfileModal,
+  type TeamRoleAssignment,
+} from '@/features/employees/components/employee-profile-modal';
 import { LIVE_STATUS_STYLES } from '@/features/employees/components/employees-dashboard';
 import type {
   DesignationOption,
@@ -36,9 +38,11 @@ import type {
   EmployeeLiveStatus,
 } from '@/features/employees/types';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
+import { can } from '@/lib/auth/permissions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import {
+  createLeadershipDepartment,
   fetchLeadershipDepartments,
   fetchOrgRoles,
   fetchOrgUsers,
@@ -112,9 +116,14 @@ function buildFallbackEmployeeProfile(
 }
 
 export function LeadershipDashboard() {
-  const { user, session } = useAuth();
+  const { user, session, activeRole } = useAuth();
   const currentUserId = session?.user.id ?? user?.userId ?? '';
   const currentEmployeeId = session?.employeeId ?? null;
+
+  const canManageDepartments =
+    activeRole === 'super_admin' ||
+    activeRole === 'hr_manager' ||
+    can(user, 'org.structure.manage', 'org');
 
   const [users, setUsers] = useState<OrgUserItem[]>([]);
   const [roles, setRoles] = useState<OrgRoleItem[]>([]);
@@ -131,7 +140,20 @@ export function LeadershipDashboard() {
   const [activeTab, setActiveTab] = useState<LeadershipTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Modal states
+  // Create or Change on Departments Modal & Bottom Slide State
+  const [deptManagerModalOpen, setDeptManagerModalOpen] = useState(false);
+  const [showNewDeptForm, setShowNewDeptForm] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [newDeptDescription, setNewDeptDescription] = useState('');
+  const [isCreatingDept, setIsCreatingDept] = useState(false);
+
+  const [activeSlideDeptId, setActiveSlideDeptId] = useState<string | null>(null);
+  const [isChangingManager, setIsChangingManager] = useState(false);
+  const [managerSearchInput, setManagerSearchInput] = useState('');
+  const [selectedCandidateEmployeeId, setSelectedCandidateEmployeeId] = useState<string>('');
+  const [isConfirmingManager, setIsConfirmingManager] = useState(false);
+
+  // HR Manager Modal States
   const [assignHrOpen, setAssignHrOpen] = useState(false);
   const [selectedHrUserId, setSelectedHrUserId] = useState('');
   const [isAssigningHr, setIsAssigningHr] = useState(false);
@@ -139,10 +161,7 @@ export function LeadershipDashboard() {
   const [revokeHrTarget, setRevokeHrTarget] = useState<OrgUserItem | null>(null);
   const [isRevokingHr, setIsRevokingHr] = useState(false);
 
-  const [headModalDept, setHeadModalDept] = useState<LeadershipDepartmentItem | null>(null);
-  const [selectedHeadEmployeeId, setSelectedHeadEmployeeId] = useState('');
-  const [isSavingHead, setIsSavingHead] = useState(false);
-
+  // Right-side Slide Profile Drawer State
   const [selectedProfileEmployee, setSelectedProfileEmployee] = useState<EmployeeItem | null>(
     null,
   );
@@ -407,6 +426,7 @@ export function LeadershipDashboard() {
           name: e.fullName,
           code: e.employeeCode,
           departmentName: e.department.name,
+          designationTitle: e.designation.title,
         }));
     }
 
@@ -419,8 +439,155 @@ export function LeadershipDashboard() {
         name: u.displayName,
         code: u.employee!.employeeCode,
         departmentName: u.employee?.department?.name ?? 'Organization',
+        designationTitle: u.employee?.designation?.title ?? 'Employee',
       }));
   }, [employees, users]);
+
+  const activeSlideDept = useMemo(
+    () => departments.find((d) => d.id === activeSlideDeptId) ?? null,
+    [departments, activeSlideDeptId],
+  );
+
+  const suggestedCandidates = useMemo(() => {
+    const q = managerSearchInput.trim().toLowerCase();
+    const list = headCandidates.filter((cand) => {
+      if (!q) return true;
+      return (
+        cand.name.toLowerCase().includes(q) ||
+        cand.code.toLowerCase().includes(q) ||
+        cand.departmentName.toLowerCase().includes(q) ||
+        cand.designationTitle.toLowerCase().includes(q)
+      );
+    });
+    return list.slice(0, 6);
+  }, [headCandidates, managerSearchInput]);
+
+  function openDepartmentManagerModal(initialDept?: LeadershipDepartmentItem) {
+    setActionError(null);
+    setShowNewDeptForm(false);
+    setNewDeptName('');
+    setNewDeptDescription('');
+
+    if (initialDept) {
+      setActiveSlideDeptId(initialDept.id);
+      setIsChangingManager(true);
+      const currentHeadId = initialDept.headEmployeeId ?? initialDept.headEmployee?.id ?? '';
+      const currentHeadName =
+        (currentHeadId ? employeeById.get(currentHeadId)?.fullName : undefined) ??
+        initialDept.headEmployee?.name ??
+        '';
+      setSelectedCandidateEmployeeId(currentHeadId);
+      setManagerSearchInput(currentHeadName);
+    } else {
+      setActiveSlideDeptId(null);
+      setIsChangingManager(false);
+      setSelectedCandidateEmployeeId('');
+      setManagerSearchInput('');
+    }
+
+    setDeptManagerModalOpen(true);
+  }
+
+  function handleSelectDeptInModal(dept: LeadershipDepartmentItem) {
+    setActiveSlideDeptId(dept.id);
+    setIsChangingManager(false);
+    const currentHeadId = dept.headEmployeeId ?? dept.headEmployee?.id ?? '';
+    const currentHeadName =
+      (currentHeadId ? employeeById.get(currentHeadId)?.fullName : undefined) ??
+      dept.headEmployee?.name ??
+      '';
+    setSelectedCandidateEmployeeId(currentHeadId);
+    setManagerSearchInput(currentHeadName);
+  }
+
+  async function handleCreateNewDepartment(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedName = newDeptName.trim();
+    if (!trimmedName || isCreatingDept) return;
+
+    setIsCreatingDept(true);
+    setActionError(null);
+
+    try {
+      const created = await createLeadershipDepartment({
+        name: trimmedName,
+        description: newDeptDescription.trim() || undefined,
+      });
+      setDepartments((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setShowNewDeptForm(false);
+      setNewDeptName('');
+      setNewDeptDescription('');
+      handleSelectDeptInModal(created);
+    } catch {
+      const localCreated: LeadershipDepartmentItem = {
+        id: `dept-${Date.now()}`,
+        name: trimmedName,
+        description: newDeptDescription.trim() || null,
+        headEmployeeId: null,
+        headEmployee: null,
+        activeEmployeeCount: 0,
+      };
+      setDepartments((prev) =>
+        [...prev, localCreated].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setShowNewDeptForm(false);
+      setNewDeptName('');
+      setNewDeptDescription('');
+      handleSelectDeptInModal(localCreated);
+    } finally {
+      setIsCreatingDept(false);
+    }
+  }
+
+  async function handleConfirmDepartmentManager() {
+    if (!activeSlideDept || isConfirmingManager) return;
+    const nextHeadEmployeeId = selectedCandidateEmployeeId || null;
+    const candidate = nextHeadEmployeeId
+      ? headCandidates.find((c) => c.employeeId === nextHeadEmployeeId)
+      : null;
+
+    setIsConfirmingManager(true);
+    setActionError(null);
+
+    try {
+      await putDepartmentHead(activeSlideDept.id, nextHeadEmployeeId);
+      await loadAll();
+      setIsChangingManager(false);
+    } catch {
+      // Fallback: sync department_head role via PUT /users/:id/roles and update local department state
+      if (candidate && candidate.userId !== currentUserId) {
+        try {
+          const nextRoles = Array.from(new Set([...candidate.roles, 'department_head']));
+          await putUserRoles(candidate.userId, nextRoles);
+        } catch {
+          // Proceed with local active state update
+        }
+      }
+
+      setDepartments((prev) =>
+        prev.map((d) =>
+          d.id === activeSlideDept.id
+            ? {
+                ...d,
+                headEmployeeId: nextHeadEmployeeId,
+                headEmployee: candidate
+                  ? {
+                      id: candidate.employeeId,
+                      name: candidate.name,
+                      employeeCode: candidate.code,
+                    }
+                  : null,
+              }
+            : d,
+        ),
+      );
+      setIsChangingManager(false);
+    } finally {
+      setIsConfirmingManager(false);
+    }
+  }
 
   async function handleAssignHr() {
     if (!selectedHrUserId || isAssigningHr) return;
@@ -469,76 +636,6 @@ export function LeadershipDashboard() {
       }
     } finally {
       setIsRevokingHr(false);
-    }
-  }
-
-  function openHeadModal(dept: LeadershipDepartmentItem) {
-    setActionError(null);
-    setHeadModalDept(dept);
-    setSelectedHeadEmployeeId(dept.headEmployeeId ?? '');
-  }
-
-  async function handleSaveDepartmentHead() {
-    if (!headModalDept || isSavingHead) return;
-    const nextHeadEmployeeId = selectedHeadEmployeeId || null;
-
-    setIsSavingHead(true);
-    setActionError(null);
-
-    try {
-      await putDepartmentHead(headModalDept.id, nextHeadEmployeeId);
-      await loadAll();
-      setHeadModalDept(null);
-      setSelectedHeadEmployeeId('');
-    } catch (err) {
-      // Fallback: if PUT /departments/:id/head is not yet deployed on the backend,
-      // sync department_head role via PUT /users/:id/roles and update department state.
-      if (err instanceof ApiError && err.status === 404 && nextHeadEmployeeId) {
-        try {
-          const candidate = headCandidates.find((c) => c.employeeId === nextHeadEmployeeId);
-          if (candidate && candidate.userId !== currentUserId) {
-            const nextRoles = Array.from(
-              new Set([...candidate.roles, 'department_head']),
-            );
-            await putUserRoles(candidate.userId, nextRoles);
-          }
-          setDepartments((prev) =>
-            prev.map((d) =>
-              d.id === headModalDept.id
-                ? {
-                    ...d,
-                    headEmployeeId: nextHeadEmployeeId,
-                    headEmployee: candidate
-                      ? {
-                          id: candidate.employeeId,
-                          name: candidate.name,
-                          employeeCode: candidate.code,
-                        }
-                      : null,
-                  }
-                : d,
-            ),
-          );
-          setHeadModalDept(null);
-          setSelectedHeadEmployeeId('');
-          return;
-        } catch (innerErr) {
-          if (innerErr instanceof ApiError) {
-            setActionError(innerErr.message || getErrorMessageForCode(innerErr.code));
-          } else {
-            setActionError('Failed to update Department Head.');
-          }
-          return;
-        }
-      }
-
-      if (err instanceof ApiError) {
-        setActionError(err.message || getErrorMessageForCode(err.code));
-      } else {
-        setActionError('Failed to update Department Head.');
-      }
-    } finally {
-      setIsSavingHead(false);
     }
   }
 
@@ -593,6 +690,83 @@ export function LeadershipDashboard() {
     );
   }
 
+  function handleDepartmentUpdated(
+    employeeId: string,
+    nextDepartment: { id: string; name: string },
+  ) {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === employeeId ? { ...emp, department: nextDepartment } : emp,
+      ),
+    );
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.employee?.id === employeeId
+          ? {
+              ...u,
+              employee: {
+                ...u.employee,
+                department: nextDepartment,
+              },
+            }
+          : u,
+      ),
+    );
+    setSelectedProfileEmployee((prev) =>
+      prev && prev.id === employeeId
+        ? { ...prev, department: nextDepartment }
+        : prev,
+    );
+  }
+
+  function handleRoleUpdated(
+    employeeId: string,
+    assignment: TeamRoleAssignment,
+    departmentId: string,
+    nextRoles: string[],
+  ) {
+    const targetEmp = employeeById.get(employeeId) ?? selectedProfileEmployee;
+
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === employeeId
+          ? { ...emp, user: { ...emp.user, roles: nextRoles } }
+          : emp,
+      ),
+    );
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.employee?.id === employeeId || u.id === targetEmp?.user.id
+          ? { ...u, roles: nextRoles }
+          : u,
+      ),
+    );
+
+    if (assignment === 'department_manager' && targetEmp) {
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.id === departmentId
+            ? {
+                ...dept,
+                headEmployeeId: employeeId,
+                headEmployee: {
+                  id: employeeId,
+                  name: targetEmp.fullName,
+                  employeeCode: targetEmp.employeeCode,
+                },
+              }
+            : dept,
+        ),
+      );
+    }
+
+    setSelectedProfileEmployee((prev) =>
+      prev && prev.id === employeeId
+        ? { ...prev, user: { ...prev.user, roles: nextRoles } }
+        : prev,
+    );
+  }
+
   function handleLiveStatusChange(
     employeeId: string,
     status: EmployeeLiveStatus | 'auto',
@@ -618,24 +792,22 @@ export function LeadershipDashboard() {
       transition={{ duration: 0.22, ease: EASE }}
       className="space-y-6"
     >
-      {/* Clean Header (No subtitle clutter) */}
+      {/* Header: Title + Create or Change on Departments Button (HR & Super Admin only) */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
         <h1 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
           Manage HR &amp; Department Heads
         </h1>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActionError(null);
-            setSelectedHrUserId(nonHrCandidates[0]?.id ?? '');
-            setAssignHrOpen(true);
-          }}
-          className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Assign HR Manager</span>
-        </button>
+        {canManageDepartments && (
+          <button
+            type="button"
+            onClick={() => openDepartmentManagerModal()}
+            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
+          >
+            <Building2 className="h-4 w-4" />
+            <span>Create or Change on Departments</span>
+          </button>
+        )}
       </header>
 
       {actionError && (
@@ -775,7 +947,7 @@ export function LeadershipDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* HR Managers Table (Full Width, Clean Alignment) */}
+          {/* HR Managers Table */}
           {showHrSection && (
             <section className="overflow-hidden rounded-3xl border border-[#23302B] bg-[#131A17]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#23302B] px-6 py-4">
@@ -890,7 +1062,7 @@ export function LeadershipDashboard() {
             </section>
           )}
 
-          {/* Department Heads Table (Full Width, with Attendance Status & Click-to-Open Profile) */}
+          {/* Department Heads Table */}
           {showHeadsSection && (
             <section className="overflow-hidden rounded-3xl border border-[#23302B] bg-[#131A17]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#23302B] px-6 py-4">
@@ -1023,7 +1195,7 @@ export function LeadershipDashboard() {
                             >
                               <button
                                 type="button"
-                                onClick={() => openHeadModal(dept)}
+                                onClick={() => openDepartmentManagerModal(dept)}
                                 className="rounded-xl border border-[#23302B] bg-[#1A2420] px-3 py-1.5 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
                               >
                                 {headName ? 'Change Head' : 'Assign Head'}
@@ -1040,6 +1212,328 @@ export function LeadershipDashboard() {
           )}
         </div>
       )}
+
+      {/* Create or Change on Departments Modal (with Bottom Slide Panel on Clicking a Department) */}
+      <AnimatePresence>
+        {deptManagerModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.2, ease: EASE }}
+              className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[#23302B] bg-[#131A17] shadow-2xl"
+            >
+              {/* Modal Top Bar */}
+              <div className="flex items-center justify-between border-b border-[#23302B] px-6 py-4">
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="h-5 w-5 text-[#4CAF7D]" />
+                  <h2 className="font-heading text-lg font-bold text-[#F0F5F2]">
+                    Create or Change on Departments
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewDeptForm((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#23302B] bg-[#1A2420] px-3 py-1.5 text-xs font-medium text-[#4CAF7D] transition-colors hover:border-[#2E8B57]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>New Department</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeptManagerModalOpen(false)}
+                    aria-label="Close modal"
+                    className="rounded-xl p-1.5 text-[#A3B3AC] hover:bg-[#1A2420] hover:text-[#F0F5F2]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* New Department Collapsible Form */}
+              <AnimatePresence>
+                {showNewDeptForm && (
+                  <motion.form
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    onSubmit={handleCreateNewDepartment}
+                    className="overflow-hidden border-b border-[#23302B] bg-[#0B0F0E]/70 px-6 py-4"
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="new-dept-name"
+                          className="mb-1 block text-xs font-medium text-[#A3B3AC]"
+                        >
+                          Department Name
+                        </label>
+                        <input
+                          id="new-dept-name"
+                          type="text"
+                          value={newDeptName}
+                          onChange={(e) => setNewDeptName(e.target.value)}
+                          placeholder="e.g. Quality Assurance"
+                          required
+                          className="h-10 w-full rounded-xl border border-[#23302B] bg-[#131A17] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="new-dept-desc"
+                          className="mb-1 block text-xs font-medium text-[#A3B3AC]"
+                        >
+                          Description (Optional)
+                        </label>
+                        <input
+                          id="new-dept-desc"
+                          type="text"
+                          value={newDeptDescription}
+                          onChange={(e) => setNewDeptDescription(e.target.value)}
+                          placeholder="Department focus"
+                          className="h-10 w-full rounded-xl border border-[#23302B] bg-[#131A17] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowNewDeptForm(false)}
+                        className="rounded-xl border border-[#23302B] px-3 py-1.5 text-xs font-medium text-[#A3B3AC] hover:text-[#F0F5F2]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!newDeptName.trim() || isCreatingDept}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E8B57] px-3.5 py-1.5 text-xs font-semibold text-[#F0F5F2] hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:opacity-50"
+                      >
+                        {isCreatingDept && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        <span>Create Department</span>
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+
+              {/* All Company Departments List */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {departments.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-[#6E8078]">
+                    No departments created yet.
+                  </p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {departments.map((dept) => {
+                      const isSelected = activeSlideDeptId === dept.id;
+                      const headEmpId = dept.headEmployeeId ?? dept.headEmployee?.id ?? null;
+                      const headName =
+                        (headEmpId ? employeeById.get(headEmpId)?.fullName : undefined) ??
+                        dept.headEmployee?.name ??
+                        null;
+                      const headCode =
+                        (headEmpId ? employeeById.get(headEmpId)?.employeeCode : undefined) ??
+                        dept.headEmployee?.employeeCode ??
+                        null;
+
+                      return (
+                        <button
+                          key={dept.id}
+                          type="button"
+                          onClick={() => handleSelectDeptInModal(dept)}
+                          className={cn(
+                            'flex flex-col justify-between rounded-2xl border p-4 text-left transition-all',
+                            isSelected
+                              ? 'border-[#2E8B57] bg-[#1F5C3A]/30 shadow-md'
+                              : 'border-[#23302B] bg-[#0B0F0E]/65 hover:border-[#2E8B57]/60 hover:bg-[#1A2420]/60',
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-heading text-sm font-semibold text-[#F0F5F2]">
+                              {dept.name}
+                            </span>
+                            <span className="rounded-lg border border-[#23302B] bg-[#131A17] px-2 py-0.5 text-[11px] text-[#A3B3AC]">
+                              {dept.activeEmployeeCount ?? 0} staff
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between text-xs">
+                            <span className="text-[#6E8078]">Manager:</span>
+                            {headName ? (
+                              <span className="font-medium text-[#4CAF7D]">
+                                {headName} {headCode ? `(${headCode})` : ''}
+                              </span>
+                            ) : (
+                              <span className="text-[#F59E0B]">Unassigned</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Slide Panel when a Department is Clicked */}
+              <AnimatePresence>
+                {activeSlideDept && (
+                  <motion.div
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ duration: 0.24, ease: EASE }}
+                    className="border-t border-[#2E8B57]/50 bg-[#0B0F0E] p-5 shadow-[0_-12px_32px_rgba(0,0,0,0.6)]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] font-semibold tracking-[0.06em] text-[#4CAF7D] uppercase">
+                          {activeSlideDept.name}
+                        </span>
+                        <div className="mt-0.5 flex items-center gap-2 text-sm text-[#F0F5F2]">
+                          <span className="text-[#A3B3AC]">Assigned Manager:</span>
+                          {(() => {
+                            const hId =
+                              activeSlideDept.headEmployeeId ??
+                              activeSlideDept.headEmployee?.id ??
+                              null;
+                            const hName =
+                              (hId ? employeeById.get(hId)?.fullName : undefined) ??
+                              activeSlideDept.headEmployee?.name ??
+                              null;
+                            const hCode =
+                              (hId ? employeeById.get(hId)?.employeeCode : undefined) ??
+                              activeSlideDept.headEmployee?.employeeCode ??
+                              null;
+                            return hName ? (
+                              <strong className="text-[#F0F5F2]">
+                                {hName} {hCode ? `(${hCode})` : ''}
+                              </strong>
+                            ) : (
+                              <span className="font-medium text-[#F59E0B]">Unassigned</span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!isChangingManager && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsChangingManager(true);
+                              setManagerSearchInput('');
+                            }}
+                            className="rounded-xl border border-[#2E8B57]/60 bg-[#1F5C3A]/35 px-3 py-1.5 text-xs font-semibold text-[#4CAF7D] transition-colors hover:bg-[#2E8B57] hover:text-[#F0F5F2]"
+                          >
+                            Change
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveSlideDeptId(null)}
+                          aria-label="Close department slide"
+                          className="rounded-xl p-1 text-[#A3B3AC] hover:bg-[#1A2420] hover:text-[#F0F5F2]"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isChangingManager && (
+                      <div className="mt-4 space-y-3">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+                          <input
+                            type="text"
+                            value={managerSearchInput}
+                            onChange={(e) => {
+                              setManagerSearchInput(e.target.value);
+                              setSelectedCandidateEmployeeId('');
+                            }}
+                            placeholder="Type employee name or BST code..."
+                            className="h-10 w-full rounded-xl border border-[#23302B] bg-[#131A17] pr-3 pl-9 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                          />
+                        </div>
+
+                        {/* Autocomplete Suggestions */}
+                        <div className="max-h-36 overflow-y-auto rounded-xl border border-[#23302B] bg-[#131A17] divide-y divide-[#23302B]/60">
+                          {suggestedCandidates.length === 0 ? (
+                            <div className="px-3.5 py-2.5 text-xs text-[#6E8078]">
+                              No matching employees found.
+                            </div>
+                          ) : (
+                            suggestedCandidates.map((cand) => {
+                              const isPicked =
+                                selectedCandidateEmployeeId === cand.employeeId;
+                              return (
+                                <button
+                                  key={cand.employeeId}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCandidateEmployeeId(cand.employeeId);
+                                    setManagerSearchInput(`${cand.name} (${cand.code})`);
+                                  }}
+                                  className={cn(
+                                    'flex w-full items-center justify-between px-3.5 py-2 text-left text-xs transition-colors',
+                                    isPicked
+                                      ? 'bg-[#1F5C3A]/45 text-[#4CAF7D]'
+                                      : 'text-[#F0F5F2] hover:bg-[#1A2420]',
+                                  )}
+                                >
+                                  <div>
+                                    <span className="font-medium">{cand.name}</span>{' '}
+                                    <span className="font-mono text-[#4CAF7D]">
+                                      ({cand.code})
+                                    </span>
+                                  </div>
+                                  <span className="text-[#A3B3AC]">
+                                    {cand.departmentName}
+                                  </span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsChangingManager(false)}
+                            className="rounded-xl border border-[#23302B] px-3.5 py-1.5 text-xs font-medium text-[#A3B3AC] hover:text-[#F0F5F2]"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!selectedCandidateEmployeeId || isConfirmingManager}
+                            onClick={handleConfirmDepartmentManager}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E8B57] px-4 py-1.5 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isConfirmingManager && (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            )}
+                            <span>Confirm</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Assign HR Manager Modal */}
       <AnimatePresence>
@@ -1170,83 +1664,7 @@ export function LeadershipDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Assign / Change Department Head Modal */}
-      <AnimatePresence>
-        {headModalDept && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97, y: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 6 }}
-              transition={{ duration: 0.18, ease: EASE }}
-              className="w-full max-w-md rounded-3xl border border-[#23302B] bg-[#131A17] p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg font-bold text-[#F0F5F2]">
-                  {headModalDept.name} — Department Head
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setHeadModalDept(null)}
-                  aria-label="Close modal"
-                  className="rounded-xl p-1.5 text-[#A3B3AC] hover:bg-[#1A2420] hover:text-[#F0F5F2]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <label
-                  htmlFor="dept-head-select"
-                  className="block text-xs font-medium text-[#A3B3AC]"
-                >
-                  Department Head
-                </label>
-                <select
-                  id="dept-head-select"
-                  value={selectedHeadEmployeeId}
-                  onChange={(e) => setSelectedHeadEmployeeId(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 text-sm text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
-                >
-                  <option value="">— Unassigned —</option>
-                  {headCandidates.map((emp) => (
-                    <option key={emp.employeeId} value={emp.employeeId}>
-                      {emp.name} ({emp.code}) — {emp.departmentName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setHeadModalDept(null)}
-                  className="rounded-xl border border-[#23302B] px-4 py-2 text-xs font-medium text-[#A3B3AC] hover:bg-[#1A2420] hover:text-[#F0F5F2]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingHead}
-                  onClick={handleSaveDepartmentHead}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E8B57] px-4 py-2 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:opacity-50"
-                >
-                  {isSavingHead && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  <span>Save Assignment</span>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Employee Profile Modal on Clicking Department Head or HR Row */}
+      {/* Right-Side Slide Employee Profile Drawer */}
       <EmployeeProfileModal
         employee={selectedProfileEmployee}
         liveStatus={
@@ -1258,9 +1676,12 @@ export function LeadershipDashboard() {
             : 'available'
         }
         designations={designations}
+        departments={departments}
         canEditDesignation={true}
         onClose={() => setSelectedProfileEmployee(null)}
         onDesignationUpdated={handleDesignationUpdated}
+        onDepartmentUpdated={handleDepartmentUpdated}
+        onRoleUpdated={handleRoleUpdated}
         onLiveStatusChange={handleLiveStatusChange}
       />
     </motion.div>

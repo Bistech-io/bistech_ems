@@ -3,8 +3,9 @@ import { LeadershipDashboard } from '@/features/admin/leadership/components/lead
 
 export default function ManageLeadershipPage() {
   return (
-    <RoleGuard allowedRoles={['super_admin']} permission="role.manage" minScope="org">
+    <RoleGuard allowedRoles={['super_admin', 'hr_manager']}>
       <LeadershipDashboard />
     </RoleGuard>
   );
 }
+

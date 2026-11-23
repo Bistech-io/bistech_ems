@@ -148,7 +148,12 @@ export async function createEmployee(
 
 export async function updateEmployeeDesignation(
   employeeId: string,
-  payload: { designationId?: string; designationTitle?: string; reason?: string },
+  payload: {
+    designationId?: string;
+    designationTitle?: string;
+    departmentId?: string;
+    reason?: string;
+  },
 ): Promise<EmployeeItem> {
   const res = await apiRequest(`/employees/${employeeId}`, {
     method: 'PATCH',
