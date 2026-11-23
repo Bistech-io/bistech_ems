@@ -121,8 +121,35 @@ describe('LeadershipDashboard Integration', () => {
     vi.spyOn(employeesApi, 'fetchEmployees').mockResolvedValue([]);
     vi.spyOn(employeesApi, 'fetchDesignations').mockResolvedValue([]);
     vi.spyOn(employeesApi, 'fetchTodayOrgAttendance').mockResolvedValue([]);
-    vi.spyOn(attendanceApi, 'fetchOrganizationSettings').mockResolvedValue(null);
-    vi.spyOn(attendanceApi, 'fetchMyAttendanceBoard').mockResolvedValue(null);
+    vi.spyOn(attendanceApi, 'fetchOrganizationSettings').mockResolvedValue({
+      timezone: 'Asia/Dhaka',
+      workStart: '09:00',
+      workEnd: '18:00',
+      graceMinutes: 15,
+    });
+    vi.spyOn(attendanceApi, 'fetchMyAttendanceBoard').mockResolvedValue({
+      timezone: 'Asia/Dhaka',
+      workStart: '09:00',
+      graceMinutes: 15,
+      workEnd: '18:00',
+      from: '2026-11-01',
+      to: '2026-11-30',
+      today: {
+        workDate: '2026-11-23',
+        status: 'present',
+        checkInAt: '09:10:00',
+        lateMinutes: 0,
+        source: 'web',
+      },
+      summary: {
+        presentDays: 1,
+        lateDays: 0,
+        absentDays: 0,
+        expectedWorkingDays: 22,
+        attendanceRatePercent: 100,
+      },
+      records: [],
+    });
   });
 
   afterEach(() => {
