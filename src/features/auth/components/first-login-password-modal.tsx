@@ -89,7 +89,7 @@ export function FirstLoginPasswordModal() {
     return Array.from(tokens);
   }, [session, user]);
 
-  const lengthValid = newPassword.length >= 12 && newPassword.length <= 128;
+  const lengthValid = newPassword.length >= 6 && newPassword.length <= 128;
 
   const containsIdentity = useMemo(() => {
     if (!newPassword) return false;
@@ -106,7 +106,7 @@ export function FirstLoginPasswordModal() {
     setErrorMessage(null);
 
     if (!lengthValid) {
-      setErrorMessage('Password must be between 12 and 128 characters.');
+      setErrorMessage('Password must be between 6 and 128 characters.');
       return;
     }
 
@@ -230,7 +230,7 @@ export function FirstLoginPasswordModal() {
                         placeholder="Enter new password"
                         autoComplete="new-password"
                         required
-                        minLength={12}
+                        minLength={6}
                         maxLength={128}
                         className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] focus:border-[#2E8B57] focus:outline-none"
                       />
@@ -266,7 +266,7 @@ export function FirstLoginPasswordModal() {
                         placeholder="Confirm new password"
                         autoComplete="new-password"
                         required
-                        minLength={12}
+                        minLength={6}
                         maxLength={128}
                         className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] focus:border-[#2E8B57] focus:outline-none"
                       />
@@ -296,7 +296,7 @@ export function FirstLoginPasswordModal() {
                         )}
                       />
                       <span className={lengthValid ? 'text-[#F0F5F2]' : 'text-[#A3B3AC]'}>
-                        12 to 128 characters
+                        6 to 128 characters
                       </span>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">

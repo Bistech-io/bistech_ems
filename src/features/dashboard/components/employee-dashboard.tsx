@@ -70,7 +70,7 @@ const ROLE_DASHBOARD_META: Record<
     },
   },
   employee: {
-    title: 'Employee Dashboard',
+    title: 'Dashboard',
     badge: 'Employee Workspace',
     defaultPersona: {
       designation: 'Senior Frontend Engineer',
@@ -164,7 +164,7 @@ export function EmployeeDashboard() {
       transition={{ duration: 0.22, ease: EASE }}
       className="space-y-6"
     >
-      {/* Clean Role Header (No welcome message, no check-in button, no clutter) */}
+      {/* Clean Role Header with Eye-Catchy Dynamic Designation */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
         <div>
           <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
@@ -173,13 +173,11 @@ export function EmployeeDashboard() {
           <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
             {meta.title}
           </h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[#A3B3AC]">
+          <div className="mt-2 flex flex-wrap items-center gap-2.5 text-xs">
             <span className="font-medium text-[#F0F5F2]">{persona.fullName}</span>
-            <span className="rounded-md border border-[#23302B] bg-[#131A17] px-2 py-0.5 font-mono text-[11px] text-[#4CAF7D]">
-              {persona.employeeCode}
-            </span>
-            <span>
-              {persona.department} — {persona.teamName}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/50 bg-gradient-to-r from-[#1F5C3A]/60 to-[#2E8B57]/25 px-3 py-1 text-xs font-semibold tracking-wide text-[#4CAF7D] shadow-[0_4px_14px_-4px_rgba(46,139,87,0.45)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
+              {persona.designation}
             </span>
           </div>
         </div>

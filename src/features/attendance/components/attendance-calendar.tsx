@@ -65,6 +65,21 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${m}-${d}`;
 }
 
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
 export function AttendanceCalendar({
   year,
   month,
@@ -74,12 +89,10 @@ export function AttendanceCalendar({
   onSelectDate,
   onMonthChange,
 }: AttendanceCalendarProps) {
-  const monthLabel = useMemo(() => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(year, month, 1));
-  }, [year, month]);
+  const availableYears = useMemo(() => {
+    const base = Math.max(year, 2026);
+    return [base - 3, base - 2, base - 1, base, base + 1];
+  }, [year]);
 
   const calendarCells = useMemo(() => {
     const firstWeekday = new Date(year, month, 1).getDay();
@@ -113,17 +126,37 @@ export function AttendanceCalendar({
 
   return (
     <section className="flex flex-col rounded-3xl border border-[#23302B] bg-[#131A17] p-5 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      {/* Header with Month / Year Selector & Prev/Next Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1F5C3A]/40 text-[#4CAF7D]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1F5C3A]/40 text-[#4CAF7D]">
             <CalendarIcon className="h-4 w-4" />
           </span>
-          <div>
-            <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
-              {monthLabel}
-            </h2>
-            <p className="text-[11px] text-[#6E8078]">Monthly attendance overview</p>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={month}
+              onChange={(e) => onMonthChange(year, Number(e.target.value))}
+              aria-label="Select month"
+              className="h-8 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 text-xs font-semibold text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+            >
+              {MONTHS.map((mName, idx) => (
+                <option key={mName} value={idx}>
+                  {mName}
+                </option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => onMonthChange(Number(e.target.value), month)}
+              aria-label="Select year"
+              className="h-8 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 text-xs font-semibold text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
