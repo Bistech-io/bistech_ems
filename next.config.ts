@@ -1,11 +1,23 @@
 import type { NextConfig } from "next";
 
-const defaultApi =
-  process.env.NODE_ENV === 'production'
+const isDevPreview =
+  process.env.VERCEL_GIT_COMMIT_REF === 'dev' ||
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+
+const defaultApi = isDevPreview
+  ? 'https://bistech-ems-server-dev.vercel.app'
+  : process.env.NODE_ENV === 'production'
     ? 'https://bistech-ems-server.vercel.app'
     : 'http://localhost:4000';
 
-const apiInternal = (process.env.API_INTERNAL_URL ?? defaultApi).replace(/\/+$/, '');
+const rawConfiguredApi = process.env.API_INTERNAL_URL;
+const resolvedApi =
+  isDevPreview && rawConfiguredApi === 'https://bistech-ems-server.vercel.app'
+    ? 'https://bistech-ems-server-dev.vercel.app'
+    : (rawConfiguredApi ?? defaultApi);
+
+const apiInternal = resolvedApi.replace(/\/+$/, '');
 
 const nextConfig: NextConfig = {
   /* config options here */
