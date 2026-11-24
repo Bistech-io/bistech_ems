@@ -77,16 +77,39 @@ export async function fetchMyAttendanceBoard(params?: {
   return res.data;
 }
 
-export async function queryHasUserEverCheckedIn(): Promise<boolean> {
+export async function fetchMyFirstCheckInDate(): Promise<string | null> {
   const board = await fetchMyAttendanceBoard({
     from: '2020-01-01',
   });
 
-  if (board.today.status !== 'not_checked_in' && Boolean(board.today.checkInAt)) {
-    return true;
+  let earliest: string | null = null;
+  for (const record of board.records) {
+    if (
+      !record.isDerived &&
+      (record.status === 'present' || record.status === 'late' || Boolean(record.checkInAt))
+    ) {
+      if (!earliest || record.workDate < earliest) {
+        earliest = record.workDate;
+      }
+    }
   }
 
-  return board.records.some((record) => !record.isDerived && Boolean(record.checkInAt));
+  if (
+    board.today.status === 'present' ||
+    board.today.status === 'late' ||
+    Boolean(board.today.checkInAt)
+  ) {
+    if (!earliest || board.today.workDate < earliest) {
+      earliest = board.today.workDate;
+    }
+  }
+
+  return earliest;
+}
+
+export async function queryHasUserEverCheckedIn(): Promise<boolean> {
+  const firstDate = await fetchMyFirstCheckInDate();
+  return firstDate !== null;
 }
 
 
@@ -130,6 +153,7 @@ export async function fetchOrgAttendanceRange(params: {
   to: string;
   employeeId?: string;
   departmentId?: string;
+  status?: 'present' | 'late' | 'absent';
   limit?: number;
 }): Promise<OrgAttendanceListItem[]> {
   const search = new URLSearchParams();
@@ -137,6 +161,7 @@ export async function fetchOrgAttendanceRange(params: {
   search.set('to', params.to);
   if (params.employeeId) search.set('employeeId', params.employeeId);
   if (params.departmentId) search.set('departmentId', params.departmentId);
+  if (params.status) search.set('status', params.status);
   search.set('limit', String(params.limit ?? 100));
 
   const res = await apiRequest(`/attendance?${search.toString()}`, {
@@ -144,6 +169,70 @@ export async function fetchOrgAttendanceRange(params: {
     schema: orgAttendanceRangeResponseSchema,
   });
   return res.data;
+}
+
+export async function fetchEmployeeFirstCheckInDate(
+  employeeId: string,
+  to: string,
+): Promise<string | null> {
+  const [presentList, lateList] = await Promise.all([
+    fetchOrgAttendanceRange({
+      employeeId,
+      from: '2020-01-01',
+      to,
+      status: 'present',
+      limit: 100,
+    }).catch(() => [] as OrgAttendanceListItem[]),
+    fetchOrgAttendanceRange({
+      employeeId,
+      from: '2020-01-01',
+      to,
+      status: 'late',
+      limit: 100,
+    }).catch(() => [] as OrgAttendanceListItem[]),
+  ]);
+
+  let earliest: string | null = null;
+  for (const rec of [...presentList, ...lateList]) {
+    if (!rec.isDerived && (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))) {
+      if (!earliest || rec.workDate < earliest) {
+        earliest = rec.workDate;
+      }
+    }
+  }
+  return earliest;
+}
+
+export async function fetchOrgFirstCheckInDates(
+  to: string,
+): Promise<Record<string, string>> {
+  const [presentList, lateList] = await Promise.all([
+    fetchOrgAttendanceRange({
+      from: '2020-01-01',
+      to,
+      status: 'present',
+      limit: 100,
+    }).catch(() => [] as OrgAttendanceListItem[]),
+    fetchOrgAttendanceRange({
+      from: '2020-01-01',
+      to,
+      status: 'late',
+      limit: 100,
+    }).catch(() => [] as OrgAttendanceListItem[]),
+  ]);
+
+  const earliestByEmployee: Record<string, string> = {};
+  for (const rec of [...presentList, ...lateList]) {
+    const empId = rec.employee?.id ?? rec.employeeId;
+    if (!empId) continue;
+    if (!rec.isDerived && (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))) {
+      const current = earliestByEmployee[empId];
+      if (!current || rec.workDate < current) {
+        earliestByEmployee[empId] = rec.workDate;
+      }
+    }
+  }
+  return earliestByEmployee;
 }
 
 export async function fetchOrganizationSettings(): Promise<OrganizationShiftSettings> {
