@@ -1,10 +1,12 @@
 import {
   authMeResponseSchema,
+  changePasswordResponseSchema,
   loginResponseSchema,
   logoutResponseSchema,
   refreshResponseSchema,
   resetPasswordResponseSchema,
   type AuthMeData,
+  type ChangePasswordRequest,
   type LoginRequest,
   type ResetPasswordRequest,
 } from '@ems/contracts';
@@ -58,6 +60,15 @@ export async function resetPassword(payload: ResetPasswordRequest): Promise<stri
     method: 'POST',
     body: payload,
     schema: resetPasswordResponseSchema,
+  });
+  return res.message;
+}
+
+export async function changePassword(payload: ChangePasswordRequest): Promise<string> {
+  const res = await apiRequest('/auth/change-password', {
+    method: 'POST',
+    body: payload,
+    schema: changePasswordResponseSchema,
   });
   return res.message;
 }

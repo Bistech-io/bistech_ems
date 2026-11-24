@@ -104,9 +104,26 @@ export const resetPasswordRequestSchema = z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .max(128, 'Password must be 128 characters or fewer'),
+    currentPassword: z.string().min(1).max(128).optional(),
   })
   .strict();
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export const resetPasswordResponseSchema = successEnvelopeSchema(z.null());
+
+export const changePasswordRequestSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, 'Current password is required')
+      .max(128, 'Current password must be 128 characters or fewer'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be 128 characters or fewer'),
+  })
+  .strict();
+
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
+export const changePasswordResponseSchema = successEnvelopeSchema(z.null());
 
