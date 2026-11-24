@@ -323,9 +323,17 @@ export function AttendanceDashboard() {
     const handleAutoCheckIn = () => {
       void loadBoard(viewYear, viewMonth);
     };
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
     window.addEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
     return () => {
       window.removeEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
     };
   }, [loadBoard, viewYear, viewMonth]);
 
