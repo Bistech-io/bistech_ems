@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -24,6 +24,11 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
+import {
+  fetchMyProfile,
+  updateMyProfile,
+  type EmployeeProfileData,
+} from '@/features/account/api';
 import { changePassword } from '@/features/auth/api';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
@@ -32,13 +37,6 @@ import { useAuth } from '@/providers/auth-provider';
 const EASE = [0.22, 1, 0.36, 1] as const;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
 const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
-interface RoleProfileDefaults {
-  designation: string;
-  department: string;
-  employeeCode: string;
-  joiningDate: string;
-}
 
 interface PersonalDetails {
   personalEmail: string;
@@ -58,33 +56,6 @@ const EMPTY_PERSONAL_DETAILS: PersonalDetails = {
   city: '',
   emergencyContactName: '',
   emergencyContactPhone: '',
-};
-
-const ROLE_DEFAULTS: Record<RoleName, RoleProfileDefaults> = {
-  super_admin: {
-    designation: 'System Administrator',
-    department: 'Executive & Platform',
-    employeeCode: 'BST-00001',
-    joiningDate: '2024-01-10',
-  },
-  hr_manager: {
-    designation: 'HR Manager',
-    department: 'People Operations',
-    employeeCode: 'BST-00102',
-    joiningDate: '2024-06-15',
-  },
-  dept_head: {
-    designation: 'Head of Engineering',
-    department: 'Engineering',
-    employeeCode: 'BST-00103',
-    joiningDate: '2024-04-01',
-  },
-  employee: {
-    designation: 'Software Engineer',
-    department: 'Engineering',
-    employeeCode: 'BST-00115',
-    joiningDate: '2025-02-15',
-  },
 };
 
 function getInitials(name: string): string {
@@ -123,10 +94,12 @@ export function ProfileView() {
   const [isUploading, setIsUploading] = useState(false);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
 
-  // Personal Details (editable)
+  // Personal Details (editable, persisted in DB)
+  const [profileData, setProfileData] = useState<EmployeeProfileData | null>(null);
   const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(EMPTY_PERSONAL_DETAILS);
   const [isSavingPersonal, setIsSavingPersonal] = useState(false);
   const [personalSavedNotice, setPersonalSavedNotice] = useState(false);
+  const [personalError, setPersonalError] = useState<string | null>(null);
 
   // Change Password Card state (8+ chars, with Current Password verification)
   const [currentPassword, setCurrentPassword] = useState('');
@@ -148,20 +121,38 @@ export function ProfileView() {
         const savedPid = localStorage.getItem(`bistech_avatar_pid_${currentUserId}`);
         if (savedUrl) setAvatarUrl(savedUrl);
         if (savedPid) setAvatarPublicId(savedPid);
-
-        const savedPersonalRaw = localStorage.getItem(`bistech_personal_${currentUserId}`);
-        if (savedPersonalRaw) {
-          const parsed = JSON.parse(savedPersonalRaw) as Partial<PersonalDetails>;
-          setPersonalDetails({ ...EMPTY_PERSONAL_DETAILS, ...parsed });
-        }
       } catch {
         // LocalStorage may be blocked or unavailable
       }
     }
   }
 
-  const roleKey: RoleName = activeRole ?? 'employee';
-  const defaults = ROLE_DEFAULTS[roleKey];
+  useEffect(() => {
+    if (!user?.userId) return;
+    let cancelled = false;
+
+    fetchMyProfile()
+      .then((data) => {
+        if (cancelled) return;
+        setProfileData(data);
+        setPersonalDetails({
+          personalEmail: data.personalEmail ?? '',
+          personalPhone: data.personalPhone ?? '',
+          dateOfBirth: data.dateOfBirth ?? '',
+          addressLine: data.addressLine ?? '',
+          city: data.city ?? '',
+          emergencyContactName: data.emergencyContactName ?? '',
+          emergencyContactPhone: data.emergencyContactPhone ?? '',
+        });
+      })
+      .catch(() => {
+        // Keep fields empty if user has no employee record
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.userId]);
 
   const displayName = user?.name ?? 'BisTech Member';
   const displayUsername = user?.username ? `@${user.username}` : '—';
@@ -259,22 +250,45 @@ export function ProfileView() {
     }
   }
 
-  function handleSavePersonalDetails(e: FormEvent) {
+  async function handleSavePersonalDetails(e: FormEvent) {
     e.preventDefault();
+    if (isSavingPersonal) return;
+
     setIsSavingPersonal(true);
     setPersonalSavedNotice(false);
+    setPersonalError(null);
 
     try {
-      localStorage.setItem(
-        `bistech_personal_${currentUserId}`,
-        JSON.stringify(personalDetails),
-      );
-    } catch {
-      // Ignore storage error
-    }
+      const updated = await updateMyProfile({
+        personalEmail: personalDetails.personalEmail.trim() || null,
+        personalPhone: personalDetails.personalPhone.trim() || null,
+        dateOfBirth: personalDetails.dateOfBirth.trim() || null,
+        addressLine: personalDetails.addressLine.trim() || null,
+        city: personalDetails.city.trim() || null,
+        emergencyContactName: personalDetails.emergencyContactName.trim() || null,
+        emergencyContactPhone: personalDetails.emergencyContactPhone.trim() || null,
+      });
 
-    setIsSavingPersonal(false);
-    setPersonalSavedNotice(true);
+      setProfileData(updated);
+      setPersonalDetails({
+        personalEmail: updated.personalEmail ?? '',
+        personalPhone: updated.personalPhone ?? '',
+        dateOfBirth: updated.dateOfBirth ?? '',
+        addressLine: updated.addressLine ?? '',
+        city: updated.city ?? '',
+        emergencyContactName: updated.emergencyContactName ?? '',
+        emergencyContactPhone: updated.emergencyContactPhone ?? '',
+      });
+      setPersonalSavedNotice(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setPersonalError(err.message || getErrorMessageForCode(err.code));
+      } else {
+        setPersonalError('Failed to save personal details. Please try again.');
+      }
+    } finally {
+      setIsSavingPersonal(false);
+    }
   }
 
   async function handleChangePassword(e: FormEvent) {
@@ -424,12 +438,12 @@ export function ProfileView() {
               </div>
 
               <p className="text-sm font-medium text-[#A3B3AC]">
-                {defaults.designation} · {defaults.department}
+                {profileData?.designation.title ?? displayRole} · {profileData?.department.name ?? 'BisTech'}
               </p>
 
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                 <span className="rounded-xl border border-[#23302B] bg-[#0B0F0E]/85 px-3 py-1 font-mono font-medium text-[#A3B3AC]">
-                  {defaults.employeeCode}
+                  {profileData?.employeeCode ?? '—'}
                 </span>
                 <span className="rounded-xl border border-[#2E8B57]/40 bg-[#1F5C3A]/30 px-3 py-1 font-medium text-[#4CAF7D]">
                   {displayRole}
@@ -507,12 +521,40 @@ export function ProfileView() {
               <Lock className="h-4 w-4 text-[#6E8078]" />
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <ReadOnlyField label="Designation" value={defaults.designation} icon={Briefcase} />
-              <ReadOnlyField label="Department" value={defaults.department} icon={Network} />
-              <ReadOnlyField label="Organization" value="BisTech" icon={Building2} />
-              <ReadOnlyField label="Joining Date" value={defaults.joiningDate} icon={Calendar} />
-              <ReadOnlyField label="Employee Code" value={defaults.employeeCode} icon={IdCard} />
-              <ReadOnlyField label="Work Shift" value="09:00 AM · Asia/Dhaka" icon={Clock} />
+              <ReadOnlyField
+                label="Designation"
+                value={profileData?.designation.title ?? '—'}
+                icon={Briefcase}
+              />
+              <ReadOnlyField
+                label="Department"
+                value={profileData?.department.name ?? '—'}
+                icon={Network}
+              />
+              <ReadOnlyField
+                label="Organization"
+                value={profileData?.organizationName ?? 'BisTech'}
+                icon={Building2}
+              />
+              <ReadOnlyField
+                label="Joining Date"
+                value={profileData?.joiningDate ?? '—'}
+                icon={Calendar}
+              />
+              <ReadOnlyField
+                label="Employee Code"
+                value={profileData?.employeeCode ?? '—'}
+                icon={IdCard}
+              />
+              <ReadOnlyField
+                label="Work Shift"
+                value={
+                  profileData?.workStart && profileData?.timezone
+                    ? `${profileData.workStart} · ${profileData.timezone}`
+                    : '—'
+                }
+                icon={Clock}
+              />
             </div>
           </section>
 
@@ -683,9 +725,15 @@ export function ProfileView() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between gap-3 pt-1">
                 <div>
-                  {personalSavedNotice && (
+                  {personalError && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#FCA5A5]">
+                      <AlertCircle className="h-3.5 w-3.5 text-[#EF4444]" />
+                      <span>{personalError}</span>
+                    </span>
+                  )}
+                  {!personalError && personalSavedNotice && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Personal details saved.</span>
@@ -698,7 +746,14 @@ export function ProfileView() {
                   disabled={isSavingPersonal}
                   className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:opacity-50"
                 >
-                  <span>Save Personal Details</span>
+                  {isSavingPersonal ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Personal Details</span>
+                  )}
                 </button>
               </div>
             </form>

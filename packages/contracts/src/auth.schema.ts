@@ -99,12 +99,11 @@ export const logoutResponseSchema = successEnvelopeSchema(z.null());
 
 export const resetPasswordRequestSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Current password is required').optional(),
+    currentPassword: z.string().min(1, 'Current password is required').max(128).optional(),
     newPassword: z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .max(128, 'Password must be 128 characters or fewer'),
-    currentPassword: z.string().min(1).max(128).optional(),
   })
   .strict();
 

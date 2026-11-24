@@ -50,53 +50,23 @@ const ROLE_DASHBOARD_META: Record<
   {
     title: string;
     badge: string;
-    defaultPersona: {
-      designation: string;
-      department: string;
-      teamName: string;
-      employeeCode: string;
-    };
   }
 > = {
   super_admin: {
     title: 'Super Admin Dashboard',
     badge: 'Super Admin Workspace',
-    defaultPersona: {
-      designation: 'Super Administrator',
-      department: 'Management & Operations',
-      teamName: 'Executive Leadership',
-      employeeCode: 'BST-0001',
-    },
   },
   hr_manager: {
     title: 'HR Manager Dashboard',
     badge: 'HR Manager Workspace',
-    defaultPersona: {
-      designation: 'HR Manager',
-      department: 'Human Resources',
-      teamName: 'People Operations',
-      employeeCode: 'BST-1001',
-    },
   },
   dept_head: {
     title: 'Department Head Dashboard',
     badge: 'Department Head Workspace',
-    defaultPersona: {
-      designation: 'Lead Engineer & Department Head',
-      department: 'Engineering',
-      teamName: 'Engineering Leadership',
-      employeeCode: 'BST-1002',
-    },
   },
   employee: {
     title: 'Dashboard',
     badge: 'Employee Workspace',
-    defaultPersona: {
-      designation: 'Senior Frontend Engineer',
-      department: 'Engineering',
-      teamName: 'Core Platform Squad',
-      employeeCode: 'BST-1003',
-    },
   },
 };
 
@@ -188,10 +158,10 @@ export function EmployeeDashboard() {
     const employeeCode =
       emp?.employeeCode ||
       (user?.employeeId && user.employeeId.startsWith('BST-') ? user.employeeId : null) ||
-      meta.defaultPersona.employeeCode;
-    const department = emp?.department || meta.defaultPersona.department;
-    const teamName = emp?.teams?.[0] || meta.defaultPersona.teamName;
-    const designation = emp?.designation || user?.roleTitle || meta.defaultPersona.designation;
+      '—';
+    const department = emp?.department || '—';
+    const teamName = emp?.teams?.[0] || '—';
+    const designation = emp?.designation || user?.roleTitle || ROLE_LABELS[role];
 
     return {
       fullName,
@@ -200,7 +170,7 @@ export function EmployeeDashboard() {
       teamName,
       designation,
     };
-  }, [summary, user, meta]);
+  }, [summary, user, role]);
 
   const myTaskRows: EmployeeTaskItem[] = useMemo(() => {
     const items = summary?.me?.tasks.items ?? [];
