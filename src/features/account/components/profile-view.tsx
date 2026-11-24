@@ -24,7 +24,7 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
-import { resetPassword } from '@/features/auth/api';
+import { changePassword } from '@/features/auth/api';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
@@ -317,7 +317,7 @@ export function ProfileView() {
     setIsUpdatingPassword(true);
 
     try {
-      await resetPassword({ newPassword });
+      await changePassword({ currentPassword, newPassword });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileView } from '@/features/account/components/profile-view';
+import * as authApi from '@/features/auth/api';
 import { AuthProvider } from '@/providers/auth-provider';
 
 vi.mock('next/navigation', () => ({
@@ -137,6 +138,43 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     await waitFor(() => {
       expect(screen.queryByRole('img')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('validates current password field and changes password successfully', async () => {
+    const changePasswordSpy = vi
+      .spyOn(authApi, 'changePassword')
+      .mockResolvedValue('Password updated successfully.');
+
+    renderProfile('employee');
+
+    expect(screen.getByText('Change Password')).toBeInTheDocument();
+
+    const currentInput = screen.getByPlaceholderText('Enter current password');
+    const newInput = screen.getByPlaceholderText('At least 8 characters');
+    const confirmInput = screen.getByPlaceholderText('Re-enter new password');
+    const updateBtn = screen.getByRole('button', { name: /update password/i });
+    const form = updateBtn.closest('form')!;
+
+    // Submit with empty current password
+    fireEvent.change(newInput, { target: { value: 'BrandNewPass123!' } });
+    fireEvent.change(confirmInput, { target: { value: 'BrandNewPass123!' } });
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByText('Current password is required.')).toBeInTheDocument();
+    });
+
+    // Submit with valid inputs
+    fireEvent.change(currentInput, { target: { value: 'Password123!' } });
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(changePasswordSpy).toHaveBeenCalledWith({
+        currentPassword: 'Password123!',
+        newPassword: 'BrandNewPass123!',
+      });
+      expect(screen.getByText('Password updated successfully.')).toBeInTheDocument();
     });
   });
 });
