@@ -56,9 +56,12 @@ describe('OrganizationManagementDashboard', () => {
       expect(screen.getByText('Organization Management')).toBeInTheDocument();
     });
 
-    // Header badge and summary card show active shift
-    const shiftMatches = screen.getAllByText('09:30 AM – 06:00 PM');
-    expect(shiftMatches.length).toBe(2);
+    // Header badge shows active shift with grace period
+    expect(
+      screen.getByText(/09:30 AM – 06:00 PM · 25m grace/i),
+    ).toBeInTheDocument();
+    // Summary card shows shift window
+    expect(screen.getByText('09:30 AM – 06:00 PM')).toBeInTheDocument();
 
     // Inputs have loaded values
     const startInput = screen.getByLabelText(/Shift Start Time/i) as HTMLInputElement;

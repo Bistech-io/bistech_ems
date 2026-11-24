@@ -2,15 +2,36 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarCheck, Search, X } from 'lucide-react';
+import { CalendarCheck, Clock, Search, X } from 'lucide-react';
 import { fetchDepartments, fetchEmployees } from '@/features/employees/api';
 import type { DepartmentOption, EmployeeItem } from '@/features/employees/types';
 import { cn } from '@/lib/utils';
-import { fetchOrgAttendanceRange, type OrgAttendanceListItem } from '../api';
-import type { AttendanceDayRecord } from '../types';
+import {
+  fetchOrgAttendanceRange,
+  fetchOrganizationSettings,
+  type OrgAttendanceListItem,
+} from '../api';
+import type { AttendanceDayRecord, OrganizationShiftSettings } from '../types';
 import { ATTENDANCE_STATUS_STYLE, AttendanceCalendar } from './attendance-calendar';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+const DEFAULT_SHIFT: OrganizationShiftSettings = {
+  timezone: 'Asia/Dhaka',
+  workStart: '09:30',
+  workEnd: '18:00',
+  graceMinutes: 15,
+};
+
+function format24hTo12h(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 function formatDateKey(d: Date): string {
   const y = d.getFullYear();
@@ -69,6 +90,7 @@ export function EmployeeAttendanceDashboard() {
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [fiveDayRecords, setFiveDayRecords] = useState<OrgAttendanceListItem[]>([]);
+  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,6 +103,29 @@ export function EmployeeAttendanceDashboard() {
   const [drawerSelectedDate, setDrawerSelectedDate] = useState<string>('2026-11-23');
   const [drawerMonthRecords, setDrawerMonthRecords] = useState<OrgAttendanceListItem[]>([]);
   const [isLoadingDrawer, setIsLoadingDrawer] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchOrganizationSettings()
+      .then((settings) => {
+        if (!cancelled) setShiftSettings(settings);
+      })
+      .catch(() => {});
+
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -260,6 +305,15 @@ export function EmployeeAttendanceDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs">
+            <Clock className="h-4 w-4 text-[#4CAF7D]" />
+            <span className="text-[#A3B3AC]">Shift:</span>
+            <strong className="text-[#F0F5F2]">
+              {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
+              {shiftSettings.graceMinutes}m grace
+            </strong>
+          </div>
+
           <div className="relative w-full sm:w-64">
             <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
             <input

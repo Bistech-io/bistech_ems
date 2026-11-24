@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search } from 'lucide-react';
+import { Clock, Plus, Search } from 'lucide-react';
 import {
   fetchMyAttendanceBoard,
   fetchOrganizationSettings,
@@ -35,6 +35,16 @@ const DEFAULT_SHIFT: OrganizationShiftSettings = {
   workEnd: '18:00',
   graceMinutes: 15,
 };
+
+function format24hTo12h(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 export const LIVE_STATUS_STYLES: Record<
   EmployeeLiveStatus,
@@ -201,8 +211,18 @@ export function EmployeesDashboard() {
         if (!cancelled) setIsLoading(false);
       });
 
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
     };
   }, [user?.employeeId]);
 
@@ -374,16 +394,27 @@ export function EmployeesDashboard() {
           </div>
         </div>
 
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create New Employee</span>
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs">
+            <Clock className="h-4 w-4 text-[#4CAF7D]" />
+            <span className="text-[#A3B3AC]">Shift:</span>
+            <strong className="text-[#F0F5F2]">
+              {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
+              {shiftSettings.graceMinutes}m grace
+            </strong>
+          </div>
+
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create New Employee</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Filters */}

@@ -68,8 +68,23 @@ export function OrganizationManagementDashboard() {
         if (!cancelled) setIsLoading(false);
       });
 
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        const data = customEvent.detail;
+        setSettings(data);
+        setWorkStart(data.workStart);
+        setWorkEnd(data.workEnd);
+        setGraceMinutes(String(data.graceMinutes));
+        setTimezone(data.timezone);
+      }
+    };
+
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
     };
   }, []);
 
@@ -150,7 +165,8 @@ export function OrganizationManagementDashboard() {
           <Clock className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-[#A3B3AC]">Active Shift:</span>
           <strong className="text-[#F0F5F2]">
-            {format24hTo12h(settings.workStart)} – {format24hTo12h(settings.workEnd)}
+            {format24hTo12h(settings.workStart)} – {format24hTo12h(settings.workEnd)} ·{' '}
+            {settings.graceMinutes}m grace
           </strong>
         </div>
       </header>

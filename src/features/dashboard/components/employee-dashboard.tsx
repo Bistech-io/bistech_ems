@@ -20,11 +20,30 @@ import {
 } from 'lucide-react';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
+import { fetchOrganizationSettings } from '@/features/attendance/api';
+import type { OrganizationShiftSettings } from '@/features/attendance/types';
 import { fetchDashboardSummary, type SummaryDashboardData } from '../api';
 import type { EmployeeTaskItem } from '../types';
 import { MyTasksTable } from './my-tasks-table';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+const DEFAULT_SHIFT: OrganizationShiftSettings = {
+  timezone: 'Asia/Dhaka',
+  workStart: '09:30',
+  workEnd: '18:00',
+  graceMinutes: 15,
+};
+
+function format24hTo12h(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 const ROLE_DASHBOARD_META: Record<
   RoleName,
@@ -84,10 +103,34 @@ const ROLE_DASHBOARD_META: Record<
 export function EmployeeDashboard() {
   const { user, isAuthenticated, activeRole } = useAuth();
   const [summary, setSummary] = useState<SummaryDashboardData | null>(null);
+  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const role: RoleName = activeRole ?? 'employee';
   const meta = ROLE_DASHBOARD_META[role] ?? ROLE_DASHBOARD_META.employee;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchOrganizationSettings()
+      .then((settings) => {
+        if (!cancelled) setShiftSettings(settings);
+      })
+      .catch(() => {});
+
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -100,6 +143,28 @@ export function EmployeeDashboard() {
       .then((res) => {
         if (!cancelled) {
           setSummary(res);
+          if (res.company?.workStart) {
+            setShiftSettings({
+              workStart: res.company.workStart,
+              workEnd: res.company.workEnd,
+              graceMinutes: res.company.graceMinutes,
+              timezone: res.company.timezone,
+            });
+          } else if (res.hr?.workStart) {
+            setShiftSettings({
+              workStart: res.hr.workStart,
+              workEnd: res.hr.workEnd,
+              graceMinutes: res.hr.graceMinutes,
+              timezone: res.hr.timezone,
+            });
+          } else if (res.me?.employee?.workStart) {
+            setShiftSettings({
+              workStart: res.me.employee.workStart,
+              workEnd: res.me.employee.workEnd,
+              graceMinutes: res.me.employee.graceMinutes,
+              timezone: res.me.employee.timezone,
+            });
+          }
         }
       })
       .catch(() => {
@@ -184,10 +249,21 @@ export function EmployeeDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
-          <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
-          <span className="text-xs font-medium text-[#A3B3AC]">Role:</span>
-          <span className="text-xs font-semibold text-[#F0F5F2]">{ROLE_LABELS[role]}</span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs">
+            <Clock className="h-4 w-4 text-[#4CAF7D]" />
+            <span className="text-[#A3B3AC]">Shift:</span>
+            <strong className="text-[#F0F5F2]">
+              {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
+              {shiftSettings.graceMinutes}m grace
+            </strong>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
+            <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
+            <span className="text-xs font-medium text-[#A3B3AC]">Role:</span>
+            <span className="text-xs font-semibold text-[#F0F5F2]">{ROLE_LABELS[role]}</span>
+          </div>
         </div>
       </header>
 

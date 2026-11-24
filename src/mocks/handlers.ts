@@ -232,4 +232,21 @@ export const authHandlers = [
 
     return HttpResponse.json(payload, { status: 200 });
   }),
+
+  http.get('/api/v1/organization/settings', () => {
+    return HttpResponse.json({
+      success: true,
+      message: 'Organization settings retrieved',
+      data: {
+        timezone: 'Asia/Dhaka',
+        workStart: '09:30',
+        workEnd: '18:00',
+        graceMinutes: 15,
+        weekendDays: [5, 6],
+        name: 'BisTech',
+        slug: 'bistech',
+      },
+      meta: null,
+    });
+  }),
 ];

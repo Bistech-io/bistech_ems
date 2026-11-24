@@ -162,5 +162,8 @@ export async function patchOrganizationSettings(
     body: payload,
     schema: organizationSettingsResponseSchema,
   });
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ems:shift-updated', { detail: res.data }));
+  }
   return res.data;
 }
