@@ -7,7 +7,9 @@ import { fetchDepartments, fetchEmployees } from '@/features/employees/api';
 import type { DepartmentOption, EmployeeItem } from '@/features/employees/types';
 import { cn } from '@/lib/utils';
 import {
+  fetchEmployeeFirstCheckInDate,
   fetchOrgAttendanceRange,
+  fetchOrgFirstCheckInDates,
   fetchOrganizationSettings,
   type OrgAttendanceListItem,
 } from '../api';
@@ -90,6 +92,7 @@ export function EmployeeAttendanceDashboard() {
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [fiveDayRecords, setFiveDayRecords] = useState<OrgAttendanceListItem[]>([]);
+  const [orgFirstCheckInDates, setOrgFirstCheckInDates] = useState<Record<string, string>>({});
   const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -102,6 +105,7 @@ export function EmployeeAttendanceDashboard() {
   const [drawerMonth, setDrawerMonth] = useState<number>(10);
   const [drawerSelectedDate, setDrawerSelectedDate] = useState<string>('2026-11-23');
   const [drawerMonthRecords, setDrawerMonthRecords] = useState<OrgAttendanceListItem[]>([]);
+  const [drawerFirstCheckInDate, setDrawerFirstCheckInDate] = useState<string | null>(null);
   const [isLoadingDrawer, setIsLoadingDrawer] = useState(false);
 
   useEffect(() => {
@@ -154,12 +158,14 @@ export function EmployeeAttendanceDashboard() {
       fetchOrgAttendanceRange({ from, to, limit: 100 }).catch(
         () => [] as OrgAttendanceListItem[],
       ),
+      fetchOrgFirstCheckInDates(to).catch(() => ({}) as Record<string, string>),
     ])
-      .then(([empList, deptList, attList]) => {
+      .then(([empList, deptList, attList, firstDates]) => {
         if (cancelled) return;
         setEmployees(empList);
         setDepartments(deptList);
         setFiveDayRecords(attList);
+        setOrgFirstCheckInDates(firstDates);
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -205,6 +211,29 @@ export function EmployeeAttendanceDashboard() {
     };
   }, [selectedEmployee, drawerYear, drawerMonth]);
 
+  // Fetch selected employee's earliest check-in date when opening the drawer
+  useEffect(() => {
+    if (!selectedEmployee) {
+      return;
+    }
+    let cancelled = false;
+    fetchEmployeeFirstCheckInDate(selectedEmployee.id, todayKey)
+      .then((date) => {
+        if (!cancelled) {
+          setDrawerFirstCheckInDate(date);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDrawerFirstCheckInDate(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedEmployee, todayKey]);
+
   useEffect(() => {
     if (!selectedEmployee) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -225,6 +254,36 @@ export function EmployeeAttendanceDashboard() {
     }
     return map;
   }, [fiveDayRecords]);
+
+  // Earliest known check-in date per employee (attendance/absence counts from first check-in date)
+  const firstCheckInByEmployee = useMemo(() => {
+    const map = new Map<string, string>(Object.entries(orgFirstCheckInDates));
+    for (const rec of fiveDayRecords) {
+      const empId = rec.employee?.id ?? rec.employeeId;
+      if (!empId) continue;
+      if (!rec.isDerived && (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))) {
+        const current = map.get(empId);
+        if (!current || rec.workDate < current) {
+          map.set(empId, rec.workDate);
+        }
+      }
+    }
+    return map;
+  }, [orgFirstCheckInDates, fiveDayRecords]);
+
+  const effectiveDrawerFirstCheckInDate = useMemo(() => {
+    if (!selectedEmployee) return null;
+    let earliest: string | null =
+      drawerFirstCheckInDate ?? firstCheckInByEmployee.get(selectedEmployee.id) ?? null;
+    for (const rec of drawerMonthRecords) {
+      if (!rec.isDerived && (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))) {
+        if (!earliest || rec.workDate < earliest) {
+          earliest = rec.workDate;
+        }
+      }
+    }
+    return earliest;
+  }, [selectedEmployee, drawerFirstCheckInDate, firstCheckInByEmployee, drawerMonthRecords]);
 
   const filteredEmployees = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -255,15 +314,23 @@ export function EmployeeAttendanceDashboard() {
       const rec = byDate.get(key);
 
       if (rec) {
-        map[key] = {
-          date: key,
-          status: rec.status,
-          checkInIso: rec.checkInAt,
-          checkInTime: formatTimeFromIso(rec.checkInAt),
-          lateMinutes: rec.lateMinutes,
-          note: rec.note ?? undefined,
-          isDerived: rec.isDerived,
-        };
+        if (
+          rec.isDerived &&
+          rec.status === 'absent' &&
+          (!effectiveDrawerFirstCheckInDate || key < effectiveDrawerFirstCheckInDate)
+        ) {
+          map[key] = { date: key, status: 'empty', note: 'No attendance record' };
+        } else {
+          map[key] = {
+            date: key,
+            status: rec.status,
+            checkInIso: rec.checkInAt,
+            checkInTime: formatTimeFromIso(rec.checkInAt),
+            lateMinutes: rec.lateMinutes,
+            note: rec.note ?? undefined,
+            isDerived: rec.isDerived,
+          };
+        }
       } else if (weekday === 5 || weekday === 6) {
         map[key] = { date: key, status: 'weekend' };
       } else if (key > todayKey) {
@@ -271,11 +338,12 @@ export function EmployeeAttendanceDashboard() {
       } else if (key === todayKey) {
         map[key] = { date: key, status: 'pending' };
       } else {
-        map[key] = { date: key, status: 'absent' };
+        // No attendance data returned (e.g. before first check-in date) -> leave empty, not absent
+        map[key] = { date: key, status: 'empty' };
       }
     }
     return map;
-  }, [drawerYear, drawerMonth, drawerMonthRecords, todayKey]);
+  }, [drawerYear, drawerMonth, drawerMonthRecords, todayKey, effectiveDrawerFirstCheckInDate]);
 
   const drawerSummary = useMemo(() => {
     const values = Object.values(drawerCalendarMap);
@@ -372,7 +440,10 @@ export function EmployeeAttendanceDashboard() {
                 {filteredEmployees.map((emp) => (
                   <tr
                     key={emp.id}
-                    onClick={() => setSelectedEmployee(emp)}
+                    onClick={() => {
+                      setDrawerFirstCheckInDate(null);
+                      setSelectedEmployee(emp);
+                    }}
                     className="cursor-pointer transition-colors hover:bg-[#1A2420]/75"
                   >
                     <td className="px-6 py-4 font-mono text-xs font-medium text-[#4CAF7D]">
@@ -396,27 +467,40 @@ export function EmployeeAttendanceDashboard() {
                     <td className="px-6 py-4 text-xs text-[#A3B3AC]">{emp.department.name}</td>
                     {last7Days.map((dayIso) => {
                       const rec = fiveDayLookup.get(`${emp.id}:${dayIso}`);
+                      const empFirstCheckIn = firstCheckInByEmployee.get(emp.id) ?? null;
+                      const isPreFirstCheckInAbsent =
+                        rec?.isDerived &&
+                        rec.status === 'absent' &&
+                        (!empFirstCheckIn || dayIso < empFirstCheckIn);
                       const [y, m, d] = dayIso.split('-').map(Number);
                       const weekday = new Date(y, (m || 1) - 1, d || 1).getDay();
-                      const status = rec
-                        ? rec.status
-                        : weekday === 5 || weekday === 6
-                          ? 'weekend'
-                          : dayIso === todayKey
-                            ? 'pending'
-                            : 'absent';
+                      const status = isPreFirstCheckInAbsent
+                        ? dayIso === todayKey
+                          ? 'pending'
+                          : 'empty'
+                        : rec
+                          ? rec.status
+                          : weekday === 5 || weekday === 6
+                            ? 'weekend'
+                            : dayIso === todayKey
+                              ? 'pending'
+                              : 'empty';
                       const style = ATTENDANCE_STATUS_STYLE[status];
 
                       return (
                         <td key={dayIso} className="px-3 py-4 text-center">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
-                              style.badge,
-                            )}
-                          >
-                            {style.label}
-                          </span>
+                          {status === 'empty' ? (
+                            <span className="text-xs text-[#6E8078]">—</span>
+                          ) : (
+                            <span
+                              className={cn(
+                                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
+                                style.badge,
+                              )}
+                            >
+                              {style.label}
+                            </span>
+                          )}
                         </td>
                       );
                     })}

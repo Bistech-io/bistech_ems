@@ -21,6 +21,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
 import {
   fetchMyAttendanceBoard,
+  fetchMyFirstCheckInDate,
   fetchOrganizationSettings,
   patchOrganizationSettings,
   postCheckIn,
@@ -144,6 +145,7 @@ function buildCalendarRecordsMap(
   todayKey: string,
   board: AttendanceBoardData | null,
   localCheckIn: AttendanceDayRecord | null,
+  firstCheckInDate: string | null,
 ): Record<string, AttendanceDayRecord> {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const records: Record<string, AttendanceDayRecord> = {};
@@ -163,6 +165,20 @@ function buildCalendarRecordsMap(
 
     const apiRec = apiRecordsByDate.get(key);
     if (apiRec) {
+      // Count attendance/absence only from the employee's first check-in date, not joining date
+      if (
+        apiRec.isDerived &&
+        apiRec.status === 'absent' &&
+        (!firstCheckInDate || key < firstCheckInDate)
+      ) {
+        records[key] = {
+          date: key,
+          status: 'empty',
+          note: 'No attendance record',
+        };
+        continue;
+      }
+
       records[key] = {
         date: key,
         status: apiRec.status,
@@ -182,7 +198,11 @@ function buildCalendarRecordsMap(
         records[key] = localCheckIn;
         continue;
       }
-      if (board?.today && board.today.status !== 'not_checked_in') {
+      if (
+        board?.today &&
+        board.today.status !== 'not_checked_in' &&
+        !(board.today.status === 'absent' && !firstCheckInDate)
+      ) {
         records[key] = {
           date: key,
           status: board.today.status,
@@ -218,11 +238,11 @@ function buildCalendarRecordsMap(
       continue;
     }
 
-    // Fallback when API board hasn't returned a record for a past working day
+    // No attendance record returned for this date (e.g. before employee's joining date) -> leave empty
     records[key] = {
       date: key,
-      status: 'absent',
-      note: 'No check-in recorded',
+      status: 'empty',
+      note: 'No attendance record',
     };
   }
 
@@ -246,6 +266,7 @@ export function AttendanceDashboard() {
   const [selectedDateKey, setSelectedDateKey] = useState<string>('2026-11-22');
 
   const [board, setBoard] = useState<AttendanceBoardData | null>(null);
+  const [firstCheckInDate, setFirstCheckInDate] = useState<string | null>(null);
   const [localCheckIn, setLocalCheckIn] = useState<AttendanceDayRecord | null>(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState<boolean>(true);
   const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
@@ -371,9 +392,69 @@ export function AttendanceDashboard() {
     };
   }, [viewYear, viewMonth, isAuthLoading, hasEmployeeProfile]);
 
+  useEffect(() => {
+    if (isAuthLoading || !hasEmployeeProfile) return;
+    let cancelled = false;
+    fetchMyFirstCheckInDate()
+      .then((date) => {
+        if (!cancelled) {
+          setFirstCheckInDate(date);
+        }
+      })
+      .catch(() => {
+        // Ignore if offline or unavailable
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, hasEmployeeProfile]);
+
+  const effectiveFirstCheckInDate = useMemo(() => {
+    let earliest = firstCheckInDate;
+    if (
+      localCheckIn &&
+      (localCheckIn.status === 'present' || localCheckIn.status === 'late')
+    ) {
+      if (!earliest || localCheckIn.date < earliest) {
+        earliest = localCheckIn.date;
+      }
+    }
+    if (
+      board?.today &&
+      (board.today.status === 'present' ||
+        board.today.status === 'late' ||
+        Boolean(board.today.checkInAt))
+    ) {
+      if (!earliest || board.today.workDate < earliest) {
+        earliest = board.today.workDate;
+      }
+    }
+    if (board?.records) {
+      for (const rec of board.records) {
+        if (
+          !rec.isDerived &&
+          (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))
+        ) {
+          if (!earliest || rec.workDate < earliest) {
+            earliest = rec.workDate;
+          }
+        }
+      }
+    }
+    return earliest;
+  }, [firstCheckInDate, localCheckIn, board]);
+
   const recordsByDate = useMemo(
-    () => buildCalendarRecordsMap(viewYear, viewMonth, todayKey, board, localCheckIn),
-    [viewYear, viewMonth, todayKey, board, localCheckIn],
+    () =>
+      buildCalendarRecordsMap(
+        viewYear,
+        viewMonth,
+        todayKey,
+        board,
+        localCheckIn,
+        effectiveFirstCheckInDate,
+      ),
+    [viewYear, viewMonth, todayKey, board, localCheckIn, effectiveFirstCheckInDate],
   );
 
   const todayRecord = recordsByDate[todayKey];
@@ -394,14 +475,6 @@ export function AttendanceDashboard() {
   );
 
   const summary = useMemo(() => {
-    if (board?.summary) {
-      return {
-        present: board.summary.presentDays,
-        late: board.summary.lateDays,
-        absent: board.summary.absentDays,
-        rate: Math.round(board.summary.attendanceRatePercent),
-      };
-    }
     const values = Object.values(recordsByDate);
     const present = values.filter((r) => r.status === 'present').length;
     const late = values.filter((r) => r.status === 'late').length;
@@ -409,7 +482,7 @@ export function AttendanceDashboard() {
     const total = present + late + absent;
     const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
     return { present, late, absent, rate };
-  }, [board, recordsByDate]);
+  }, [recordsByDate]);
 
   // Recent 5 days (per requirement: 5 days, not 6)
   const recentLogs = useMemo(() => {

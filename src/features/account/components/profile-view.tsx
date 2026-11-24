@@ -128,7 +128,9 @@ export function ProfileView() {
   const [isSavingPersonal, setIsSavingPersonal] = useState(false);
   const [personalSavedNotice, setPersonalSavedNotice] = useState(false);
 
-  // Change Password Card state (6 to 128 chars)
+  // Change Password Card state (8+ chars, with Current Password verification)
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -282,8 +284,18 @@ export function ProfileView() {
     setPasswordError(null);
     setPasswordSuccess(null);
 
-    if (newPassword.length < 6 || newPassword.length > 128) {
-      setPasswordError('Password must be between 6 and 128 characters.');
+    if (!currentPassword.trim()) {
+      setPasswordError('Current password is required.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.');
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setPasswordError('New password must be different from your current password.');
       return;
     }
 
@@ -306,6 +318,7 @@ export function ProfileView() {
 
     try {
       await resetPassword({ newPassword });
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setPasswordSuccess('Password updated successfully.');
@@ -729,6 +742,42 @@ export function ProfileView() {
             <form onSubmit={handleChangePassword} className="mt-5 space-y-4">
               <div>
                 <label
+                  htmlFor="profile-current-password"
+                  className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
+                >
+                  Current Password
+                </label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6E8078]" />
+                  <input
+                    id="profile-current-password"
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    autoComplete="current-password"
+                    required
+                    className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword((prev) => !prev)}
+                    aria-label={
+                      showCurrentPassword ? 'Hide current password' : 'Show current password'
+                    }
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6E8078] hover:text-[#F0F5F2]"
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label
                   htmlFor="profile-new-password"
                   className="mb-1.5 block text-xs font-medium text-[#A3B3AC]"
                 >
@@ -741,11 +790,10 @@ export function ProfileView() {
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 8 characters"
                     autoComplete="new-password"
                     required
-                    minLength={6}
-                    maxLength={128}
+                    minLength={8}
                     className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
                   />
                   <button
@@ -776,8 +824,7 @@ export function ProfileView() {
                     placeholder="Re-enter new password"
                     autoComplete="new-password"
                     required
-                    minLength={6}
-                    maxLength={128}
+                    minLength={8}
                     className="h-11 w-full rounded-2xl border border-[#23302B] bg-[#0B0F0E] pr-10 pl-10 text-sm text-[#F0F5F2] placeholder-[#6E8078] outline-none focus:border-[#4CAF7D]"
                   />
                   <button
@@ -798,7 +845,7 @@ export function ProfileView() {
               </div>
 
               <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 px-3.5 py-2.5 text-[11px] text-[#A3B3AC]">
-                Must be 6–128 characters and cannot contain your name or email.
+                Must be at least 8 characters and cannot contain your name or email.
               </div>
 
               {passwordError && (
@@ -823,7 +870,7 @@ export function ProfileView() {
 
               <button
                 type="submit"
-                disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+                disabled={isUpdatingPassword || !currentPassword || !newPassword || !confirmPassword}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#2E8B57] px-5 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUpdatingPassword ? (
