@@ -17,6 +17,7 @@ const publicEnvSchema = z.object({
       ? DEFAULT_PROD_SERVER_ORIGIN
       : DEFAULT_DEV_SERVER_ORIGIN,
   ),
+  NEXT_PUBLIC_FEEDBACK_FORM_URL: z.string().url().optional(),
 });
 
 const serverEnvSchema = z.object({
@@ -29,6 +30,8 @@ const serverEnvSchema = z.object({
   CLOUDINARY_URL: z.string().optional(),
 });
 
+const rawFeedbackUrl = process.env.NEXT_PUBLIC_FEEDBACK_FORM_URL?.trim();
+
 export const publicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING ?? 'disabled',
   NEXT_PUBLIC_SERVER_ORIGIN:
@@ -37,6 +40,7 @@ export const publicEnv = publicEnvSchema.parse({
     (process.env.NODE_ENV === 'production'
       ? DEFAULT_PROD_SERVER_ORIGIN
       : DEFAULT_DEV_SERVER_ORIGIN),
+  NEXT_PUBLIC_FEEDBACK_FORM_URL: rawFeedbackUrl || undefined,
 });
 
 export const isMockingEnabled = publicEnv.NEXT_PUBLIC_API_MOCKING === 'enabled';

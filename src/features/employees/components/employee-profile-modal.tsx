@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { putDepartmentHead, putUserRoles } from '@/features/admin/leadership/api';
 import { ApiError } from '@/lib/api/errors';
+import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
 import { createDesignation, updateEmployeeDesignation } from '../api';
 import type {
@@ -84,6 +85,8 @@ export function EmployeeProfileModal({
   onRoleUpdated,
   onLiveStatusChange,
 }: EmployeeProfileModalProps) {
+  useRegisterRightDrawer(Boolean(employee), 512);
+
   const [designationInput, setDesignationInput] = useState<string>('');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [selectedRoleAssignment, setSelectedRoleAssignment] =
