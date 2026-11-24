@@ -34,9 +34,9 @@ const employeeDashboardSchema = z.object({
     designation: z.string(),
     teams: z.array(z.string()).default([]),
     timezone: z.string().default('Asia/Dhaka'),
-    workStart: z.string().default('09:00'),
+    workStart: z.string().default('10:00'),
     graceMinutes: z.number().default(15),
-    workEnd: z.string().default('18:00'),
+    workEnd: z.string().default('18:30'),
   }),
   todayAttendance: z.object({
     workDate: z.string(),
@@ -77,9 +77,9 @@ const employeeDashboardSchema = z.object({
 
 const hrDashboardSchema = z.object({
   timezone: z.string().default('Asia/Dhaka'),
-  workStart: z.string().default('09:00'),
+  workStart: z.string().default('10:00'),
   graceMinutes: z.number().default(15),
-  workEnd: z.string().default('18:00'),
+  workEnd: z.string().default('18:30'),
   workforce: z.object({
     activeEmployees: z.number().default(0),
     inactiveEmployees: z.number().default(0),
