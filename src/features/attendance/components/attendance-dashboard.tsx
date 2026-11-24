@@ -218,11 +218,11 @@ function buildCalendarRecordsMap(
       continue;
     }
 
-    // Fallback when API board hasn't returned a record for a past working day
+    // No attendance record returned for this date (e.g. before employee's joining date) -> leave empty
     records[key] = {
       date: key,
-      status: 'absent',
-      note: 'No check-in recorded',
+      status: 'empty',
+      note: 'No attendance record',
     };
   }
 

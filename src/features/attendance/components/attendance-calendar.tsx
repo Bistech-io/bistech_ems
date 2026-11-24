@@ -57,6 +57,11 @@ export const ATTENDANCE_STATUS_STYLE: Record<
     badge: 'border-[#23302B] bg-[#1A2420] text-[#6E8078]',
     label: 'Upcoming',
   },
+  empty: {
+    dot: 'bg-transparent',
+    badge: 'border-[#23302B] bg-[#1A2420] text-[#6E8078]',
+    label: '—',
+  },
 };
 
 function toDateKey(year: number, month: number, day: number): string {
@@ -200,7 +205,7 @@ export function AttendanceCalendar({
           }
 
           const record = recordsByDate[cell.dateKey];
-          const status: AttendanceDayStatus = record?.status ?? 'future';
+          const status: AttendanceDayStatus = record?.status ?? 'empty';
           const isToday = cell.dateKey === todayKey;
           const isSelected = cell.dateKey === selectedDateKey;
           const style = ATTENDANCE_STATUS_STYLE[status];
@@ -218,7 +223,7 @@ export function AttendanceCalendar({
                   ? 'border-[#4CAF7D] bg-[#1F5C3A]/45 text-[#F0F5F2]'
                   : isToday
                     ? 'border-[#2E8B57]/70 bg-[#1A2420] text-[#F0F5F2]'
-                    : status === 'weekend' || status === 'future'
+                    : status === 'weekend' || status === 'future' || status === 'empty'
                       ? 'border-transparent bg-[#0B0F0E]/50 text-[#6E8078] hover:border-[#23302B] hover:text-[#A3B3AC]'
                       : 'border-[#23302B]/70 bg-[#0B0F0E]/85 text-[#F0F5F2] hover:border-[#2E8B57]/60 hover:bg-[#1A2420]',
               )}

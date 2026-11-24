@@ -271,7 +271,8 @@ export function EmployeeAttendanceDashboard() {
       } else if (key === todayKey) {
         map[key] = { date: key, status: 'pending' };
       } else {
-        map[key] = { date: key, status: 'absent' };
+        // No attendance data returned (e.g. before joining date) -> leave empty, not absent
+        map[key] = { date: key, status: 'empty' };
       }
     }
     return map;
@@ -404,19 +405,23 @@ export function EmployeeAttendanceDashboard() {
                           ? 'weekend'
                           : dayIso === todayKey
                             ? 'pending'
-                            : 'absent';
+                            : 'empty';
                       const style = ATTENDANCE_STATUS_STYLE[status];
 
                       return (
                         <td key={dayIso} className="px-3 py-4 text-center">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
-                              style.badge,
-                            )}
-                          >
-                            {style.label}
-                          </span>
+                          {status === 'empty' ? (
+                            <span className="text-xs text-[#6E8078]">—</span>
+                          ) : (
+                            <span
+                              className={cn(
+                                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
+                                style.badge,
+                              )}
+                            >
+                              {style.label}
+                            </span>
+                          )}
                         </td>
                       );
                     })}

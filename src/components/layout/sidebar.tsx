@@ -6,10 +6,10 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
-  Contrast,
   LogOut,
   Menu,
   Moon,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Sun,
@@ -330,7 +330,7 @@ export function Sidebar() {
               className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-200 hover:bg-[#1A2420]/90 hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
             >
               <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-[#4CAF7D]">
-                <Contrast className="h-[19px] w-[19px]" strokeWidth={1.9} />
+                <Palette className="h-[19px] w-[19px]" strokeWidth={1.9} />
               </span>
               <AnimatePresence initial={false}>
                 {expanded && (

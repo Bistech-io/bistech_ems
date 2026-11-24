@@ -5,7 +5,8 @@ export type AttendanceDayStatus =
   | 'weekend'
   | 'holiday'
   | 'pending'
-  | 'future';
+  | 'future'
+  | 'empty';
 
 export interface AttendanceDayRecord {
   /** YYYY-MM-DD */
