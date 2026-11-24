@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Building2,
   CheckCircle2,
+  Clock,
   Loader2,
   Network,
   Plus,
@@ -69,6 +70,16 @@ function getInitials(name: string): string {
   if (parts.length === 0) return 'BT';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function format24hTo12h(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 function parseHhMmToMinutes(hhmm: string, fallback: number): number {
@@ -303,8 +314,18 @@ export function LeadershipDashboard() {
         if (!cancelled) setIsLoading(false);
       });
 
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
     };
   }, [currentEmployeeId]);
 
@@ -798,16 +819,27 @@ export function LeadershipDashboard() {
           Manage HR &amp; Department Heads
         </h1>
 
-        {canManageDepartments && (
-          <button
-            type="button"
-            onClick={() => openDepartmentManagerModal()}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
-          >
-            <Building2 className="h-4 w-4" />
-            <span>Create or Change on Departments</span>
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs">
+            <Clock className="h-4 w-4 text-[#4CAF7D]" />
+            <span className="text-[#A3B3AC]">Shift:</span>
+            <strong className="text-[#F0F5F2]">
+              {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
+              {shiftSettings.graceMinutes}m grace
+            </strong>
+          </div>
+
+          {canManageDepartments && (
+            <button
+              type="button"
+              onClick={() => openDepartmentManagerModal()}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#2E8B57] px-4 text-xs font-semibold text-[#F0F5F2] shadow-[0_6px_20px_-6px_rgba(46,139,87,0.55)] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
+            >
+              <Building2 className="h-4 w-4" />
+              <span>Create or Change on Departments</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {actionError && (
