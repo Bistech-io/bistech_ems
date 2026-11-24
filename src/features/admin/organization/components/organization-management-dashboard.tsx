@@ -21,13 +21,6 @@ import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const DEFAULT_SETTINGS: OrganizationShiftSettings = {
-  timezone: 'Asia/Dhaka',
-  workStart: '09:00',
-  workEnd: '18:00',
-  graceMinutes: 15,
-};
-
 function format24hTo12h(hhmm: string): string {
   const [hStr, mStr] = hhmm.split(':');
   const h = Number(hStr);
@@ -39,11 +32,11 @@ function format24hTo12h(hhmm: string): string {
 }
 
 export function OrganizationManagementDashboard() {
-  const [settings, setSettings] = useState<OrganizationShiftSettings>(DEFAULT_SETTINGS);
-  const [workStart, setWorkStart] = useState(DEFAULT_SETTINGS.workStart);
-  const [workEnd, setWorkEnd] = useState(DEFAULT_SETTINGS.workEnd);
-  const [graceMinutes, setGraceMinutes] = useState(String(DEFAULT_SETTINGS.graceMinutes));
-  const [timezone, setTimezone] = useState(DEFAULT_SETTINGS.timezone);
+  const [settings, setSettings] = useState<OrganizationShiftSettings | null>(null);
+  const [workStart, setWorkStart] = useState('');
+  const [workEnd, setWorkEnd] = useState('');
+  const [graceMinutes, setGraceMinutes] = useState('15');
+  const [timezone, setTimezone] = useState('Asia/Dhaka');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -165,8 +158,9 @@ export function OrganizationManagementDashboard() {
           <Clock className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-[#A3B3AC]">Active Shift:</span>
           <strong className="text-[#F0F5F2]">
-            {format24hTo12h(settings.workStart)} – {format24hTo12h(settings.workEnd)} ·{' '}
-            {settings.graceMinutes}m grace
+            {settings
+              ? `${format24hTo12h(settings.workStart)} – ${format24hTo12h(settings.workEnd)} · ${settings.graceMinutes}m grace`
+              : '—'}
           </strong>
         </div>
       </header>
@@ -340,18 +334,22 @@ export function OrganizationManagementDashboard() {
               <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-4">
                 <span className="text-[#6E8078]">Shift Window</span>
                 <p className="mt-1 font-heading text-lg font-bold text-[#F0F5F2]">
-                  {format24hTo12h(settings.workStart)} – {format24hTo12h(settings.workEnd)}
+                  {settings
+                    ? `${format24hTo12h(settings.workStart)} – ${format24hTo12h(settings.workEnd)}`
+                    : '—'}
                 </p>
               </div>
               <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-4">
                 <span className="text-[#6E8078]">Grace Period</span>
                 <p className="mt-1 font-heading text-lg font-bold text-[#4CAF7D]">
-                  {settings.graceMinutes} minutes
+                  {settings ? `${settings.graceMinutes} minutes` : '—'}
                 </p>
               </div>
               <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-4">
                 <span className="text-[#6E8078]">Timezone</span>
-                <p className="mt-1 text-sm font-semibold text-[#F0F5F2]">{settings.timezone}</p>
+                <p className="mt-1 text-sm font-semibold text-[#F0F5F2]">
+                  {settings?.timezone ?? '—'}
+                </p>
               </div>
             </div>
           </section>

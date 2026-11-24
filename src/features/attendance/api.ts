@@ -51,8 +51,8 @@ export const checkInResponseSchema = successEnvelopeSchema(attendanceRecordDtoSc
 
 export const organizationSettingsDataSchema = z.object({
   timezone: z.string().default('Asia/Dhaka'),
-  workStart: z.string().default('09:00'),
-  workEnd: z.string().default('18:00'),
+  workStart: z.string().default('10:00'),
+  workEnd: z.string().default('18:30'),
   graceMinutes: z.number().default(15),
 });
 

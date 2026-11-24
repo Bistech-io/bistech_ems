@@ -29,13 +29,6 @@ import { EmployeeProfileModal } from './employee-profile-modal';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const DEFAULT_SHIFT: OrganizationShiftSettings = {
-  timezone: 'Asia/Dhaka',
-  workStart: '09:00',
-  workEnd: '18:00',
-  graceMinutes: 15,
-};
-
 function format24hTo12h(hhmm: string): string {
   const [hStr, mStr] = hhmm.split(':');
   const h = Number(hStr);
@@ -137,7 +130,7 @@ export function EmployeesDashboard() {
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [designations, setDesignations] = useState<DesignationOption[]>([]);
-  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
+  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings | null>(null);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, OrgAttendanceItem>>({});
   const [statusOverrides, setStatusOverrides] = useState<Record<string, EmployeeLiveStatus>>({});
   const [now, setNow] = useState<Date | null>(null);
@@ -247,7 +240,7 @@ export function EmployeesDashboard() {
       const currentMinutes = now
         ? now.getHours() * 60 + now.getMinutes()
         : 10 * 60;
-      const endCutoff = parseHhMmToMinutes(shiftSettings.workEnd, 18 * 60);
+      const endCutoff = parseHhMmToMinutes(shiftSettings?.workEnd ?? '', 18 * 60 + 30);
       const isWorkingHourEnded = currentMinutes >= endCutoff;
 
       if (isWorkingHourEnded) {
@@ -399,8 +392,9 @@ export function EmployeesDashboard() {
             <Clock className="h-4 w-4 text-[#4CAF7D]" />
             <span className="text-[#A3B3AC]">Shift:</span>
             <strong className="text-[#F0F5F2]">
-              {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
-              {shiftSettings.graceMinutes}m grace
+              {shiftSettings
+                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+                : '—'}
             </strong>
           </div>
 

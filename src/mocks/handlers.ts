@@ -272,8 +272,8 @@ export const authHandlers = [
       message: 'Organization settings retrieved',
       data: {
         timezone: 'Asia/Dhaka',
-        workStart: '09:30',
-        workEnd: '18:00',
+        workStart: '10:00',
+        workEnd: '18:30',
         graceMinutes: 15,
         weekendDays: [5, 6],
         name: 'BisTech',

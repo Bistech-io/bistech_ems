@@ -32,13 +32,6 @@ import { ATTENDANCE_STATUS_STYLE, AttendanceCalendar } from './attendance-calend
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const DEFAULT_SHIFT: OrganizationShiftSettings = {
-  timezone: 'Asia/Dhaka',
-  workStart: '09:00',
-  workEnd: '18:00',
-  graceMinutes: 15,
-};
-
 function formatDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -149,7 +142,7 @@ function buildCalendarRecordsMap(
 ): Record<string, AttendanceDayRecord> {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const records: Record<string, AttendanceDayRecord> = {};
-  const tz = board?.timezone ?? DEFAULT_SHIFT.timezone;
+  const tz = board?.timezone ?? 'Asia/Dhaka';
 
   const apiRecordsByDate = new Map<string, AttendanceBoardData['records'][number]>();
   if (board?.records) {
@@ -273,11 +266,11 @@ export function AttendanceDashboard() {
   const [checkInError, setCheckInError] = useState<string | null>(null);
 
   // Dynamic Shift Settings (GET /organization/settings + PATCH /organization/settings)
-  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
+  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings | null>(null);
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
-  const [draftWorkStart, setDraftWorkStart] = useState(DEFAULT_SHIFT.workStart);
-  const [draftWorkEnd, setDraftWorkEnd] = useState(DEFAULT_SHIFT.workEnd);
-  const [draftGrace, setDraftGrace] = useState(String(DEFAULT_SHIFT.graceMinutes));
+  const [draftWorkStart, setDraftWorkStart] = useState('');
+  const [draftWorkEnd, setDraftWorkEnd] = useState('');
+  const [draftGrace, setDraftGrace] = useState('15');
   const [isSavingShift, setIsSavingShift] = useState(false);
   const [shiftFeedback, setShiftFeedback] = useState<string | null>(null);
 
@@ -326,10 +319,10 @@ export function AttendanceDashboard() {
         const data = await fetchMyAttendanceBoard(bounds);
         setBoard(data);
         setShiftSettings((prev) => ({
-          timezone: data.timezone || prev.timezone,
-          workStart: data.workStart || prev.workStart,
-          workEnd: data.workEnd || prev.workEnd,
-          graceMinutes: data.graceMinutes ?? prev.graceMinutes,
+          timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
+          workStart: data.workStart || prev?.workStart || '10:00',
+          workEnd: data.workEnd || prev?.workEnd || '18:30',
+          graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
         }));
       } catch {
         // Keep UI responsive if offline or user has no employee profile yet
@@ -372,10 +365,10 @@ export function AttendanceDashboard() {
         if (cancelled) return;
         setBoard(data);
         setShiftSettings((prev) => ({
-          timezone: data.timezone || prev.timezone,
-          workStart: data.workStart || prev.workStart,
-          workEnd: data.workEnd || prev.workEnd,
-          graceMinutes: data.graceMinutes ?? prev.graceMinutes,
+          timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
+          workStart: data.workStart || prev?.workStart || '10:00',
+          workEnd: data.workEnd || prev?.workEnd || '18:30',
+          graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
         }));
       })
       .catch(() => {
@@ -468,10 +461,10 @@ export function AttendanceDashboard() {
     () =>
       computeStopwatchState(
         isViewingToday ? todayRecord?.checkInIso : selectedRecord?.checkInIso,
-        shiftSettings.workEnd,
+        shiftSettings?.workEnd ?? '18:30',
         now,
       ),
-    [isViewingToday, todayRecord, selectedRecord, shiftSettings.workEnd, now],
+    [isViewingToday, todayRecord, selectedRecord, shiftSettings?.workEnd, now],
   );
 
   const summary = useMemo(() => {
@@ -522,7 +515,7 @@ export function AttendanceDashboard() {
         date: record.workDate || todayKey,
         status: record.status,
         checkInIso,
-        checkInTime: formatTimeFromIso(checkInIso, shiftSettings.timezone),
+        checkInTime: formatTimeFromIso(checkInIso, shiftSettings?.timezone ?? 'Asia/Dhaka'),
         lateMinutes: record.lateMinutes,
       });
       setSelectedDateKey(record.workDate || todayKey);
@@ -543,6 +536,7 @@ export function AttendanceDashboard() {
   }
 
   function openShiftModal() {
+    if (!shiftSettings) return;
     setDraftWorkStart(shiftSettings.workStart);
     setDraftWorkEnd(shiftSettings.workEnd);
     setDraftGrace(String(shiftSettings.graceMinutes));
@@ -552,6 +546,7 @@ export function AttendanceDashboard() {
 
   async function handleSaveShiftSettings(e: React.FormEvent) {
     e.preventDefault();
+    if (!shiftSettings) return;
     setIsSavingShift(true);
     setShiftFeedback(null);
 
@@ -599,8 +594,9 @@ export function AttendanceDashboard() {
           <Clock className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-xs text-[#A3B3AC]">Shift:</span>
           <span className="text-xs font-semibold text-[#F0F5F2]">
-            {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
-            {shiftSettings.graceMinutes}m grace
+            {shiftSettings
+              ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+              : '—'}
           </span>
           {canManageShift && (
             <button
@@ -865,7 +861,7 @@ export function AttendanceDashboard() {
                   </p>
                   {selectedRecord?.checkInIso && stopwatch.isShiftEnded && (
                     <span className="mt-0.5 block text-[10px] font-medium text-[#F59E0B]">
-                      Shift ended ({format24hTo12h(shiftSettings.workEnd)})
+                      Shift ended ({format24hTo12h(shiftSettings?.workEnd ?? '18:30')})
                     </span>
                   )}
                 </div>
@@ -878,7 +874,7 @@ export function AttendanceDashboard() {
                 <span>
                   {selectedRecord?.checkInTime
                     ? stopwatch.isShiftEnded
-                      ? `Stopwatch stopped at shift end (${format24hTo12h(shiftSettings.workEnd)})`
+                      ? `Stopwatch stopped at shift end (${format24hTo12h(shiftSettings?.workEnd ?? '18:30')})`
                       : 'Verified web check-in · Stopwatch active'
                     : selectedRecord?.note ?? 'Select any date on the calendar'}
                 </span>
