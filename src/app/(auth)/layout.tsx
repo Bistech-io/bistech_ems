@@ -64,7 +64,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             className="h-28 w-28 object-contain drop-shadow-[0_14px_34px_rgba(76,175,125,0.35)] sm:h-32 sm:w-32"
           />
 
-          <h1 className="mt-7 font-heading text-4xl font-bold tracking-[-0.03em] text-[#F0F5F2] sm:text-5xl">
+          <p className="font-brand brand-wordmark mt-5 text-4xl font-bold tracking-[0.06em] sm:text-5xl">
+            BisTech
+          </p>
+
+          <h1 className="mt-3 font-heading text-2xl font-bold tracking-[-0.03em] text-[#F0F5F2] sm:text-3xl">
             Build. Grow.{' '}
             <span className="text-[#4CAF7D]">Scale.</span>
           </h1>

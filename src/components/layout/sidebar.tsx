@@ -112,11 +112,13 @@ export function Sidebar() {
                   transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                   className="flex flex-col overflow-hidden whitespace-nowrap"
                 >
-                  <span
-                    className="text-[15px] font-bold tracking-[-0.02em] text-[#F0F5F2]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    BisTech EMS
+                  <span className="font-brand flex items-baseline gap-1.5 leading-none">
+                    <span className="brand-wordmark text-[18px] font-bold tracking-[0.04em]">
+                      BisTech
+                    </span>
+                    <span className="rounded-md border border-[#2E8B57]/40 bg-[#1F5C3A]/35 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-[#4CAF7D]">
+                      EMS
+                    </span>
                   </span>
                   <span className="text-[11px] font-medium text-[#6E8078]">
                     {activeRole ? ROLE_LABELS[activeRole] : 'Workspace'}

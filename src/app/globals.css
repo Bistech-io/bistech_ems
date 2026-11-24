@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Neue Power';
+  src: url('/fonts/power%20nue/NeuePowerTrial-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Power';
+  src: url('/fonts/power%20nue/NeuePowerTrial-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Power';
+  src: url('/fonts/power%20nue/NeuePowerTrial-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Power';
+  src: url('/fonts/power%20nue/NeuePowerTrial-Heavy.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root,
 .dark {
   color-scheme: dark;
@@ -65,6 +97,25 @@ html.light {
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-brand: 'Neue Power', var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-brand {
+  font-family: var(--font-brand);
+}
+
+.brand-wordmark {
+  background-image: linear-gradient(95deg, #F0F5F2 0%, #D9F2E5 48%, #4CAF7D 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html.light .brand-wordmark {
+  background-image: linear-gradient(95deg, #18231D 0%, #1F5C3A 58%, #2E8B57 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
 }
 
 @layer base {
