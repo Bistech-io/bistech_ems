@@ -156,6 +156,57 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     expect(screen.getByRole('button', { name: /remove/i })).toBeInTheDocument();
   });
 
+  it('isolates avatar strictly per account: never shows previous user avatar on different account', async () => {
+    const userAAvatar = {
+      success: true,
+      url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v12345/user_a.png',
+      publicId: 'bistech_ems/avatars/avatar_preview-hr_manager',
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/upload/avatar?userId=preview-hr_manager')) {
+        return {
+          ok: true,
+          json: async () => userAAvatar,
+        } as Response;
+      }
+      if (url.includes('/api/upload/avatar?userId=preview-employee')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, url: null, publicId: null }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({ success: true, data: mockProfileData }),
+      } as Response;
+    });
+
+    // 1. User A (HR Manager) renders with their avatar
+    const { unmount } = renderProfile('hr_manager');
+    await waitFor(() => {
+      const img = screen.getByRole('img');
+      expect(img).toHaveAttribute('src', userAAvatar.url);
+    });
+    expect(window.localStorage.getItem('bistech_avatar_preview-hr_manager')).toBe(userAAvatar.url);
+
+    // 2. User A logs out (component unmounts)
+    unmount();
+
+    // 3. User B (Employee without avatar) logs in on the same browser
+    renderProfile('employee');
+
+    // User B must NOT see User A's avatar; initials should be shown instead
+    await waitFor(() => {
+      expect(screen.queryByRole('img')).not.toBeInTheDocument();
+      expect(screen.getByText('MA')).toBeInTheDocument();
+    });
+
+    // User B's localStorage must NOT be contaminated with User A's avatar
+    expect(window.localStorage.getItem('bistech_avatar_preview-employee')).toBeNull();
+  });
+
   it('successfully uploads photo to /api/upload/avatar and updates profile picture', async () => {
     const mockUploadResponse = {
       success: true,

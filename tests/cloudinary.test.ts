@@ -191,23 +191,15 @@ describe('Cloudinary Utility & Avatar API', () => {
       expect(data.publicId).toBe(mockAsset.public_id);
     });
 
-    it('returns null url when user has no avatar and folder is empty', async () => {
-      // 1. Direct asset 404
-      vi.spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          json: async () => ({ error: { message: 'Not found' } }),
-        } as Response)
-        // 2. list assets empty
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ resources: [] }),
-        } as Response);
+    it('returns null url when user has no avatar and never leaks other users assets', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: { message: 'Not found' } }),
+      } as Response);
 
       const request = new NextRequest(
-        'http://localhost:3000/api/upload/avatar?userId=no_avatar_user',
+        'http://localhost:3000/api/upload/avatar?userId=user_without_photo',
       );
       const res = await GET(request);
       expect(res.status).toBe(200);
@@ -217,35 +209,14 @@ describe('Cloudinary Utility & Avatar API', () => {
       expect(data.publicId).toBeNull();
     });
 
-    it('returns fallback asset when direct avatar is 404 but existing unassigned avatar exists', async () => {
-      const fallbackAsset = {
-        secure_url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v123/mrkkru3bekwf0njf3uu8.jpg',
-        public_id: 'bistech_ems/avatars/mrkkru3bekwf0njf3uu8',
-      };
-
-      // 1. Direct asset 404
-      vi.spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          json: async () => ({ error: { message: 'Not found' } }),
-        } as Response)
-        // 2. list assets returns fallback
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ resources: [fallbackAsset] }),
-        } as Response);
-
-      const request = new NextRequest(
-        'http://localhost:3000/api/upload/avatar?userId=legacy_user',
-      );
+    it('returns null url when userId parameter is missing', async () => {
+      const request = new NextRequest('http://localhost:3000/api/upload/avatar');
       const res = await GET(request);
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
-      expect(data.url).toBe(fallbackAsset.secure_url);
-      expect(data.publicId).toBe(fallbackAsset.public_id);
+      expect(data.url).toBeNull();
+      expect(data.publicId).toBeNull();
     });
   });
 

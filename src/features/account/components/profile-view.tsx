@@ -119,11 +119,16 @@ export function ProfileView() {
       try {
         const savedUrl = localStorage.getItem(`bistech_avatar_${currentUserId}`);
         const savedPid = localStorage.getItem(`bistech_avatar_pid_${currentUserId}`);
-        if (savedUrl) setAvatarUrl(savedUrl);
-        if (savedPid) setAvatarPublicId(savedPid);
+        setAvatarUrl(savedUrl ?? null);
+        setAvatarPublicId(savedPid ?? null);
       } catch {
         // LocalStorage may be blocked or unavailable
+        setAvatarUrl(null);
+        setAvatarPublicId(null);
       }
+    } else {
+      setAvatarUrl(null);
+      setAvatarPublicId(null);
     }
   }
 

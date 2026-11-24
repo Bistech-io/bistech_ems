@@ -14,35 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId')?.trim();
 
-    if (userId) {
-      const cleanId = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const targetPublicId = `bistech_ems/avatars/avatar_${cleanId}`;
-
-      // 1. Try deterministic user-specific public ID
-      const directAsset = await getCloudinaryAsset(targetPublicId);
-      if (directAsset) {
-        return NextResponse.json({
-          success: true,
-          url: directAsset.url,
-          publicId: directAsset.publicId,
-        });
-      }
-
-      // 2. Graceful fallback for avatars uploaded prior to deterministic ID naming
-      const assets = await listCloudinaryAssets('bistech_ems/avatars', 10);
-      const matched =
-        assets.find((a) => a.publicId === targetPublicId) ??
-        assets.find((a) => !a.publicId.includes('avatar_')) ??
-        assets[0];
-
-      if (matched) {
-        return NextResponse.json({
-          success: true,
-          url: matched.url,
-          publicId: matched.publicId,
-        });
-      }
-
+    if (!userId) {
       return NextResponse.json({
         success: true,
         url: null,
@@ -50,16 +22,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // No userId provided; attempt to return the latest avatar in folder if one exists
-    const assets = await listCloudinaryAssets('bistech_ems/avatars', 1);
-    if (assets.length > 0) {
+    const cleanId = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetPublicId = `bistech_ems/avatars/avatar_${cleanId}`;
+
+    // Strictly fetch only the authenticated user's specific avatar asset
+    const directAsset = await getCloudinaryAsset(targetPublicId);
+    if (directAsset) {
       return NextResponse.json({
         success: true,
-        url: assets[0].url,
-        publicId: assets[0].publicId,
+        url: directAsset.url,
+        publicId: directAsset.publicId,
       });
     }
 
+    // User has not uploaded an avatar; return null so the profile displays their initials
     return NextResponse.json({
       success: true,
       url: null,
