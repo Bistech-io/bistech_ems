@@ -26,7 +26,8 @@ export function parseCloudinaryUrl(url?: string): CloudinaryConfig {
   }
 
   try {
-    const parsed = new URL(envUrl);
+    const cleanUrl = envUrl.trim().replace(/^["']|["']$/g, '');
+    const parsed = new URL(cleanUrl);
     const cloudName = parsed.hostname;
     const apiKey = parsed.username;
     const apiSecret = parsed.password;
@@ -52,6 +53,8 @@ export async function uploadToCloudinary(
   options: {
     folder?: string;
     publicId?: string;
+    overwrite?: boolean;
+    invalidate?: boolean;
   } = {},
 ): Promise<UploadResult> {
   const config = parseCloudinaryUrl();
@@ -67,6 +70,12 @@ export async function uploadToCloudinary(
   if (options.publicId) {
     paramsToSign.public_id = options.publicId;
   }
+  if (options.overwrite) {
+    paramsToSign.overwrite = 'true';
+  }
+  if (options.invalidate) {
+    paramsToSign.invalidate = 'true';
+  }
 
   const sortedKeys = Object.keys(paramsToSign).sort();
   const toSign =
@@ -81,6 +90,12 @@ export async function uploadToCloudinary(
   formData.append('folder', folder);
   if (options.publicId) {
     formData.append('public_id', options.publicId);
+  }
+  if (options.overwrite) {
+    formData.append('overwrite', 'true');
+  }
+  if (options.invalidate) {
+    formData.append('invalidate', 'true');
   }
   formData.append('signature', signature);
 
@@ -105,6 +120,78 @@ export async function uploadToCloudinary(
     width: data.width,
     height: data.height,
   };
+}
+
+/**
+ * Fetches asset details from Cloudinary by its public ID using the Admin API.
+ * Returns null if the asset is not found (404) or on error.
+ */
+export async function getCloudinaryAsset(publicId: string): Promise<UploadResult | null> {
+  const config = parseCloudinaryUrl();
+  const auth = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64');
+  const endpoint = `https://api.cloudinary.com/v1_1/${config.cloudName}/resources/image/upload/${publicId}`;
+
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${auth}`,
+    },
+  });
+
+  if (res.status === 404) {
+    return null;
+  }
+
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    return null;
+  }
+
+  return {
+    url: data.secure_url,
+    publicId: data.public_id,
+    format: data.format,
+    bytes: data.bytes,
+    width: data.width,
+    height: data.height,
+  };
+}
+
+/**
+ * Lists image assets under a given prefix in Cloudinary using the Admin API.
+ */
+export async function listCloudinaryAssets(
+  prefix = 'bistech_ems/avatars',
+  maxResults = 20,
+): Promise<UploadResult[]> {
+  const config = parseCloudinaryUrl();
+  const auth = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64');
+  const endpoint = `https://api.cloudinary.com/v1_1/${config.cloudName}/resources/image/upload?prefix=${encodeURIComponent(prefix)}&max_results=${maxResults}`;
+
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${auth}`,
+    },
+  });
+
+  if (!res.ok) {
+    return [];
+  }
+
+  const data = await res.json();
+  if (!data.resources || !Array.isArray(data.resources)) {
+    return [];
+  }
+
+  return data.resources.map((r: Record<string, unknown>) => ({
+    url: (r.secure_url as string) || (r.url as string),
+    publicId: r.public_id as string,
+    format: r.format as string | undefined,
+    bytes: r.bytes as number | undefined,
+    width: r.width as number | undefined,
+    height: r.height as number | undefined,
+  }));
 }
 
 /**

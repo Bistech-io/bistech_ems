@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import {
   deleteFromCloudinary,
+  getCloudinaryAsset,
+  listCloudinaryAssets,
   parseCloudinaryUrl,
   uploadToCloudinary,
 } from '@/lib/cloudinary';
-import { DELETE, POST } from '@/app/api/upload/avatar/route';
+import { DELETE, GET, POST } from '@/app/api/upload/avatar/route';
 
 describe('Cloudinary Utility & Avatar API', () => {
   const originalEnv = process.env.CLOUDINARY_URL;
@@ -93,6 +95,157 @@ describe('Cloudinary Utility & Avatar API', () => {
         'https://api.cloudinary.com/v1_1/bwr0yh78/image/destroy',
         expect.objectContaining({ method: 'POST' }),
       );
+    });
+  });
+
+  describe('getCloudinaryAsset', () => {
+    it('returns asset data when asset is found', async () => {
+      const mockAsset = {
+        secure_url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v123/avatar.png',
+        public_id: 'bistech_ems/avatars/avatar123',
+        format: 'png',
+        bytes: 1024,
+        width: 200,
+        height: 200,
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockAsset,
+      } as Response);
+
+      const result = await getCloudinaryAsset('bistech_ems/avatars/avatar123');
+      expect(result).not.toBeNull();
+      expect(result?.url).toBe(mockAsset.secure_url);
+      expect(result?.publicId).toBe(mockAsset.public_id);
+    });
+
+    it('returns null when asset is not found (404)', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: { message: 'Resource not found' } }),
+      } as Response);
+
+      const result = await getCloudinaryAsset('bistech_ems/avatars/non_existent');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('listCloudinaryAssets', () => {
+    it('returns mapped array of assets under prefix', async () => {
+      const mockResources = {
+        resources: [
+          {
+            secure_url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v123/avatar1.png',
+            public_id: 'bistech_ems/avatars/avatar1',
+          },
+        ],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResources,
+      } as Response);
+
+      const list = await listCloudinaryAssets('bistech_ems/avatars');
+      expect(list).toHaveLength(1);
+      expect(list[0].publicId).toBe('bistech_ems/avatars/avatar1');
+    });
+
+    it('returns empty array when Cloudinary responds with error', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({}),
+      } as Response);
+
+      const list = await listCloudinaryAssets('bistech_ems/avatars');
+      expect(list).toEqual([]);
+    });
+  });
+
+  describe('GET /api/upload/avatar', () => {
+    it('returns user-specific avatar when asset exists', async () => {
+      const mockAsset = {
+        secure_url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v123/avatar_u1.png',
+        public_id: 'bistech_ems/avatars/avatar_u1',
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockAsset,
+      } as Response);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/upload/avatar?userId=u1',
+      );
+      const res = await GET(request);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.url).toBe(mockAsset.secure_url);
+      expect(data.publicId).toBe(mockAsset.public_id);
+    });
+
+    it('returns null url when user has no avatar and folder is empty', async () => {
+      // 1. Direct asset 404
+      vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          json: async () => ({ error: { message: 'Not found' } }),
+        } as Response)
+        // 2. list assets empty
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ resources: [] }),
+        } as Response);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/upload/avatar?userId=no_avatar_user',
+      );
+      const res = await GET(request);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.url).toBeNull();
+      expect(data.publicId).toBeNull();
+    });
+
+    it('returns fallback asset when direct avatar is 404 but existing unassigned avatar exists', async () => {
+      const fallbackAsset = {
+        secure_url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v123/mrkkru3bekwf0njf3uu8.jpg',
+        public_id: 'bistech_ems/avatars/mrkkru3bekwf0njf3uu8',
+      };
+
+      // 1. Direct asset 404
+      vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          json: async () => ({ error: { message: 'Not found' } }),
+        } as Response)
+        // 2. list assets returns fallback
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ resources: [fallbackAsset] }),
+        } as Response);
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/upload/avatar?userId=legacy_user',
+      );
+      const res = await GET(request);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.url).toBe(fallbackAsset.secure_url);
+      expect(data.publicId).toBe(fallbackAsset.public_id);
     });
   });
 

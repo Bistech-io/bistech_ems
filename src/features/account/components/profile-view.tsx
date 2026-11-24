@@ -131,6 +131,37 @@ export function ProfileView() {
     if (!user?.userId) return;
     let cancelled = false;
 
+    // Fetch avatar from Cloudinary (crucial for new devices / fresh sessions)
+    fetch(`/api/upload/avatar?userId=${encodeURIComponent(user.userId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.success && data.url) {
+          setAvatarUrl(data.url);
+          setAvatarPublicId(data.publicId ?? null);
+          try {
+            localStorage.setItem(`bistech_avatar_${user.userId}`, data.url);
+            if (data.publicId) {
+              localStorage.setItem(`bistech_avatar_pid_${user.userId}`, data.publicId);
+            }
+          } catch {
+            // LocalStorage may be blocked or unavailable
+          }
+        } else if (data.success && data.url === null) {
+          setAvatarUrl(null);
+          setAvatarPublicId(null);
+          try {
+            localStorage.removeItem(`bistech_avatar_${user.userId}`);
+            localStorage.removeItem(`bistech_avatar_pid_${user.userId}`);
+          } catch {
+            // Ignore
+          }
+        }
+      })
+      .catch(() => {
+        // Network or server error; keep cached avatar if available
+      });
+
     fetchMyProfile()
       .then((data) => {
         if (cancelled) return;
@@ -184,6 +215,9 @@ export function ProfileView() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      if (user?.userId) {
+        formData.append('userId', user.userId);
+      }
 
       const res = await fetch('/api/upload/avatar', {
         method: 'POST',
@@ -224,7 +258,11 @@ export function ProfileView() {
     setAvatarError(null);
     setAvatarSaved(false);
 
-    const pidToDelete = avatarPublicId;
+    const pidToDelete =
+      avatarPublicId ||
+      (user?.userId
+        ? `bistech_ems/avatars/avatar_${user.userId.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+        : null);
     setAvatarUrl(null);
     setAvatarPublicId(null);
 

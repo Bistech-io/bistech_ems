@@ -12,6 +12,31 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/account/profile',
 }));
 
+const mockProfileData = {
+  employeeId: 'emp_123',
+  employeeCode: 'BT-001',
+  fullName: 'Mehedi Alam',
+  workEmail: 'mehedi@bistech.com',
+  department: { id: 'dept_1', name: 'Engineering' },
+  designation: { id: 'desig_1', title: 'Software Engineer' },
+  employmentStatus: 'active',
+  joiningDate: '2026-01-01',
+  organizationName: 'BisTech',
+  timezone: 'Asia/Dhaka',
+  workStart: '09:30 AM',
+  workEnd: '06:00 PM',
+  dateOfBirth: null,
+  personalEmail: null,
+  personalPhone: null,
+  addressLine: null,
+  city: null,
+  countryCode: null,
+  emergencyContactName: null,
+  emergencyContactPhone: null,
+  emergencyContactRelation: null,
+  updatedAt: null,
+};
+
 describe('ProfileView Avatar Photo Upload Flow', () => {
   let mockStore: Record<string, string> = {};
 
@@ -37,6 +62,26 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
       writable: true,
     });
     vi.restoreAllMocks();
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/employees/me/profile')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, data: mockProfileData }),
+        } as Response;
+      }
+      if (url.includes('/api/upload/avatar')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, url: null, publicId: null }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response;
+    });
   });
 
   afterEach(() => {
@@ -74,19 +119,75 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     });
   });
 
+  it('fetches and displays avatar from Cloudinary on initial mount for a new device login', async () => {
+    const cloudAvatar = {
+      success: true,
+      url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v12345/cloud_avatar.png',
+      publicId: 'bistech_ems/avatars/avatar_preview-employee',
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/upload/avatar')) {
+        return {
+          ok: true,
+          json: async () => cloudAvatar,
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({ success: true, data: mockProfileData }),
+      } as Response;
+    });
+
+    // Fresh new device: localStorage is empty
+    expect(window.localStorage.getItem('bistech_avatar_preview-employee')).toBeNull();
+
+    renderProfile('employee');
+
+    // Avatar image should be fetched and rendered
+    await waitFor(() => {
+      const img = screen.getByRole('img');
+      expect(img).toHaveAttribute('src', cloudAvatar.url);
+    });
+
+    // LocalStorage should now be cached for offline / instant render
+    expect(window.localStorage.getItem('bistech_avatar_preview-employee')).toBe(cloudAvatar.url);
+    expect(screen.getByRole('button', { name: /remove/i })).toBeInTheDocument();
+  });
+
   it('successfully uploads photo to /api/upload/avatar and updates profile picture', async () => {
     const mockUploadResponse = {
       success: true,
       url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v12345/avatar.png',
-      publicId: 'bistech_ems/avatars/avatar12345',
+      publicId: 'bistech_ems/avatars/avatar_preview-employee',
     };
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUploadResponse,
-    } as Response);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/api/upload/avatar') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => mockUploadResponse,
+        } as Response;
+      }
+      if (url.includes('/employees/me/profile')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, data: mockProfileData }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({ success: true, url: null, publicId: null }),
+      } as Response;
+    });
 
     renderProfile('employee');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /change photo/i })).toBeInTheDocument();
+    });
 
     const input = screen.getByLabelText(/upload profile picture/i) as HTMLInputElement;
     const file = new File(['valid-image-bytes'], 'me.png', { type: 'image/png' });
@@ -108,20 +209,43 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     const mockUploadResponse = {
       success: true,
       url: 'https://res.cloudinary.com/bwr0yh78/image/upload/v12345/avatar.png',
-      publicId: 'bistech_ems/avatars/avatar12345',
+      publicId: 'bistech_ems/avatars/avatar_preview-employee',
     };
 
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce({
+    let deleteCalled = false;
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/api/upload/avatar') && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => mockUploadResponse,
+        } as Response;
+      }
+      if (url.includes('/api/upload/avatar') && init?.method === 'DELETE') {
+        deleteCalled = true;
+        return {
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response;
+      }
+      if (url.includes('/employees/me/profile')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, data: mockProfileData }),
+        } as Response;
+      }
+      return {
         ok: true,
-        json: async () => mockUploadResponse,
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true }),
-      } as Response);
+        json: async () => ({ success: true, url: null, publicId: null }),
+      } as Response;
+    });
 
     renderProfile('employee');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /change photo/i })).toBeInTheDocument();
+    });
 
     const input = screen.getByLabelText(/upload profile picture/i) as HTMLInputElement;
     const file = new File(['valid-image-bytes'], 'me.png', { type: 'image/png' });
@@ -138,6 +262,7 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     await waitFor(() => {
       expect(screen.queryByRole('img')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
+      expect(deleteCalled).toBe(true);
     });
   });
 
