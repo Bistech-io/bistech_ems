@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { EmployeeItem } from '@/features/employees/types';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
+import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
 import {
   cancelTask,
@@ -123,6 +124,8 @@ export function TaskDetailDrawer({
   onTaskAssignedToEmployee,
   onCommentAdded,
 }: TaskDetailDrawerProps) {
+  useRegisterRightDrawer(Boolean(task), 576);
+
   const [detailedTask, setDetailedTask] = useState<TaskItem | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<TaskAssignmentStatus>('todo');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);

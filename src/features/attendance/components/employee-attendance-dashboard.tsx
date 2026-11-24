@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarCheck, Clock, Search, X } from 'lucide-react';
 import { fetchDepartments, fetchEmployees } from '@/features/employees/api';
 import type { DepartmentOption, EmployeeItem } from '@/features/employees/types';
+import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
 import {
   fetchEmployeeFirstCheckInDate,
@@ -101,6 +102,7 @@ export function EmployeeAttendanceDashboard() {
 
   // Slide-over employee monthly calendar state
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeItem | null>(null);
+  useRegisterRightDrawer(Boolean(selectedEmployee), 576);
   const [drawerYear, setDrawerYear] = useState<number>(2026);
   const [drawerMonth, setDrawerMonth] = useState<number>(10);
   const [drawerSelectedDate, setDrawerSelectedDate] = useState<string>('2026-11-23');
