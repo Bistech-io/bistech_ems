@@ -92,10 +92,18 @@ export function OrganizationManagementDashboard() {
       return;
     }
 
+    const trimmedTz = timezone.trim() || 'Asia/Dhaka';
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: trimmedTz });
+    } catch {
+      setErrorMessage('Please enter a valid IANA timezone (e.g. Asia/Dhaka, UTC).');
+      return;
+    }
+
     setIsSaving(true);
 
     const payload: OrganizationShiftSettings = {
-      timezone: timezone.trim() || 'Asia/Dhaka',
+      timezone: trimmedTz,
       workStart,
       workEnd,
       graceMinutes: Math.max(0, Math.min(180, Number(graceMinutes) || 0)),
@@ -113,7 +121,11 @@ export function OrganizationManagementDashboard() {
       );
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrorMessage(err.message || getErrorMessageForCode(err.code));
+        if (err.details && err.details.length > 0) {
+          setErrorMessage(err.details.map((d) => d.message).join('. '));
+        } else {
+          setErrorMessage(err.message || getErrorMessageForCode(err.code));
+        }
       } else {
         setErrorMessage('Unable to update organization shift settings.');
       }

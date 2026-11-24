@@ -1,0 +1,191 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { OrganizationManagementDashboard } from '@/features/admin/organization/components/organization-management-dashboard';
+import * as attendanceApi from '@/features/attendance/api';
+import { ApiError } from '@/lib/api/errors';
+
+vi.mock('@/providers/auth-provider', () => ({
+  useAuth: () => ({
+    user: {
+      userId: 'admin-user-id',
+      email: 'admin@bistech.io',
+      roles: ['super_admin'],
+      fullName: 'Super Admin',
+    },
+    session: {
+      user: {
+        id: 'admin-user-id',
+        email: 'admin@bistech.io',
+        name: 'Super Admin',
+      },
+      employeeId: 'emp-admin',
+    },
+    activeRole: 'super_admin',
+  }),
+}));
+
+describe('OrganizationManagementDashboard', () => {
+  const mockInitialSettings = {
+    timezone: 'Asia/Dhaka',
+    workStart: '09:30',
+    workEnd: '18:00',
+    graceMinutes: 25,
+  };
+
+  beforeEach(() => {
+    vi.spyOn(attendanceApi, 'fetchOrganizationSettings').mockResolvedValue(
+      mockInitialSettings,
+    );
+    vi.spyOn(attendanceApi, 'patchOrganizationSettings').mockResolvedValue({
+      ...mockInitialSettings,
+      workStart: '10:00',
+      workEnd: '18:30',
+      graceMinutes: 15,
+      timezone: 'Asia/Dhaka',
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders initial organization settings in header, form and summary', async () => {
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Organization Management')).toBeInTheDocument();
+    });
+
+    // Header badge and summary card show active shift
+    const shiftMatches = screen.getAllByText('09:30 AM – 06:00 PM');
+    expect(shiftMatches.length).toBe(2);
+
+    // Inputs have loaded values
+    const startInput = screen.getByLabelText(/Shift Start Time/i) as HTMLInputElement;
+    const endInput = screen.getByLabelText(/Shift End Time/i) as HTMLInputElement;
+    const graceInput = screen.getByLabelText(/Late Grace Period/i) as HTMLInputElement;
+    const tzInput = screen.getByLabelText(/Organization Timezone/i) as HTMLInputElement;
+
+    expect(startInput.value).toBe('09:30');
+    expect(endInput.value).toBe('18:00');
+    expect(graceInput.value).toBe('25');
+    expect(tzInput.value).toBe('Asia/Dhaka');
+
+    // Summary card has grace period and timezone
+    expect(screen.getByText('25 minutes')).toBeInTheDocument();
+  });
+
+  it('applies seasonal presets when clicked', async () => {
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Standard / Summer Shift')).toBeInTheDocument();
+    });
+
+    const summerBtn = screen.getByText('Standard / Summer Shift').closest('button')!;
+    fireEvent.click(summerBtn);
+
+    const startInput = screen.getByLabelText(/Shift Start Time/i) as HTMLInputElement;
+    const endInput = screen.getByLabelText(/Shift End Time/i) as HTMLInputElement;
+
+    expect(startInput.value).toBe('10:00');
+    expect(endInput.value).toBe('18:00');
+
+    const winterBtn = screen.getByText('Winter Shift').closest('button')!;
+    fireEvent.click(winterBtn);
+
+    expect(startInput.value).toBe('09:00');
+    expect(endInput.value).toBe('17:00');
+  });
+
+  it('submits updated shift settings and displays success message', async () => {
+    const patchSpy = vi.spyOn(attendanceApi, 'patchOrganizationSettings').mockResolvedValue({
+      timezone: 'Asia/Dhaka',
+      workStart: '10:00',
+      workEnd: '18:30',
+      graceMinutes: 15,
+    });
+
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Shift Start Time/i)).toBeInTheDocument();
+    });
+
+    const startInput = screen.getByLabelText(/Shift Start Time/i);
+    const endInput = screen.getByLabelText(/Shift End Time/i);
+    const graceInput = screen.getByLabelText(/Late Grace Period/i);
+
+    fireEvent.change(startInput, { target: { value: '10:00' } });
+    fireEvent.change(endInput, { target: { value: '18:30' } });
+    fireEvent.change(graceInput, { target: { value: '15' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Save Shift Schedule/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(patchSpy).toHaveBeenCalledWith({
+        timezone: 'Asia/Dhaka',
+        workStart: '10:00',
+        workEnd: '18:30',
+        graceMinutes: 15,
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Shift schedule updated to 10:00 AM – 06:30 PM\./i),
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('15 minutes')).toBeInTheDocument();
+  });
+
+  it('validates shift end time after shift start time client-side', async () => {
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Shift Start Time/i)).toBeInTheDocument();
+    });
+
+    const startInput = screen.getByLabelText(/Shift Start Time/i);
+    const endInput = screen.getByLabelText(/Shift End Time/i);
+
+    fireEvent.change(startInput, { target: { value: '18:00' } });
+    fireEvent.change(endInput, { target: { value: '09:00' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Save Shift Schedule/i });
+    fireEvent.click(submitBtn);
+
+    expect(
+      screen.getByText('Shift end time must be after shift start time.'),
+    ).toBeInTheDocument();
+  });
+
+  it('displays detailed error message when API fails with ApiError details', async () => {
+    vi.spyOn(attendanceApi, 'patchOrganizationSettings').mockRejectedValue(
+      new ApiError(
+        'VALIDATION_ERROR',
+        400,
+        [{ field: 'timezone', message: 'Invalid IANA timezone identifier' }],
+        'req-1',
+      ),
+    );
+
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Organization Timezone/i)).toBeInTheDocument();
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /Save Shift Schedule/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Invalid IANA timezone identifier'),
+      ).toBeInTheDocument();
+    });
+  });
+});
+
