@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
+  Contrast,
   LogOut,
   Menu,
   Moon,
@@ -319,21 +320,17 @@ export function Sidebar() {
         </div>
 
         <ul className="space-y-1">
-          {/* Light / Dark Mode Switcher placed directly before Profile button */}
+          {/* Change Theme Switcher placed directly before Profile button */}
           <li>
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={!expanded ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
+              aria-label="Change Theme"
+              title={!expanded ? 'Change Theme' : undefined}
               className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-200 hover:bg-[#1A2420]/90 hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
             >
               <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-[#4CAF7D]">
-                {theme === 'dark' ? (
-                  <Sun className="h-[19px] w-[19px]" strokeWidth={1.85} />
-                ) : (
-                  <Moon className="h-[19px] w-[19px]" strokeWidth={1.85} />
-                )}
+                <Contrast className="h-[19px] w-[19px]" strokeWidth={1.9} />
               </span>
               <AnimatePresence initial={false}>
                 {expanded && (
@@ -342,18 +339,49 @@ export function Sidebar() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
                     transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
-                    className="flex flex-1 items-center justify-between truncate whitespace-nowrap"
+                    className="flex flex-1 items-center justify-between gap-2 truncate whitespace-nowrap"
                   >
-                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                    <span>Change Theme</span>
+                    {/* Pill Toggle Switch with Sun (Light) / Moon (Dark) icon inside */}
                     <span
                       className={cn(
-                        'flex h-5 w-9 items-center rounded-full border p-0.5 transition-colors duration-300',
-                        theme === 'light'
-                          ? 'border-[#2E8B57]/60 bg-[#2E8B57] justify-end'
-                          : 'border-[#23302B] bg-[#0B0F0E] justify-start',
+                        'relative inline-flex h-6 w-12 shrink-0 items-center rounded-full border p-0.5 transition-colors duration-300',
+                        theme === 'dark'
+                          ? 'border-[#3B4A43] bg-[#1E2924]'
+                          : 'border-[#DDD7CA] bg-[#FFFFFF] shadow-inner',
                       )}
                     >
-                      <span className="h-3.5 w-3.5 rounded-full bg-[#F0F5F2] shadow-xs" />
+                      {/* Sun icon on left (visible in light mode) */}
+                      <span
+                        className={cn(
+                          'flex h-4 w-4 items-center justify-center transition-opacity duration-300',
+                          theme === 'light' ? 'opacity-100 text-[#F59E0B]' : 'opacity-0',
+                        )}
+                      >
+                        <Sun className="h-3.5 w-3.5" strokeWidth={2.2} />
+                      </span>
+
+                      {/* Moon icon on right (visible in dark mode) */}
+                      <span
+                        className={cn(
+                          'ml-auto flex h-4 w-4 items-center justify-center transition-opacity duration-300',
+                          theme === 'dark' ? 'opacity-100 text-[#F0F5F2]' : 'opacity-0',
+                        )}
+                      >
+                        <Moon className="h-3.5 w-3.5" strokeWidth={2.1} />
+                      </span>
+
+                      {/* Sliding Circle Knob */}
+                      <motion.span
+                        layout
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        className={cn(
+                          'pointer-events-none absolute top-0.5 h-[18px] w-[18px] rounded-full border-2 transition-colors duration-300',
+                          theme === 'dark'
+                            ? 'left-0.5 border-[#F0F5F2] bg-[#1E2924]'
+                            : 'right-0.5 border-[#F59E0B] bg-[#FDE68A]/70',
+                        )}
+                      />
                     </span>
                   </motion.span>
                 )}

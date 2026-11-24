@@ -77,6 +77,42 @@ function parseHhMmToMinutes(hhmm: string, fallback: number): number {
   return h * 60 + m;
 }
 
+function getEmployeeHierarchyRank(emp: EmployeeItem): number {
+  const roles = emp.user.roles.map((r) => r.toLowerCase());
+  const dept = emp.department.name.toLowerCase();
+  const desig = emp.designation.title.toLowerCase();
+
+  if (
+    roles.includes('super_admin') ||
+    dept.includes('management') ||
+    dept.includes('executive') ||
+    desig.includes('ceo') ||
+    desig.includes('director') ||
+    desig.includes('executive')
+  ) {
+    return 0;
+  }
+
+  if (
+    roles.includes('department_head') ||
+    roles.includes('dept_head') ||
+    desig.includes('head') ||
+    desig.includes('lead') ||
+    desig.includes('manager')
+  ) {
+    if (roles.includes('hr_manager') || dept.includes('human resource') || dept.includes('people')) {
+      return 2;
+    }
+    return 1;
+  }
+
+  if (roles.includes('hr_manager') || dept.includes('human resource') || dept.includes('people')) {
+    return 2;
+  }
+
+  return 3;
+}
+
 export function EmployeesDashboard() {
   const { user, activeRole } = useAuth();
   const canCreate =
@@ -211,19 +247,27 @@ export function EmployeesDashboard() {
 
   const filteredEmployees = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return employees.filter((emp) => {
-      if (departmentFilter && emp.department.id !== departmentFilter) return false;
-      const empStatus = deriveLiveStatus(emp);
-      if (liveStatusFilter && empStatus !== liveStatusFilter) return false;
-      if (!q) return true;
-      return (
-        emp.fullName.toLowerCase().includes(q) ||
-        emp.employeeCode.toLowerCase().includes(q) ||
-        emp.workEmail.toLowerCase().includes(q) ||
-        emp.user.username.toLowerCase().includes(q) ||
-        emp.designation.title.toLowerCase().includes(q)
-      );
-    });
+    return employees
+      .filter((emp) => {
+        if (departmentFilter && emp.department.id !== departmentFilter) return false;
+        const empStatus = deriveLiveStatus(emp);
+        if (liveStatusFilter && empStatus !== liveStatusFilter) return false;
+        if (!q) return true;
+        return (
+          emp.fullName.toLowerCase().includes(q) ||
+          emp.employeeCode.toLowerCase().includes(q) ||
+          emp.workEmail.toLowerCase().includes(q) ||
+          emp.user.username.toLowerCase().includes(q) ||
+          emp.designation.title.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const rankDiff = getEmployeeHierarchyRank(a) - getEmployeeHierarchyRank(b);
+        if (rankDiff !== 0) return rankDiff;
+        const deptDiff = a.department.name.localeCompare(b.department.name);
+        if (deptDiff !== 0) return deptDiff;
+        return a.employeeCode.localeCompare(b.employeeCode);
+      });
   }, [employees, departmentFilter, liveStatusFilter, searchQuery, deriveLiveStatus]);
 
   const availableCount = useMemo(
