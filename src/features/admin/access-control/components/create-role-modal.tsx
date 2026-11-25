@@ -372,7 +372,7 @@ export function CreateRoleModal({
                             key={category}
                             className="overflow-hidden rounded-2xl border border-[#23302B] bg-[#0B0F0E]/70"
                           >
-                            <div className="flex items-center justify-between border-b border-[#23302B]/80 bg-[#1A2420]/55 px-4 py-2.5">
+                            <div className="flex items-center justify-between border-b border-[#23302B]/80 bg-[#1A2420] px-4 py-2.5">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold text-[#F0F5F2]">
                                   {category}
