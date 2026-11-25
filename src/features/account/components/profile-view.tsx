@@ -82,18 +82,23 @@ function ReadOnlyField({ label, value, icon: Icon }: ReadOnlyFieldProps) {
         <Icon className="h-3.5 w-3.5 text-[#4CAF7D]" />
         <span>{label}</span>
       </div>
-      <p className="mt-1.5 truncate text-sm font-medium text-[#F0F5F2]">{value}</p>
+      <p className="mt-1.5 truncate text-sm font-medium text-[#F0F5F2]" title={value}>
+        {value}
+      </p>
     </div>
   );
 }
 
 function format24hTo12h(hhmm: string): string {
   if (!hhmm) return hhmm;
-  if (hhmm.includes('AM') || hhmm.includes('PM')) return hhmm;
-  const [hStr, mStr] = hhmm.split(':');
+  const trimmed = hhmm.trim();
+  if (trimmed.toUpperCase().includes('AM') || trimmed.toUpperCase().includes('PM')) {
+    return trimmed;
+  }
+  const [hStr, mStr] = trimmed.split(':');
   const h = Number(hStr);
   const m = Number(mStr ?? 0);
-  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  if (Number.isNaN(h) || Number.isNaN(m)) return trimmed;
   const period = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
@@ -224,17 +229,15 @@ export function ProfileView() {
   const displayRole = activeRole ? ROLE_LABELS[activeRole] : '—';
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
-  const effectiveWorkStart = profileData?.workStart || orgShift?.workStart;
-  const effectiveWorkEnd = profileData?.workEnd || orgShift?.workEnd;
-  const effectiveTimezone = profileData?.timezone || orgShift?.timezone;
-
   const workShiftDisplay = useMemo(() => {
-    if (!effectiveWorkStart || !effectiveTimezone) return '—';
-    if (effectiveWorkEnd) {
-      return `${format24hTo12h(effectiveWorkStart)} – ${format24hTo12h(effectiveWorkEnd)} · ${effectiveTimezone}`;
-    }
-    return `${format24hTo12h(effectiveWorkStart)} · ${effectiveTimezone}`;
-  }, [effectiveWorkStart, effectiveWorkEnd, effectiveTimezone]);
+    if (!profileData && !orgShift) return '—';
+    const start = profileData?.workStart || orgShift?.workStart || '10:00';
+    const end = profileData?.workEnd || orgShift?.workEnd || '18:30';
+    const tz = profileData?.timezone || orgShift?.timezone || 'Asia/Dhaka';
+    const start12 = format24hTo12h(start);
+    const end12 = format24hTo12h(end);
+    return `${start12} – ${end12} · ${tz}`;
+  }, [profileData, orgShift]);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setAvatarError(null);
