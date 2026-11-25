@@ -11,7 +11,13 @@ import {
   UserCog,
   X,
 } from 'lucide-react';
-import { putDepartmentHead, putUserRoles } from '@/features/admin/leadership/api';
+import {
+  fetchOrgRoles,
+  putDepartmentHead,
+  putUserRoles,
+  type OrgRoleItem,
+} from '@/features/admin/leadership/api';
+import { getRoleLabel, isCustomRoleName } from '@/lib/auth/permissions';
 import { ApiError } from '@/lib/api/errors';
 import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
@@ -91,6 +97,8 @@ export function EmployeeProfileModal({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [selectedRoleAssignment, setSelectedRoleAssignment] =
     useState<TeamRoleAssignment>('team_member');
+  const [availableCustomRoles, setAvailableCustomRoles] = useState<OrgRoleItem[]>([]);
+  const [selectedCustomRoles, setSelectedCustomRoles] = useState<string[]>([]);
   const [draftStatus, setDraftStatus] = useState<EmployeeLiveStatus | 'auto'>(liveStatus);
   const [savedStatusNotice, setSavedStatusNotice] = useState(false);
 
@@ -113,10 +121,20 @@ export function EmployeeProfileModal({
 
   useEffect(() => {
     if (!employee) return;
+    let cancelled = false;
+    fetchOrgRoles()
+      .then((rolesList) => {
+        if (!cancelled) {
+          setAvailableCustomRoles(rolesList.filter((r) => !r.isSystem));
+        }
+      })
+      .catch(() => {});
+
     const timer = setTimeout(() => {
       setDesignationInput(employee.designation.title);
       setSelectedDepartmentId(employee.department.id);
       setSelectedRoleAssignment(resolveInitialRoleAssignment(employee.user.roles));
+      setSelectedCustomRoles(employee.user.roles.filter((r) => isCustomRoleName(r)));
       setDraftStatus(liveStatus);
       setSavedStatusNotice(false);
       setSavedDesignationNotice(false);
@@ -124,7 +142,10 @@ export function EmployeeProfileModal({
       setSavedRoleNotice(false);
       setRoleError(null);
     }, 0);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [employee, liveStatus]);
 
   function handleConfirmStatusChange(e: React.FormEvent) {
@@ -219,17 +240,23 @@ export function EmployeeProfileModal({
 
     let nextRoles: string[] = [...preserveSuperAdmin, 'employee'];
     if (selectedRoleAssignment === 'department_manager') {
-      nextRoles = Array.from(new Set([...nextRoles, 'department_head']));
+      nextRoles = Array.from(new Set([...nextRoles, 'dept_head']));
     } else if (selectedRoleAssignment === 'hr_manager') {
       nextRoles = Array.from(new Set([...nextRoles, 'hr_manager']));
     }
+    nextRoles = Array.from(new Set([...nextRoles, ...selectedCustomRoles]));
+
+    const hadCustomRoles = employee.user.roles.some((r) => isCustomRoleName(r));
 
     try {
       if (selectedRoleAssignment === 'department_manager') {
-        try {
-          await putDepartmentHead(targetDeptId, employee.id);
-        } catch {
-          await putUserRoles(employee.user.id, nextRoles);
+        await putDepartmentHead(targetDeptId, employee.id);
+        if (
+          employee.user.roles.includes('hr_manager') ||
+          selectedCustomRoles.length > 0 ||
+          hadCustomRoles
+        ) {
+          await putUserRoles(employee.user.id, nextRoles, targetDeptId);
         }
       } else {
         await putUserRoles(employee.user.id, nextRoles);
@@ -242,10 +269,10 @@ export function EmployeeProfileModal({
         setRoleError('Only Super Admin can change manager role assignments.');
       } else if (err instanceof ApiError && err.code === 'SELF_MODIFICATION_NOT_ALLOWED') {
         setRoleError('You cannot modify your own role assignment.');
+      } else if (err instanceof ApiError) {
+        setRoleError(err.message || 'Failed to update role assignment.');
       } else {
-        // Update locally so UI reflects selection cleanly
-        onRoleUpdated?.(employee.id, selectedRoleAssignment, targetDeptId, nextRoles);
-        setSavedRoleNotice(true);
+        setRoleError('Failed to update role assignment. Please try again.');
       }
     } finally {
       setIsSavingRole(false);
@@ -548,6 +575,42 @@ export function EmployeeProfileModal({
                       );
                     })}
                   </div>
+
+                  {availableCustomRoles.length > 0 && (
+                    <div className="mt-3 border-t border-[#23302B]/70 pt-3">
+                      <p className="mb-2 text-[11px] font-semibold tracking-[0.04em] text-[#A3B3AC] uppercase">
+                        Custom Roles
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableCustomRoles.map((customRole) => {
+                          const checked = selectedCustomRoles.includes(customRole.name);
+                          return (
+                            <button
+                              key={customRole.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomRoles((prev) =>
+                                  prev.includes(customRole.name)
+                                    ? prev.filter((r) => r !== customRole.name)
+                                    : [...prev, customRole.name],
+                                );
+                                setSavedRoleNotice(false);
+                                setRoleError(null);
+                              }}
+                              className={cn(
+                                'rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+                                checked
+                                  ? 'border-[#38BDF8]/60 bg-[#38BDF8]/15 text-[#38BDF8]'
+                                  : 'border-[#23302B] bg-[#131A17] text-[#A3B3AC] hover:border-[#38BDF8]/40 hover:text-[#F0F5F2]',
+                              )}
+                            >
+                              {getRoleLabel(customRole.name)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="submit"

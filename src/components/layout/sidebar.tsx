@@ -21,7 +21,7 @@ import {
   type NavItem,
 } from '@/config/navigation';
 import { useSignOut } from '@/features/auth/hooks';
-import { ROLE_LABELS } from '@/lib/auth/permissions';
+import { getRoleLabel } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
@@ -121,7 +121,7 @@ export function Sidebar() {
                     </span>
                   </span>
                   <span className="text-[11px] font-medium text-[#6E8078]">
-                    {activeRole ? ROLE_LABELS[activeRole] : 'Workspace'}
+                    {activeRole ? getRoleLabel(activeRole) : 'Workspace'}
                   </span>
                 </motion.div>
               )}

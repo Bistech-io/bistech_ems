@@ -118,10 +118,11 @@ export async function fetchOrgRoles(): Promise<OrgRoleItem[]> {
 export async function putUserRoles(
   userId: string,
   roles: string[],
+  departmentId?: string,
 ): Promise<UpdatedUserRoles> {
   const res = await apiRequest(`/users/${userId}/roles`, {
     method: 'PUT',
-    body: { roles },
+    body: departmentId ? { roles, departmentId } : { roles },
     schema: updateUserRolesResponseSchema,
   });
   return res.data;

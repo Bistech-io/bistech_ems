@@ -4,9 +4,17 @@ import type {
   PermissionKey,
   RoleName,
   ScopeLevel,
+  SystemRoleName,
 } from '@ems/contracts';
 
-export type { AuthMeData, PermissionGrantMap, PermissionKey, RoleName, ScopeLevel };
+export type {
+  AuthMeData,
+  PermissionGrantMap,
+  PermissionKey,
+  RoleName,
+  ScopeLevel,
+  SystemRoleName,
+};
 
 export interface UserAuthContext {
   userId: string;
@@ -27,12 +35,76 @@ const SCOPE_ORDER: Record<ScopeLevel, number> = {
   org: 5,
 };
 
-export const ROLE_LABELS: Record<RoleName, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
   hr_manager: 'HR Manager',
   dept_head: 'Dept Head',
   employee: 'Employee',
 };
+
+const ROLE_PRIORITY: Record<string, number> = {
+  super_admin: 4,
+  hr_manager: 3,
+  dept_head: 2,
+  employee: 1,
+};
+
+const SYSTEM_ROLE_SET = new Set([
+  'super_admin',
+  'hr_manager',
+  'dept_head',
+  'department_head',
+  'employee',
+]);
+
+export function isCustomRoleName(role: string): boolean {
+  return !SYSTEM_ROLE_SET.has(role.trim().toLowerCase());
+}
+
+export function getRoleLabel(role: string | null | undefined): string {
+  if (!role) return '—';
+  const normalized = normalizeRoleName(role) ?? role.trim().toLowerCase();
+  if (ROLE_LABELS[normalized]) {
+    return ROLE_LABELS[normalized];
+  }
+  return normalized
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+export function normalizeRoleName(role: string): RoleName | null {
+  const trimmed = role.trim().toLowerCase();
+  if (!trimmed) return null;
+  if (trimmed === 'department_head' || trimmed === 'dept_head') return 'dept_head';
+  return trimmed;
+}
+
+/**
+ * Picks the highest-privilege role from an unsorted roles array
+ * (super_admin > hr_manager > dept_head > custom roles > employee).
+ */
+export function resolvePrimaryRole(
+  roles: readonly (RoleName | string)[] | null | undefined,
+): RoleName | null {
+  if (!roles || roles.length === 0) return null;
+
+  let best: RoleName | null = null;
+  let bestScore = -1;
+
+  for (const rawRole of roles) {
+    const normalized = normalizeRoleName(rawRole);
+    if (!normalized) continue;
+    const score = ROLE_PRIORITY[normalized] ?? 1.5;
+    if (score > bestScore) {
+      bestScore = score;
+      best = normalized;
+    }
+  }
+
+  return best;
+}
 
 /**
  * Default permission matrices per role from FSD.md section 1.
@@ -136,14 +208,23 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
 };
 
 export function authMeToUserContext(authMe: AuthMeData): UserAuthContext {
+  const normalizedRoles = Array.from(
+    new Set(
+      authMe.roles
+        .map((r) => normalizeRoleName(r))
+        .filter((r): r is RoleName => r !== null),
+    ),
+  );
+  const primaryRole = resolvePrimaryRole(normalizedRoles) ?? 'employee';
+
   return {
     userId: authMe.user.id,
     employeeId: authMe.employeeId,
     username: authMe.user.username,
     name: authMe.user.name,
     email: authMe.user.email ?? authMe.user.username,
-    roleTitle: ROLE_LABELS[authMe.roles[0] ?? 'employee'],
-    roles: authMe.roles,
+    roleTitle: getRoleLabel(primaryRole),
+    roles: normalizedRoles.length > 0 ? normalizedRoles : authMe.roles,
     permissions: authMe.permissions,
   };
 }
@@ -192,4 +273,35 @@ export function hasAnyRole(
 ): boolean {
   if (!auth?.roles?.length) return false;
   return allowedRoles.some((role) => auth.roles?.includes(role));
+}
+
+export interface AccessRule {
+  permission?: PermissionKey;
+  minScope?: ScopeLevel;
+  allowedRoles?: RoleName[];
+}
+
+/**
+ * Evaluates navigation and route access for both built-in system roles and custom roles.
+ * Custom-role holders gain access to any permission-gated view when their granted
+ * permission meets `minScope`.
+ */
+export function isAuthorizedForRule(
+  auth: { roles?: RoleName[]; permissions?: PermissionGrantMap } | null | undefined,
+  rule: AccessRule,
+): boolean {
+  if (!auth) return false;
+
+  if (rule.permission && !can(auth, rule.permission, rule.minScope ?? 'own')) {
+    return false;
+  }
+
+  if (rule.allowedRoles && !hasAnyRole(auth, rule.allowedRoles)) {
+    const holdsCustomRole = Boolean(auth.roles?.some((r) => isCustomRoleName(r)));
+    if (!(holdsCustomRole && Boolean(rule.permission))) {
+      return false;
+    }
+  }
+
+  return true;
 }

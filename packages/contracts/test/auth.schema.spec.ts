@@ -109,11 +109,18 @@ describe('@ems/contracts auth schemas', () => {
     expect(logoutResponseSchema.parse(logoutPayload)).toEqual(logoutPayload);
   });
 
-  it('rejects invalid roles, invalid permission keys, or missing csrfToken', () => {
+  it('accepts custom role slugs and rejects invalid role keys, invalid permission keys, or missing csrfToken', () => {
+    expect(
+      authMeDataSchema.parse({
+        ...VALID_AUTH_ME_DATA,
+        roles: ['employee', 'finance_auditor'],
+      }).roles,
+    ).toEqual(['employee', 'finance_auditor']);
+
     expect(() =>
       authMeDataSchema.parse({
         ...VALID_AUTH_ME_DATA,
-        roles: ['unknown_role'],
+        roles: ['Invalid Role!'],
       }),
     ).toThrow();
 
