@@ -1,8 +1,17 @@
 import { z } from 'zod';
 import { successEnvelopeSchema } from './envelope';
 
-export const ROLE_NAMES = ['super_admin', 'hr_manager', 'dept_head', 'employee'] as const;
-export const roleNameSchema = z.enum(ROLE_NAMES);
+export const SYSTEM_ROLE_NAMES = ['super_admin', 'hr_manager', 'dept_head', 'employee'] as const;
+export const systemRoleNameSchema = z.enum(SYSTEM_ROLE_NAMES);
+export type SystemRoleName = z.infer<typeof systemRoleNameSchema>;
+
+export const ROLE_NAMES = SYSTEM_ROLE_NAMES;
+export const roleNameSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(48)
+  .regex(/^[a-z0-9_]+$/);
 export type RoleName = z.infer<typeof roleNameSchema>;
 
 export const SCOPE_LEVELS = ['own', 'team', 'department', 'managed', 'org'] as const;

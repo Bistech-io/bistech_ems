@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { authMeDataSchema } from '@ems/contracts';
 import {
   can,
+  getRoleLabel,
   hasAnyRole,
+  isAuthorizedForRule,
   resolvePermissionsForRoles,
   resolvePrimaryRole,
 } from '@/lib/auth/permissions';
@@ -40,6 +43,52 @@ describe('permissions.can()', () => {
     expect(resolvePrimaryRole(['employee', 'hr_manager'])).toBe('hr_manager');
     expect(resolvePrimaryRole(['employee', 'dept_head', 'super_admin'])).toBe('super_admin');
     expect(resolvePrimaryRole(['department_head' as never])).toBe('dept_head');
+    expect(resolvePrimaryRole(['employee', 'finance_auditor'])).toBe('finance_auditor');
     expect(resolvePrimaryRole([])).toBeNull();
+  });
+
+  it('formats labels and evaluates permission-driven rules for custom roles', () => {
+    expect(getRoleLabel('finance_auditor')).toBe('Finance Auditor');
+    expect(getRoleLabel('dept_head')).toBe('Dept Head');
+
+    const customAuditor = {
+      roles: ['employee', 'finance_auditor'],
+      permissions: {
+        'attendance.read': 'org' as const,
+        'audit.read': 'org' as const,
+      },
+    };
+
+    expect(
+      isAuthorizedForRule(customAuditor, {
+        allowedRoles: ['super_admin', 'hr_manager'],
+        permission: 'attendance.read',
+        minScope: 'org',
+      }),
+    ).toBe(true);
+
+    expect(
+      isAuthorizedForRule(customAuditor, {
+        allowedRoles: ['super_admin'],
+        permission: 'role.manage',
+        minScope: 'org',
+      }),
+    ).toBe(false);
+
+    // Validates @ems/contracts accepts custom role names in AuthMe payload
+    const parsed = authMeDataSchema.parse({
+      user: {
+        id: '11111111-1111-4111-8111-111111111111',
+        username: 'auditor1',
+        email: 'auditor@bistech.io',
+        name: 'Audit User',
+        accountStatus: 'active',
+      },
+      employeeId: null,
+      roles: ['employee', 'finance_auditor'],
+      permissions: { 'attendance.read': 'org', 'audit.read': 'org' },
+      csrfToken: 'csrf-token-1',
+    });
+    expect(parsed.roles).toContain('finance_auditor');
   });
 });

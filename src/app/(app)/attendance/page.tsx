@@ -4,7 +4,11 @@ import { AttendanceDashboard } from '@/features/attendance/components/attendance
 
 export default function AttendancePage() {
   return (
-    <RoleGuard allowedRoles={['hr_manager', 'dept_head', 'employee']}>
+    <RoleGuard
+      allowedRoles={['hr_manager', 'dept_head', 'employee']}
+      permission="attendance.self"
+      minScope="own"
+    >
       <Suspense
         fallback={
           <div className="h-96 animate-pulse rounded-3xl border border-[#23302B] bg-[#131A17]/60" />

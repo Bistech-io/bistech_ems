@@ -202,3 +202,46 @@ export async function createCustomRole(
     throw err;
   }
 }
+
+export interface UpdateCustomRolePayload {
+  description?: string | null;
+  permissions: RolePermissionGrant[];
+}
+
+export async function updateCustomRole(
+  roleId: string,
+  payload: UpdateCustomRolePayload,
+): Promise<AccessControlRole> {
+  const res = await apiRequest(`/roles/${roleId}`, {
+    method: 'PATCH',
+    body: {
+      description: payload.description?.trim() || null,
+      permissions: payload.permissions.map((p) => ({
+        key: p.key,
+        scope: p.scope,
+      })),
+    },
+    schema: singleRoleResponseSchema,
+  });
+
+  return mapRoleDto(res.data);
+}
+
+const deleteRoleResponseSchema = successEnvelopeSchema(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    detachedUsersCount: z.number(),
+  }),
+);
+
+export async function deleteCustomRole(
+  roleId: string,
+): Promise<{ id: string; name: string; detachedUsersCount: number }> {
+  const res = await apiRequest(`/roles/${roleId}`, {
+    method: 'DELETE',
+    schema: deleteRoleResponseSchema,
+  });
+
+  return res.data;
+}

@@ -2,7 +2,7 @@
 
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useSignOut } from '@/features/auth/hooks';
-import { ROLE_LABELS } from '@/lib/auth/permissions';
+import { getRoleLabel } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 
 export function DashboardSessionBar() {
@@ -25,7 +25,7 @@ export function DashboardSessionBar() {
           <p className="text-[11px] text-[#6E8078]">
             Role:{' '}
             <span className="text-[#4CAF7D]">
-              {activeRole ? ROLE_LABELS[activeRole] : '—'}
+              {activeRole ? getRoleLabel(activeRole) : '—'}
             </span>
             {' · '}
             {isAuthenticated ? 'Authenticated Session' : 'Verifying Session'}

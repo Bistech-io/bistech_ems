@@ -12,8 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import {
-  can,
-  hasAnyRole,
+  isAuthorizedForRule,
   type PermissionKey,
   type RoleName,
   type ScopeLevel,
@@ -86,6 +85,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         label: 'Employee Attendance',
         href: '/attendance/employees',
         icon: CalendarCheck,
+        permission: 'attendance.read',
+        minScope: 'org',
         allowedRoles: ['super_admin', 'hr_manager'],
       },
     ],
@@ -107,6 +108,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         label: 'My Team',
         href: '/team',
         icon: Users,
+        permission: 'team.read',
+        minScope: 'department',
         allowedRoles: ['dept_head'],
       },
       {
@@ -129,6 +132,8 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         label: 'Organization',
         href: '/admin/organization',
         icon: Building2,
+        permission: 'org.settings.manage',
+        minScope: 'org',
         allowedRoles: ['super_admin'],
       },
       {
@@ -169,14 +174,7 @@ function isAuthorized(
   user: UserAuthContext | null | undefined,
   rule: { permission?: PermissionKey; minScope?: ScopeLevel; allowedRoles?: RoleName[] },
 ): boolean {
-  if (!user) return false;
-  if (rule.allowedRoles && !hasAnyRole(user, rule.allowedRoles)) {
-    return false;
-  }
-  if (rule.permission && !can(user, rule.permission, rule.minScope ?? 'own')) {
-    return false;
-  }
-  return true;
+  return isAuthorizedForRule(user, rule);
 }
 
 /**

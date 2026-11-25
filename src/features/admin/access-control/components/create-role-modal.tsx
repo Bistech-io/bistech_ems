@@ -13,7 +13,7 @@ import {
 import { SCOPE_LEVELS, type ScopeLevel } from '@ems/contracts';
 import { ApiError } from '@/lib/api/errors';
 import { cn } from '@/lib/utils';
-import { createCustomRole } from '../api';
+import { createCustomRole, updateCustomRole } from '../api';
 import {
   PERMISSION_CATEGORIES,
   SCOPE_LABELS,
@@ -27,19 +27,24 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface CreateRoleModalProps {
   open: boolean;
+  editingRole?: AccessControlRole | null;
   existingRoleNames: string[];
   permissionCatalog: PermissionCatalogItem[];
   onClose: () => void;
   onRoleCreated: (role: AccessControlRole, syncedWithServer: boolean) => void;
+  onRoleUpdated?: (role: AccessControlRole) => void;
 }
 
 export function CreateRoleModal({
   open,
+  editingRole = null,
   existingRoleNames,
   permissionCatalog,
   onClose,
   onRoleCreated,
+  onRoleUpdated,
 }: CreateRoleModalProps) {
+  const isEditMode = Boolean(editingRole);
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [permissionSearch, setPermissionSearch] = useState('');
@@ -49,7 +54,32 @@ export function CreateRoleModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const normalizedSlug = useMemo(() => slugifyRoleName(displayName), [displayName]);
+  const normalizedSlug = useMemo(
+    () => (editingRole ? editingRole.name : slugifyRoleName(displayName)),
+    [editingRole, displayName],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      if (editingRole) {
+        setDisplayName(editingRole.displayName);
+        setDescription(editingRole.description ?? '');
+        const initial: Record<string, ScopeLevel> = {};
+        for (const perm of editingRole.permissions) {
+          initial[perm.key] = perm.scope;
+        }
+        setSelectedPermissions(initial);
+      } else {
+        setDisplayName('');
+        setDescription('');
+        setSelectedPermissions({});
+      }
+      setPermissionSearch('');
+      setErrorMessage(null);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [open, editingRole]);
 
   useEffect(() => {
     if (!open) return;
@@ -149,23 +179,25 @@ export function CreateRoleModal({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!displayName.trim()) {
-      setErrorMessage('Please enter a role name.');
-      return;
-    }
+    if (!isEditMode) {
+      if (!displayName.trim()) {
+        setErrorMessage('Please enter a role name.');
+        return;
+      }
 
-    if (!normalizedSlug || normalizedSlug.length < 2) {
-      setErrorMessage('Role name must contain at least 2 alphanumeric characters.');
-      return;
-    }
+      if (!normalizedSlug || normalizedSlug.length < 2) {
+        setErrorMessage('Role name must contain at least 2 alphanumeric characters.');
+        return;
+      }
 
-    if (
-      existingRoleNames.some(
-        (existing) => existing.toLowerCase() === normalizedSlug.toLowerCase(),
-      )
-    ) {
-      setErrorMessage(`A role with key "${normalizedSlug}" already exists.`);
-      return;
+      if (
+        existingRoleNames.some(
+          (existing) => existing.toLowerCase() === normalizedSlug.toLowerCase(),
+        )
+      ) {
+        setErrorMessage(`A role with key "${normalizedSlug}" already exists.`);
+        return;
+      }
     }
 
     if (selectedCount === 0) {
@@ -179,20 +211,34 @@ export function CreateRoleModal({
         ([key, scope]) => ({ key, scope }),
       );
 
-      const { role, syncedWithServer } = await createCustomRole({
-        name: normalizedSlug,
-        displayName: displayName.trim(),
-        description: description.trim() || undefined,
-        permissions: permissionsPayload,
-      });
-
-      onRoleCreated(role, syncedWithServer);
+      if (editingRole) {
+        const updated = await updateCustomRole(editingRole.id, {
+          description: description.trim() || null,
+          permissions: permissionsPayload,
+        });
+        onRoleUpdated?.(updated);
+      } else {
+        const { role, syncedWithServer } = await createCustomRole({
+          name: normalizedSlug,
+          displayName: displayName.trim(),
+          description: description.trim() || undefined,
+          permissions: permissionsPayload,
+        });
+        onRoleCreated(role, syncedWithServer);
+      }
       resetAndClose();
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrorMessage(err.message || 'Could not create custom role.');
+        setErrorMessage(
+          err.message ||
+            (isEditMode ? 'Could not update custom role.' : 'Could not create custom role.'),
+        );
       } else {
-        setErrorMessage('Could not create custom role. Please try again.');
+        setErrorMessage(
+          isEditMode
+            ? 'Could not update custom role. Please try again.'
+            : 'Could not create custom role. Please try again.',
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -206,7 +252,7 @@ export function CreateRoleModal({
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Create custom role"
+          aria-label={isEditMode ? 'Edit custom role' : 'Create custom role'}
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -232,10 +278,12 @@ export function CreateRoleModal({
                 </span>
                 <div>
                   <h2 className="font-heading text-lg font-bold text-[#F0F5F2]">
-                    Create Custom Role
+                    {isEditMode ? `Edit ${editingRole?.displayName}` : 'Create Custom Role'}
                   </h2>
                   <p className="text-xs text-[#A3B3AC]">
-                    Define a new organization role and check the permissions to grant.
+                    {isEditMode
+                      ? 'Update this custom role’s description and granted permissions.'
+                      : 'Define a new organization role and check the permissions to grant.'}
                   </p>
                 </div>
               </div>
@@ -276,9 +324,10 @@ export function CreateRoleModal({
                       id="custom-role-name"
                       type="text"
                       value={displayName}
+                      disabled={isEditMode}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. Finance Auditor"
-                      className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3.5 text-sm text-[#F0F5F2] placeholder-[#6E8078] focus:border-[#4CAF7D] focus:outline-none"
+                      className="h-10 w-full rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3.5 text-sm text-[#F0F5F2] placeholder-[#6E8078] focus:border-[#4CAF7D] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     {normalizedSlug && (
                       <p className="mt-1.5 text-[11px] text-[#6E8078]">
@@ -491,12 +540,12 @@ export function CreateRoleModal({
                     {isSubmitting ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Creating...
+                        {isEditMode ? 'Saving...' : 'Creating...'}
                       </>
                     ) : (
                       <>
                         <ShieldPlus className="h-3.5 w-3.5" />
-                        Create Role
+                        {isEditMode ? 'Save Changes' : 'Create Role'}
                       </>
                     )}
                   </button>
