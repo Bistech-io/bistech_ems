@@ -17,6 +17,7 @@ import { clearCsrfToken, setCsrfToken } from '@/lib/api/csrf';
 import {
   authMeToUserContext,
   resolvePermissionsForRoles,
+  resolvePrimaryRole,
   type RoleName,
   type UserAuthContext,
 } from '@/lib/auth/permissions';
@@ -185,7 +186,7 @@ export function AuthProvider({
       session,
       isAuthenticated: Boolean(session),
       isLoading,
-      activeRole: session?.roles[0] ?? defaultRole ?? null,
+      activeRole: resolvePrimaryRole(session?.roles) ?? defaultRole ?? null,
       setSession,
     }),
     [user, session, isLoading, defaultRole, setSession],

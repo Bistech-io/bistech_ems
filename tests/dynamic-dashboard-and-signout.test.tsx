@@ -87,6 +87,38 @@ describe('Dynamic Dashboard per Role', () => {
     expect(screen.getByText(/mehedi alam/i)).toBeInTheDocument();
     expect(screen.getByText(/senior frontend engineer/i)).toBeInTheDocument();
   });
+
+  it('activates Department Head Workspace when session roles list employee before dept_head', async () => {
+    render(
+      <QueryProvider>
+        <AuthProvider
+          initialSession={{
+            user: {
+              id: 'u-dh',
+              username: 'demo_dept_head',
+              email: 'dh@bistech.io',
+              name: 'Demo Department Head',
+              accountStatus: 'active',
+            },
+            employeeId: 'emp-dh',
+            roles: ['employee', 'dept_head'],
+            permissions: {
+              'dashboard.read': 'managed',
+            },
+            csrfToken: 'csrf-token-dh',
+          }}
+        >
+          <EmployeeDashboard />
+        </AuthProvider>
+      </QueryProvider>,
+    );
+
+    expect(screen.getByText(/department head workspace/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /department head dashboard/i }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/^dept head$/i).length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('Sign Out resilience', () => {

@@ -34,6 +34,46 @@ export const ROLE_LABELS: Record<RoleName, string> = {
   employee: 'Employee',
 };
 
+const ROLE_PRIORITY: Record<RoleName, number> = {
+  super_admin: 4,
+  hr_manager: 3,
+  dept_head: 2,
+  employee: 1,
+};
+
+export function normalizeRoleName(role: string): RoleName | null {
+  if (role === 'department_head' || role === 'dept_head') return 'dept_head';
+  if (role === 'super_admin' || role === 'hr_manager' || role === 'employee') {
+    return role;
+  }
+  return null;
+}
+
+/**
+ * Picks the highest-privilege role from an unsorted roles array
+ * (super_admin > hr_manager > dept_head > employee).
+ */
+export function resolvePrimaryRole(
+  roles: readonly (RoleName | string)[] | null | undefined,
+): RoleName | null {
+  if (!roles || roles.length === 0) return null;
+
+  let best: RoleName | null = null;
+  let bestScore = -1;
+
+  for (const rawRole of roles) {
+    const normalized = normalizeRoleName(rawRole);
+    if (!normalized) continue;
+    const score = ROLE_PRIORITY[normalized] ?? 0;
+    if (score > bestScore) {
+      bestScore = score;
+      best = normalized;
+    }
+  }
+
+  return best;
+}
+
 /**
  * Default permission matrices per role from FSD.md section 1.
  * Used for role-preview mode in development until GET /auth/me is connected.
@@ -136,14 +176,23 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
 };
 
 export function authMeToUserContext(authMe: AuthMeData): UserAuthContext {
+  const normalizedRoles = Array.from(
+    new Set(
+      authMe.roles
+        .map((r) => normalizeRoleName(r))
+        .filter((r): r is RoleName => r !== null),
+    ),
+  );
+  const primaryRole = resolvePrimaryRole(normalizedRoles) ?? 'employee';
+
   return {
     userId: authMe.user.id,
     employeeId: authMe.employeeId,
     username: authMe.user.username,
     name: authMe.user.name,
     email: authMe.user.email ?? authMe.user.username,
-    roleTitle: ROLE_LABELS[authMe.roles[0] ?? 'employee'],
-    roles: authMe.roles,
+    roleTitle: ROLE_LABELS[primaryRole],
+    roles: normalizedRoles.length > 0 ? normalizedRoles : authMe.roles,
     permissions: authMe.permissions,
   };
 }
