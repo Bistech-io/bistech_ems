@@ -7,6 +7,7 @@ import {
   Crown,
   IdCard,
   LayoutGrid,
+  ShieldCheck,
   UserCircle,
   Users,
 } from 'lucide-react';
@@ -135,6 +136,15 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         label: 'HR & Dept Heads',
         href: '/admin/leadership',
         icon: Crown,
+        permission: 'role.manage',
+        minScope: 'org',
+        allowedRoles: ['super_admin'],
+      },
+      {
+        id: 'admin-access-control',
+        label: 'Access Control',
+        href: '/admin/access-control',
+        icon: ShieldCheck,
         permission: 'role.manage',
         minScope: 'org',
         allowedRoles: ['super_admin'],
