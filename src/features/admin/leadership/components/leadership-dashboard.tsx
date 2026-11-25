@@ -558,9 +558,6 @@ export function LeadershipDashboard() {
   async function handleConfirmDepartmentManager() {
     if (!activeSlideDept || isConfirmingManager) return;
     const nextHeadEmployeeId = selectedCandidateEmployeeId || null;
-    const candidate = nextHeadEmployeeId
-      ? headCandidates.find((c) => c.employeeId === nextHeadEmployeeId)
-      : null;
 
     setIsConfirmingManager(true);
     setActionError(null);
@@ -569,35 +566,12 @@ export function LeadershipDashboard() {
       await putDepartmentHead(activeSlideDept.id, nextHeadEmployeeId);
       await loadAll();
       setIsChangingManager(false);
-    } catch {
-      // Fallback: sync department_head role via PUT /users/:id/roles and update local department state
-      if (candidate && candidate.userId !== currentUserId) {
-        try {
-          const nextRoles = Array.from(new Set([...candidate.roles, 'department_head']));
-          await putUserRoles(candidate.userId, nextRoles);
-        } catch {
-          // Proceed with local active state update
-        }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setActionError(err.message || getErrorMessageForCode(err.code));
+      } else {
+        setActionError('Failed to assign department head.');
       }
-
-      setDepartments((prev) =>
-        prev.map((d) =>
-          d.id === activeSlideDept.id
-            ? {
-                ...d,
-                headEmployeeId: nextHeadEmployeeId,
-                headEmployee: candidate
-                  ? {
-                      id: candidate.employeeId,
-                      name: candidate.name,
-                      employeeCode: candidate.code,
-                    }
-                  : null,
-              }
-            : d,
-        ),
-      );
-      setIsChangingManager(false);
     } finally {
       setIsConfirmingManager(false);
     }
@@ -772,6 +746,14 @@ export function LeadershipDashboard() {
             : dept,
         ),
       );
+    } else {
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.headEmployeeId === employeeId
+            ? { ...dept, headEmployeeId: null, headEmployee: null }
+            : dept,
+        ),
+      );
     }
 
     setSelectedProfileEmployee((prev) =>
@@ -779,6 +761,8 @@ export function LeadershipDashboard() {
         ? { ...prev, user: { ...prev.user, roles: nextRoles } }
         : prev,
     );
+
+    void loadAll();
   }
 
   function handleLiveStatusChange(

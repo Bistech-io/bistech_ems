@@ -344,6 +344,7 @@ export function EmployeesDashboard() {
         ? { ...prev, user: { ...prev.user, roles: nextRoles } }
         : prev,
     );
+    fetchDepartments().then(setDepartments).catch(() => {});
   }
 
   function handleLiveStatusChange(

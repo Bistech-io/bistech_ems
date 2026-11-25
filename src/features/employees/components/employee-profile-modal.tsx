@@ -219,17 +219,16 @@ export function EmployeeProfileModal({
 
     let nextRoles: string[] = [...preserveSuperAdmin, 'employee'];
     if (selectedRoleAssignment === 'department_manager') {
-      nextRoles = Array.from(new Set([...nextRoles, 'department_head']));
+      nextRoles = Array.from(new Set([...nextRoles, 'dept_head']));
     } else if (selectedRoleAssignment === 'hr_manager') {
       nextRoles = Array.from(new Set([...nextRoles, 'hr_manager']));
     }
 
     try {
       if (selectedRoleAssignment === 'department_manager') {
-        try {
-          await putDepartmentHead(targetDeptId, employee.id);
-        } catch {
-          await putUserRoles(employee.user.id, nextRoles);
+        await putDepartmentHead(targetDeptId, employee.id);
+        if (employee.user.roles.includes('hr_manager')) {
+          await putUserRoles(employee.user.id, nextRoles, targetDeptId);
         }
       } else {
         await putUserRoles(employee.user.id, nextRoles);
@@ -242,10 +241,10 @@ export function EmployeeProfileModal({
         setRoleError('Only Super Admin can change manager role assignments.');
       } else if (err instanceof ApiError && err.code === 'SELF_MODIFICATION_NOT_ALLOWED') {
         setRoleError('You cannot modify your own role assignment.');
+      } else if (err instanceof ApiError) {
+        setRoleError(err.message || 'Failed to update role assignment.');
       } else {
-        // Update locally so UI reflects selection cleanly
-        onRoleUpdated?.(employee.id, selectedRoleAssignment, targetDeptId, nextRoles);
-        setSavedRoleNotice(true);
+        setRoleError('Failed to update role assignment. Please try again.');
       }
     } finally {
       setIsSavingRole(false);
