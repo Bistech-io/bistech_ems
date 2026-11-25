@@ -63,24 +63,44 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
     });
     vi.restoreAllMocks();
 
+    const makeResponse = (data: unknown) =>
+      ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(data),
+        json: async () => data,
+      }) as Response;
+
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input);
       if (url.includes('/employees/me/profile')) {
-        return {
-          ok: true,
-          json: async () => ({ success: true, data: mockProfileData }),
-        } as Response;
+        return makeResponse({
+          success: true,
+          message: 'Profile retrieved successfully',
+          data: mockProfileData,
+          meta: null,
+        });
+      }
+      if (url.includes('/organization/settings')) {
+        return makeResponse({
+          success: true,
+          message: 'Organization settings retrieved',
+          data: {
+            timezone: 'Asia/Dhaka',
+            workStart: '09:30',
+            workEnd: '18:00',
+            graceMinutes: 25,
+            weekendDays: [5, 6],
+            name: 'BisTech',
+            slug: 'bistech',
+          },
+          meta: null,
+        });
       }
       if (url.includes('/api/upload/avatar')) {
-        return {
-          ok: true,
-          json: async () => ({ success: true, url: null, publicId: null }),
-        } as Response;
+        return makeResponse({ success: true, message: 'Avatar status', url: null, publicId: null, meta: null });
       }
-      return {
-        ok: true,
-        json: async () => ({ success: true }),
-      } as Response;
+      return makeResponse({ success: true, message: 'OK', data: null, meta: null });
     });
   });
 
@@ -351,6 +371,21 @@ describe('ProfileView Avatar Photo Upload Flow', () => {
         newPassword: 'BrandNewPass123!',
       });
       expect(screen.getByText('Password updated successfully.')).toBeInTheDocument();
+    });
+  });
+
+  it('renders dynamic work shift formatted with 12-hour window and timezone from database sync', async () => {
+    renderProfile('employee');
+
+    await waitFor(() => {
+      expect(screen.getByText('Work Shift')).toBeInTheDocument();
+    });
+
+    // mockProfileData has workStart: '09:30 AM', workEnd: '06:00 PM', timezone: 'Asia/Dhaka'
+    await waitFor(() => {
+      expect(
+        screen.getByText('09:30 AM – 06:00 PM · Asia/Dhaka'),
+      ).toBeInTheDocument();
     });
   });
 });

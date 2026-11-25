@@ -21,6 +21,7 @@ export const employeeProfileSchema = z.object({
   timezone: z.string().nullable().optional().default(null),
   workStart: z.string().nullable().optional().default(null),
   workEnd: z.string().nullable().optional().default(null),
+  graceMinutes: z.number().nullable().optional().default(null),
   dateOfBirth: z.string().nullable(),
   personalEmail: z.string().nullable(),
   personalPhone: z.string().nullable(),
