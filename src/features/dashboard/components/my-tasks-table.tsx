@@ -1,7 +1,12 @@
 'use client';
 
-import { CheckSquare } from 'lucide-react';
+import Link from 'next/link';
+import { CheckSquare, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { CreateTaskModal } from '@/features/tasks/components/create-task-modal';
+import { TaskDetailDrawer } from '@/features/tasks/components/task-detail-drawer';
+import type { TaskCommentItem, TaskItem } from '@/features/tasks/types';
+import { useAuth } from '@/providers/auth-provider';
 import type { EmployeeTaskItem, TaskAssignmentStatus, TaskPriority } from '../types';
 
 interface MyTasksTableProps {
@@ -41,9 +46,18 @@ const PRIORITY_META: Record<TaskPriority, { label: string; dotClass: string }> =
 };
 
 export function MyTasksTable({ tasks }: MyTasksTableProps) {
-  const [filter, setFilter] = useState<FilterTab>('all');
+  const { user, session, activeRole } = useAuth();
+  const currentUserName = session?.user.name ?? user?.name ?? 'Team Member';
+  const canManage = activeRole === 'super_admin' || activeRole === 'dept_head';
 
-  const filteredTasks = tasks.filter((task) => {
+  const [filter, setFilter] = useState<FilterTab>('all');
+  const [localTasks, setLocalTasks] = useState<EmployeeTaskItem[]>(tasks);
+  const [selectedTaskItem, setSelectedTaskItem] = useState<TaskItem | null>(null);
+  const [selectedTaskStatus, setSelectedTaskStatus] = useState<TaskAssignmentStatus>('todo');
+  const [commentsMap, setCommentsMap] = useState<Record<string, TaskCommentItem[]>>({});
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const filteredTasks = localTasks.filter((task) => {
     if (filter === 'open') return task.status !== 'done';
     if (filter === 'in_review') {
       return task.status === 'in_review' || task.status === 'changes_requested';
@@ -51,6 +65,24 @@ export function MyTasksTable({ tasks }: MyTasksTableProps) {
     if (filter === 'done') return task.status === 'done';
     return true;
   });
+
+  function openTaskInDrawer(item: EmployeeTaskItem) {
+    setSelectedTaskStatus(item.status);
+    setSelectedTaskItem({
+      id: item.id,
+      title: item.title,
+      description: `Deliverable under ${item.projectOrTeam}.`,
+      priority: item.priority,
+      dueDate: item.dueDate,
+      assignmentType: item.assignmentType,
+      requiresReview: item.assignmentType !== 'self',
+      status: 'active',
+      department: { id: 'dept', name: item.projectOrTeam },
+      creator: { id: 'lead', displayName: 'Department Leadership' },
+      progress: { done: item.status === 'done' ? 1 : 0, total: 1 },
+      createdAt: item.dueDate,
+    });
+  }
 
   return (
     <section className="flex flex-col gap-5 rounded-[2rem] border border-[#23302B] bg-[#131A17] p-6 md:p-7">
@@ -69,28 +101,46 @@ export function MyTasksTable({ tasks }: MyTasksTableProps) {
           </div>
         </div>
 
-        <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-[#23302B] bg-[#0B0F0E] p-1">
-          {(
-            [
-              { id: 'all', label: 'All' },
-              { id: 'open', label: 'Open' },
-              { id: 'in_review', label: 'Review' },
-              { id: 'done', label: 'Done' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setFilter(tab.id)}
-              className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                filter === tab.id
-                  ? 'bg-[#2E8B57] text-[#F0F5F2]'
-                  : 'text-[#A3B3AC] hover:text-[#F0F5F2]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-[#23302B] bg-[#0B0F0E] p-1">
+            {(
+              [
+                { id: 'all', label: 'All' },
+                { id: 'open', label: 'Open' },
+                { id: 'in_review', label: 'Review' },
+                { id: 'done', label: 'Done' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilter(tab.id)}
+                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  filter === tab.id
+                    ? 'bg-[#2E8B57] text-[#F0F5F2]'
+                    : 'text-[#A3B3AC] hover:text-[#F0F5F2]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#2E8B57] px-3 text-xs font-semibold text-[#F0F5F2] transition-colors hover:bg-[#4CAF7D] hover:text-[#0B0F0E]"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>New Task</span>
+          </button>
+
+          <Link
+            href="/tasks"
+            className="inline-flex h-8 items-center rounded-full border border-[#23302B] bg-[#0B0F0E] px-3 text-xs font-medium text-[#4CAF7D] transition-colors hover:border-[#2E8B57]"
+          >
+            Open Task Board
+          </Link>
         </div>
       </div>
 
@@ -118,7 +168,11 @@ export function MyTasksTable({ tasks }: MyTasksTableProps) {
                 const priorityInfo = PRIORITY_META[task.priority];
 
                 return (
-                  <tr key={task.id} className="group transition-colors hover:bg-[#1A2420]/70">
+                  <tr
+                    key={task.id}
+                    onClick={() => openTaskInDrawer(task)}
+                    className="group cursor-pointer transition-colors hover:bg-[#1A2420]/70"
+                  >
                     <td className="py-3.5 pr-4">
                       <div className="font-medium text-[#F0F5F2] transition-colors group-hover:text-[#4CAF7D]">
                         {task.title}
@@ -163,6 +217,73 @@ export function MyTasksTable({ tasks }: MyTasksTableProps) {
           </tbody>
         </table>
       </div>
+
+      <CreateTaskModal
+        open={createOpen}
+        canAssignOthers={canManage}
+        employees={[]}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(created) => {
+          setLocalTasks((prev) => [
+            {
+              id: created.id,
+              title: created.title,
+              projectOrTeam: created.department?.name ?? 'My Workspace',
+              assignmentType: created.assignmentType,
+              status: 'todo',
+              priority: created.priority,
+              dueDate: created.dueDate ?? '2026-11-30',
+              dueLabel: created.dueDate ?? 'Upcoming',
+              isOverdue: false,
+              isDueSoon: false,
+            },
+            ...prev,
+          ]);
+        }}
+      />
+
+      <TaskDetailDrawer
+        task={selectedTaskItem}
+        currentStatus={selectedTaskStatus}
+        canManageTask={canManage}
+        canAssignEmployees={canManage}
+        currentUserName={currentUserName}
+        employees={[]}
+        comments={selectedTaskItem ? (commentsMap[selectedTaskItem.id] ?? []) : []}
+        onClose={() => setSelectedTaskItem(null)}
+        onStatusChanged={(taskId, nextStatus) => {
+          if (nextStatus === 'cancelled') return;
+          setSelectedTaskStatus(nextStatus);
+          setLocalTasks((prev) =>
+            prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)),
+          );
+        }}
+        onTaskUpdated={(updated) => {
+          setLocalTasks((prev) =>
+            prev.map((t) =>
+              t.id === updated.id
+                ? {
+                    ...t,
+                    title: updated.title,
+                    priority: updated.priority,
+                    dueDate: updated.dueDate ?? t.dueDate,
+                  }
+                : t,
+            ),
+          );
+        }}
+        onTaskCancelled={(taskId) => {
+          setLocalTasks((prev) => prev.filter((t) => t.id !== taskId));
+          setSelectedTaskItem(null);
+        }}
+        onTaskAssignedToEmployee={() => {}}
+        onCommentAdded={(taskId, item) => {
+          setCommentsMap((prev) => ({
+            ...prev,
+            [taskId]: [...(prev[taskId] ?? []), item],
+          }));
+        }}
+      />
     </section>
   );
 }

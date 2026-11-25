@@ -118,4 +118,24 @@ describe('LoginForm', () => {
     expect(screen.queryByRole('button', { name: /super admin/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /hr manager/i })).not.toBeInTheDocument();
   });
+
+  it('switches focus between username and password using ArrowDown, ArrowUp, and Enter', async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    const usernameInput = screen.getByLabelText(/username/i);
+    const passwordInput = screen.getByLabelText(/^password$/i);
+
+    usernameInput.focus();
+    expect(usernameInput).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    expect(passwordInput).toHaveFocus();
+
+    await user.keyboard('{ArrowUp}');
+    expect(usernameInput).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(passwordInput).toHaveFocus();
+  });
 });

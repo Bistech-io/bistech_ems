@@ -1,10 +1,14 @@
 import {
   authMeResponseSchema,
+  changePasswordResponseSchema,
   loginResponseSchema,
   logoutResponseSchema,
   refreshResponseSchema,
+  resetPasswordResponseSchema,
   type AuthMeData,
+  type ChangePasswordRequest,
   type LoginRequest,
+  type ResetPasswordRequest,
 } from '@ems/contracts';
 import { apiRequest } from '@/lib/api/client';
 import { clearCsrfToken, setCsrfToken } from '@/lib/api/csrf';
@@ -50,3 +54,22 @@ export async function logout(): Promise<void> {
     clearCsrfToken();
   }
 }
+
+export async function resetPassword(payload: ResetPasswordRequest): Promise<string> {
+  const res = await apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: payload,
+    schema: resetPasswordResponseSchema,
+  });
+  return res.message;
+}
+
+export async function changePassword(payload: ChangePasswordRequest): Promise<string> {
+  const res = await apiRequest('/auth/change-password', {
+    method: 'POST',
+    body: payload,
+    schema: changePasswordResponseSchema,
+  });
+  return res.message;
+}
+

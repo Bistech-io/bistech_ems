@@ -57,6 +57,11 @@ export const ATTENDANCE_STATUS_STYLE: Record<
     badge: 'border-[#23302B] bg-[#1A2420] text-[#6E8078]',
     label: 'Upcoming',
   },
+  empty: {
+    dot: 'bg-transparent',
+    badge: 'border-[#23302B] bg-[#1A2420] text-[#6E8078]',
+    label: '—',
+  },
 };
 
 function toDateKey(year: number, month: number, day: number): string {
@@ -64,6 +69,21 @@ function toDateKey(year: number, month: number, day: number): string {
   const d = String(day).padStart(2, '0');
   return `${year}-${m}-${d}`;
 }
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
 
 export function AttendanceCalendar({
   year,
@@ -74,12 +94,10 @@ export function AttendanceCalendar({
   onSelectDate,
   onMonthChange,
 }: AttendanceCalendarProps) {
-  const monthLabel = useMemo(() => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(year, month, 1));
-  }, [year, month]);
+  const availableYears = useMemo(() => {
+    const base = Math.max(year, 2026);
+    return [base - 3, base - 2, base - 1, base, base + 1];
+  }, [year]);
 
   const calendarCells = useMemo(() => {
     const firstWeekday = new Date(year, month, 1).getDay();
@@ -113,17 +131,37 @@ export function AttendanceCalendar({
 
   return (
     <section className="flex flex-col rounded-3xl border border-[#23302B] bg-[#131A17] p-5 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      {/* Header with Month / Year Selector & Prev/Next Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1F5C3A]/40 text-[#4CAF7D]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1F5C3A]/40 text-[#4CAF7D]">
             <CalendarIcon className="h-4 w-4" />
           </span>
-          <div>
-            <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
-              {monthLabel}
-            </h2>
-            <p className="text-[11px] text-[#6E8078]">Monthly attendance overview</p>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={month}
+              onChange={(e) => onMonthChange(year, Number(e.target.value))}
+              aria-label="Select month"
+              className="h-8 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 text-xs font-semibold text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+            >
+              {MONTHS.map((mName, idx) => (
+                <option key={mName} value={idx}>
+                  {mName}
+                </option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => onMonthChange(Number(e.target.value), month)}
+              aria-label="Select year"
+              className="h-8 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 text-xs font-semibold text-[#F0F5F2] outline-none focus:border-[#4CAF7D]"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -167,7 +205,7 @@ export function AttendanceCalendar({
           }
 
           const record = recordsByDate[cell.dateKey];
-          const status: AttendanceDayStatus = record?.status ?? 'future';
+          const status: AttendanceDayStatus = record?.status ?? 'empty';
           const isToday = cell.dateKey === todayKey;
           const isSelected = cell.dateKey === selectedDateKey;
           const style = ATTENDANCE_STATUS_STYLE[status];
@@ -185,7 +223,7 @@ export function AttendanceCalendar({
                   ? 'border-[#4CAF7D] bg-[#1F5C3A]/45 text-[#F0F5F2]'
                   : isToday
                     ? 'border-[#2E8B57]/70 bg-[#1A2420] text-[#F0F5F2]'
-                    : status === 'weekend' || status === 'future'
+                    : status === 'weekend' || status === 'future' || status === 'empty'
                       ? 'border-transparent bg-[#0B0F0E]/50 text-[#6E8078] hover:border-[#23302B] hover:text-[#A3B3AC]'
                       : 'border-[#23302B]/70 bg-[#0B0F0E]/85 text-[#F0F5F2] hover:border-[#2E8B57]/60 hover:bg-[#1A2420]',
               )}

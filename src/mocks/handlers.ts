@@ -6,6 +6,10 @@ import {
   loginResponseSchema,
   logoutResponseSchema,
   refreshResponseSchema,
+  resetPasswordRequestSchema,
+  resetPasswordResponseSchema,
+  changePasswordRequestSchema,
+  changePasswordResponseSchema,
   type AuthMeData,
 } from '@ems/contracts';
 import {
@@ -206,5 +210,76 @@ export const authHandlers = [
     });
 
     return HttpResponse.json(payload, { status: 200 });
+  }),
+
+  http.post('/api/v1/auth/reset-password', async ({ request }) => {
+    const body = await request.json().catch(() => null);
+    const parsedReq = resetPasswordRequestSchema.safeParse(body);
+
+    if (!parsedReq.success) {
+      return HttpResponse.json(
+        buildErrorEnvelope('VALIDATION_ERROR', 'Password must be 12 to 128 characters', [
+          { field: 'newPassword', message: 'Password must be 12 to 128 characters' },
+        ]),
+        { status: ERROR_CODE_HTTP_STATUS.VALIDATION_ERROR },
+      );
+    }
+
+    const payload = resetPasswordResponseSchema.parse({
+      success: true,
+      message: 'Password reset successfully. Please log in with your new password.',
+      data: null,
+      meta: null,
+    });
+
+    return HttpResponse.json(payload, { status: 200 });
+  }),
+
+  http.post('/api/v1/auth/change-password', async ({ request }) => {
+    const body = await request.json().catch(() => null);
+    const parsedReq = changePasswordRequestSchema.safeParse(body);
+
+    if (!parsedReq.success) {
+      return HttpResponse.json(
+        buildErrorEnvelope('VALIDATION_ERROR', 'Validation failed', [
+          { field: 'currentPassword', message: 'Current password is required' },
+          { field: 'newPassword', message: 'Password must be at least 8 characters' },
+        ]),
+        { status: ERROR_CODE_HTTP_STATUS.VALIDATION_ERROR },
+      );
+    }
+
+    if (parsedReq.data.currentPassword === 'wrong-password') {
+      return HttpResponse.json(
+        buildErrorEnvelope('INVALID_CREDENTIALS', 'Current password is incorrect'),
+        { status: ERROR_CODE_HTTP_STATUS.INVALID_CREDENTIALS },
+      );
+    }
+
+    const payload = changePasswordResponseSchema.parse({
+      success: true,
+      message: 'Password changed successfully',
+      data: null,
+      meta: null,
+    });
+
+    return HttpResponse.json(payload, { status: 200 });
+  }),
+
+  http.get('/api/v1/organization/settings', () => {
+    return HttpResponse.json({
+      success: true,
+      message: 'Organization settings retrieved',
+      data: {
+        timezone: 'Asia/Dhaka',
+        workStart: '10:00',
+        workEnd: '18:30',
+        graceMinutes: 15,
+        weekendDays: [5, 6],
+        name: 'BisTech',
+        slug: 'bistech',
+      },
+      meta: null,
+    });
   }),
 ];

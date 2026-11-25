@@ -21,6 +21,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
 import {
   fetchMyAttendanceBoard,
+  fetchMyFirstCheckInDate,
   fetchOrganizationSettings,
   patchOrganizationSettings,
   postCheckIn,
@@ -30,13 +31,6 @@ import type { AttendanceDayRecord, OrganizationShiftSettings } from '../types';
 import { ATTENDANCE_STATUS_STYLE, AttendanceCalendar } from './attendance-calendar';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-
-const DEFAULT_SHIFT: OrganizationShiftSettings = {
-  timezone: 'Asia/Dhaka',
-  workStart: '09:00',
-  workEnd: '18:00',
-  graceMinutes: 15,
-};
 
 function formatDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -144,10 +138,11 @@ function buildCalendarRecordsMap(
   todayKey: string,
   board: AttendanceBoardData | null,
   localCheckIn: AttendanceDayRecord | null,
+  firstCheckInDate: string | null,
 ): Record<string, AttendanceDayRecord> {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const records: Record<string, AttendanceDayRecord> = {};
-  const tz = board?.timezone ?? DEFAULT_SHIFT.timezone;
+  const tz = board?.timezone ?? 'Asia/Dhaka';
 
   const apiRecordsByDate = new Map<string, AttendanceBoardData['records'][number]>();
   if (board?.records) {
@@ -163,6 +158,20 @@ function buildCalendarRecordsMap(
 
     const apiRec = apiRecordsByDate.get(key);
     if (apiRec) {
+      // Count attendance/absence only from the employee's first check-in date, not joining date
+      if (
+        apiRec.isDerived &&
+        apiRec.status === 'absent' &&
+        (!firstCheckInDate || key < firstCheckInDate)
+      ) {
+        records[key] = {
+          date: key,
+          status: 'empty',
+          note: 'No attendance record',
+        };
+        continue;
+      }
+
       records[key] = {
         date: key,
         status: apiRec.status,
@@ -182,7 +191,11 @@ function buildCalendarRecordsMap(
         records[key] = localCheckIn;
         continue;
       }
-      if (board?.today && board.today.status !== 'not_checked_in') {
+      if (
+        board?.today &&
+        board.today.status !== 'not_checked_in' &&
+        !(board.today.status === 'absent' && !firstCheckInDate)
+      ) {
         records[key] = {
           date: key,
           status: board.today.status,
@@ -218,11 +231,11 @@ function buildCalendarRecordsMap(
       continue;
     }
 
-    // Fallback when API board hasn't returned a record for a past working day
+    // No attendance record returned for this date (e.g. before employee's joining date) -> leave empty
     records[key] = {
       date: key,
-      status: 'absent',
-      note: 'No check-in recorded',
+      status: 'empty',
+      note: 'No attendance record',
     };
   }
 
@@ -230,7 +243,8 @@ function buildCalendarRecordsMap(
 }
 
 export function AttendanceDashboard() {
-  const { user, activeRole } = useAuth();
+  const { user, session, activeRole, isLoading: isAuthLoading } = useAuth();
+  const hasEmployeeProfile = Boolean(session?.employeeId);
   const canManageShift =
     activeRole === 'super_admin' || can(user, 'org.settings.manage', 'org');
 
@@ -245,17 +259,18 @@ export function AttendanceDashboard() {
   const [selectedDateKey, setSelectedDateKey] = useState<string>('2026-11-22');
 
   const [board, setBoard] = useState<AttendanceBoardData | null>(null);
+  const [firstCheckInDate, setFirstCheckInDate] = useState<string | null>(null);
   const [localCheckIn, setLocalCheckIn] = useState<AttendanceDayRecord | null>(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState<boolean>(true);
   const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
 
   // Dynamic Shift Settings (GET /organization/settings + PATCH /organization/settings)
-  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings>(DEFAULT_SHIFT);
+  const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings | null>(null);
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
-  const [draftWorkStart, setDraftWorkStart] = useState(DEFAULT_SHIFT.workStart);
-  const [draftWorkEnd, setDraftWorkEnd] = useState(DEFAULT_SHIFT.workEnd);
-  const [draftGrace, setDraftGrace] = useState(String(DEFAULT_SHIFT.graceMinutes));
+  const [draftWorkStart, setDraftWorkStart] = useState('');
+  const [draftWorkEnd, setDraftWorkEnd] = useState('');
+  const [draftGrace, setDraftGrace] = useState('15');
   const [isSavingShift, setIsSavingShift] = useState(false);
   const [shiftFeedback, setShiftFeedback] = useState<string | null>(null);
 
@@ -293,25 +308,56 @@ export function AttendanceDashboard() {
     };
   }, []);
 
-  const loadBoard = useCallback(async (year: number, month: number) => {
-    try {
-      const bounds = getMonthBounds(year, month);
-      const data = await fetchMyAttendanceBoard(bounds);
-      setBoard(data);
-      setShiftSettings((prev) => ({
-        timezone: data.timezone || prev.timezone,
-        workStart: data.workStart || prev.workStart,
-        workEnd: data.workEnd || prev.workEnd,
-        graceMinutes: data.graceMinutes ?? prev.graceMinutes,
-      }));
-    } catch {
-      // Keep UI responsive if offline or user has no employee profile yet
-    } finally {
-      setIsLoadingBoard(false);
-    }
-  }, []);
+  const loadBoard = useCallback(
+    async (year: number, month: number) => {
+      if (!hasEmployeeProfile) {
+        setIsLoadingBoard(false);
+        return;
+      }
+      try {
+        const bounds = getMonthBounds(year, month);
+        const data = await fetchMyAttendanceBoard(bounds);
+        setBoard(data);
+        setShiftSettings((prev) => ({
+          timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
+          workStart: data.workStart || prev?.workStart || '10:00',
+          workEnd: data.workEnd || prev?.workEnd || '18:30',
+          graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
+        }));
+      } catch {
+        // Keep UI responsive if offline or user has no employee profile yet
+      } finally {
+        setIsLoadingBoard(false);
+      }
+    },
+    [hasEmployeeProfile],
+  );
 
   useEffect(() => {
+    const handleAutoCheckIn = () => {
+      void loadBoard(viewYear, viewMonth);
+    };
+    const handleShiftUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<OrganizationShiftSettings>;
+      if (customEvent.detail) {
+        setShiftSettings(customEvent.detail);
+      }
+    };
+    window.addEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+    window.addEventListener('ems:shift-updated', handleShiftUpdated);
+    return () => {
+      window.removeEventListener('ems:attendance-checked-in', handleAutoCheckIn);
+      window.removeEventListener('ems:shift-updated', handleShiftUpdated);
+    };
+  }, [loadBoard, viewYear, viewMonth]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!hasEmployeeProfile) {
+      const doneTimer = setTimeout(() => setIsLoadingBoard(false), 0);
+      return () => clearTimeout(doneTimer);
+    }
+
     let cancelled = false;
     const bounds = getMonthBounds(viewYear, viewMonth);
     fetchMyAttendanceBoard(bounds)
@@ -319,10 +365,10 @@ export function AttendanceDashboard() {
         if (cancelled) return;
         setBoard(data);
         setShiftSettings((prev) => ({
-          timezone: data.timezone || prev.timezone,
-          workStart: data.workStart || prev.workStart,
-          workEnd: data.workEnd || prev.workEnd,
-          graceMinutes: data.graceMinutes ?? prev.graceMinutes,
+          timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
+          workStart: data.workStart || prev?.workStart || '10:00',
+          workEnd: data.workEnd || prev?.workEnd || '18:30',
+          graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
         }));
       })
       .catch(() => {
@@ -337,11 +383,71 @@ export function AttendanceDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, isAuthLoading, hasEmployeeProfile]);
+
+  useEffect(() => {
+    if (isAuthLoading || !hasEmployeeProfile) return;
+    let cancelled = false;
+    fetchMyFirstCheckInDate()
+      .then((date) => {
+        if (!cancelled) {
+          setFirstCheckInDate(date);
+        }
+      })
+      .catch(() => {
+        // Ignore if offline or unavailable
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, hasEmployeeProfile]);
+
+  const effectiveFirstCheckInDate = useMemo(() => {
+    let earliest = firstCheckInDate;
+    if (
+      localCheckIn &&
+      (localCheckIn.status === 'present' || localCheckIn.status === 'late')
+    ) {
+      if (!earliest || localCheckIn.date < earliest) {
+        earliest = localCheckIn.date;
+      }
+    }
+    if (
+      board?.today &&
+      (board.today.status === 'present' ||
+        board.today.status === 'late' ||
+        Boolean(board.today.checkInAt))
+    ) {
+      if (!earliest || board.today.workDate < earliest) {
+        earliest = board.today.workDate;
+      }
+    }
+    if (board?.records) {
+      for (const rec of board.records) {
+        if (
+          !rec.isDerived &&
+          (rec.status === 'present' || rec.status === 'late' || Boolean(rec.checkInAt))
+        ) {
+          if (!earliest || rec.workDate < earliest) {
+            earliest = rec.workDate;
+          }
+        }
+      }
+    }
+    return earliest;
+  }, [firstCheckInDate, localCheckIn, board]);
 
   const recordsByDate = useMemo(
-    () => buildCalendarRecordsMap(viewYear, viewMonth, todayKey, board, localCheckIn),
-    [viewYear, viewMonth, todayKey, board, localCheckIn],
+    () =>
+      buildCalendarRecordsMap(
+        viewYear,
+        viewMonth,
+        todayKey,
+        board,
+        localCheckIn,
+        effectiveFirstCheckInDate,
+      ),
+    [viewYear, viewMonth, todayKey, board, localCheckIn, effectiveFirstCheckInDate],
   );
 
   const todayRecord = recordsByDate[todayKey];
@@ -355,21 +461,13 @@ export function AttendanceDashboard() {
     () =>
       computeStopwatchState(
         isViewingToday ? todayRecord?.checkInIso : selectedRecord?.checkInIso,
-        shiftSettings.workEnd,
+        shiftSettings?.workEnd ?? '18:30',
         now,
       ),
-    [isViewingToday, todayRecord, selectedRecord, shiftSettings.workEnd, now],
+    [isViewingToday, todayRecord, selectedRecord, shiftSettings?.workEnd, now],
   );
 
   const summary = useMemo(() => {
-    if (board?.summary) {
-      return {
-        present: board.summary.presentDays,
-        late: board.summary.lateDays,
-        absent: board.summary.absentDays,
-        rate: Math.round(board.summary.attendanceRatePercent),
-      };
-    }
     const values = Object.values(recordsByDate);
     const present = values.filter((r) => r.status === 'present').length;
     const late = values.filter((r) => r.status === 'late').length;
@@ -377,7 +475,7 @@ export function AttendanceDashboard() {
     const total = present + late + absent;
     const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
     return { present, late, absent, rate };
-  }, [board, recordsByDate]);
+  }, [recordsByDate]);
 
   // Recent 5 days (per requirement: 5 days, not 6)
   const recentLogs = useMemo(() => {
@@ -417,7 +515,7 @@ export function AttendanceDashboard() {
         date: record.workDate || todayKey,
         status: record.status,
         checkInIso,
-        checkInTime: formatTimeFromIso(checkInIso, shiftSettings.timezone),
+        checkInTime: formatTimeFromIso(checkInIso, shiftSettings?.timezone ?? 'Asia/Dhaka'),
         lateMinutes: record.lateMinutes,
       });
       setSelectedDateKey(record.workDate || todayKey);
@@ -438,6 +536,7 @@ export function AttendanceDashboard() {
   }
 
   function openShiftModal() {
+    if (!shiftSettings) return;
     setDraftWorkStart(shiftSettings.workStart);
     setDraftWorkEnd(shiftSettings.workEnd);
     setDraftGrace(String(shiftSettings.graceMinutes));
@@ -447,6 +546,7 @@ export function AttendanceDashboard() {
 
   async function handleSaveShiftSettings(e: React.FormEvent) {
     e.preventDefault();
+    if (!shiftSettings) return;
     setIsSavingShift(true);
     setShiftFeedback(null);
 
@@ -494,8 +594,9 @@ export function AttendanceDashboard() {
           <Clock className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-xs text-[#A3B3AC]">Shift:</span>
           <span className="text-xs font-semibold text-[#F0F5F2]">
-            {format24hTo12h(shiftSettings.workStart)} – {format24hTo12h(shiftSettings.workEnd)} ·{' '}
-            {shiftSettings.graceMinutes}m grace
+            {shiftSettings
+              ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+              : '—'}
           </span>
           {canManageShift && (
             <button
@@ -760,7 +861,7 @@ export function AttendanceDashboard() {
                   </p>
                   {selectedRecord?.checkInIso && stopwatch.isShiftEnded && (
                     <span className="mt-0.5 block text-[10px] font-medium text-[#F59E0B]">
-                      Shift ended ({format24hTo12h(shiftSettings.workEnd)})
+                      Shift ended ({format24hTo12h(shiftSettings?.workEnd ?? '18:30')})
                     </span>
                   )}
                 </div>
@@ -773,7 +874,7 @@ export function AttendanceDashboard() {
                 <span>
                   {selectedRecord?.checkInTime
                     ? stopwatch.isShiftEnded
-                      ? `Stopwatch stopped at shift end (${format24hTo12h(shiftSettings.workEnd)})`
+                      ? `Stopwatch stopped at shift end (${format24hTo12h(shiftSettings?.workEnd ?? '18:30')})`
                       : 'Verified web check-in · Stopwatch active'
                     : selectedRecord?.note ?? 'Select any date on the calendar'}
                 </span>

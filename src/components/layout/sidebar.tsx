@@ -6,11 +6,13 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
-  Layers,
   LogOut,
   Menu,
+  Moon,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
   X,
 } from 'lucide-react';
 import {
@@ -21,16 +23,28 @@ import {
 import { useSignOut } from '@/features/auth/hooks';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
+import { useTheme } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
+const SIDEBAR_WIDTH_DURATION = 0.55;
+const SIDEBAR_LABEL_DURATION = 0.42;
 const COLLAPSED_WIDTH = 76;
 const EXPANDED_WIDTH = 264;
 
+function normalizePathname(p: string): string {
+  if (!p) return '/';
+  const cleaned = p.replace(/\/+$/, '');
+  return cleaned || '/';
+}
+
 function isPathActive(pathname: string, href: string, exact = false): boolean {
-  if (exact) return pathname === href;
-  if (href === '/dashboard') return pathname === '/dashboard';
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const current = normalizePathname(pathname);
+  const target = normalizePathname(href);
+  if (exact || target === '/dashboard' || target === '/attendance') {
+    return current === target;
+  }
+  return current === target || current.startsWith(`${target}/`);
 }
 
 function isItemOrChildActive(pathname: string, item: NavItem): boolean {
@@ -42,6 +56,7 @@ function isItemOrChildActive(pathname: string, item: NavItem): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, activeRole } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { signOut, isPending: isSigningOut } = useSignOut();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -78,25 +93,32 @@ export function Sidebar() {
             onClick={onNavigate}
             className="flex items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] text-[#4CAF7D] shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
-              <Layers className="h-5 w-5" strokeWidth={2} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#23302B] bg-[#1A2420] p-2 shadow-sm transition-colors duration-200 hover:border-[#2E8B57]/60">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/bistech-logo.png"
+                alt="BisTech Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
 
             <AnimatePresence initial={false}>
               {expanded && (
                 <motion.div
                   key="brand-text"
-                  initial={{ opacity: 0, x: -6 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -6 }}
-                  transition={{ duration: 0.16, ease: SIDEBAR_EASE }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                   className="flex flex-col overflow-hidden whitespace-nowrap"
                 >
-                  <span
-                    className="text-[15px] font-bold tracking-[-0.02em] text-[#F0F5F2]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    BisTech EMS
+                  <span className="font-brand flex items-baseline gap-1.5 leading-none">
+                    <span className="brand-wordmark text-[18px] font-bold tracking-[0.04em]">
+                      BisTech
+                    </span>
+                    <span className="rounded-md border border-[#2E8B57]/40 bg-[#1F5C3A]/35 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-[#4CAF7D]">
+                      EMS
+                    </span>
                   </span>
                   <span className="text-[11px] font-medium text-[#6E8078]">
                     {activeRole ? ROLE_LABELS[activeRole] : 'Workspace'}
@@ -142,23 +164,26 @@ export function Sidebar() {
       {/* Main RBAC-Filtered Navigation (implemented routes only) */}
       <nav
         aria-label="Primary Navigation"
-        className="sidebar-scroll flex-1 space-y-4 overflow-y-auto px-3.5"
+        className="sidebar-scroll flex-1 space-y-3 overflow-y-auto px-3.5"
       >
         {navGroups.map((group) => (
           <div key={group.id} className="space-y-1">
-            {expanded ? (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.14 }}
-                className="px-3 pb-1 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
-              >
-                {group.label}
-              </motion.p>
-            ) : (
-              <div className="mx-auto my-2 h-px w-6 bg-[#23302B]/60 first:hidden" />
-            )}
+            {/* Fixed-height group header slot so icons never jump vertically between collapsed and expanded states */}
+            <div className="flex h-5 items-center">
+              {expanded ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
+                  className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
+                >
+                  {group.label}
+                </motion.p>
+              ) : (
+                <div className="mx-auto h-px w-6 bg-[#23302B]/70" />
+              )}
+            </div>
 
             <ul className="space-y-1">
               {group.items.map((item) => {
@@ -173,7 +198,7 @@ export function Sidebar() {
                       {active && (
                         <motion.span
                           layoutId="sidebar-active-pill"
-                          transition={{ duration: 0.22, ease: SIDEBAR_EASE }}
+                          transition={{ duration: 0.28, ease: SIDEBAR_EASE }}
                           className="absolute inset-0 rounded-2xl bg-[#2E8B57] shadow-[0_6px_20px_-4px_rgba(46,139,87,0.5)]"
                         />
                       )}
@@ -182,10 +207,11 @@ export function Sidebar() {
                         href={item.href}
                         onClick={onNavigate}
                         title={!expanded ? item.label : undefined}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                           'relative z-10 flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
                           active
-                            ? 'text-[#F0F5F2]'
+                            ? 'sidebar-nav-active text-[#F0F5F2]'
                             : 'text-[#A3B3AC] hover:bg-[#1A2420]/90 hover:text-[#F0F5F2]',
                         )}
                       >
@@ -196,10 +222,10 @@ export function Sidebar() {
                         <AnimatePresence initial={false}>
                           {expanded && (
                             <motion.span
-                              initial={{ opacity: 0, x: -6 }}
+                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -6 }}
-                              transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                              exit={{ opacity: 0, x: -8 }}
+                              transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                               className="flex-1 truncate whitespace-nowrap"
                             >
                               {item.label}
@@ -279,19 +305,92 @@ export function Sidebar() {
 
       {/* Bottom Account & Sign Out Section */}
       <div className="mt-3 space-y-1.5 border-t border-[#23302B]/80 px-3.5 pt-3">
-        {expanded && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="px-3 pb-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase"
-          >
-            Account
-          </motion.p>
-        )}
+        <div className="flex h-5 items-center">
+          {expanded ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
+              className="px-3 text-[10px] font-semibold tracking-[0.08em] text-[#6E8078] uppercase whitespace-nowrap"
+            >
+              Account
+            </motion.p>
+          ) : (
+            <div className="mx-auto h-px w-6 bg-[#23302B]/70" />
+          )}
+        </div>
 
         <ul className="space-y-1">
+          {/* Change Theme Switcher placed directly before Profile button */}
+          <li>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Change Theme"
+              title={!expanded ? 'Change Theme' : undefined}
+              className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium text-[#A3B3AC] transition-colors duration-200 hover:bg-[#1A2420]/90 hover:text-[#F0F5F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+            >
+              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-[#4CAF7D]">
+                <Palette className="h-[19px] w-[19px]" strokeWidth={1.9} />
+              </span>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
+                    className="flex flex-1 items-center justify-between gap-2 truncate whitespace-nowrap"
+                  >
+                    <span>Change Theme</span>
+                    {/* Pill Toggle Switch with Sun (Light) / Moon (Dark) icon inside */}
+                    <span
+                      className={cn(
+                        'relative inline-flex h-6 w-12 shrink-0 items-center rounded-full border p-0.5 transition-colors duration-300',
+                        theme === 'dark'
+                          ? 'border-[#3B4A43] bg-[#1E2924]'
+                          : 'border-[#DDD7CA] bg-[#FFFFFF] shadow-inner',
+                      )}
+                    >
+                      {/* Sun icon on left (visible in light mode) */}
+                      <span
+                        className={cn(
+                          'flex h-4 w-4 items-center justify-center transition-opacity duration-300',
+                          theme === 'light' ? 'opacity-100 text-[#F59E0B]' : 'opacity-0',
+                        )}
+                      >
+                        <Sun className="h-3.5 w-3.5" strokeWidth={2.2} />
+                      </span>
+
+                      {/* Moon icon on right (visible in dark mode) */}
+                      <span
+                        className={cn(
+                          'ml-auto flex h-4 w-4 items-center justify-center transition-opacity duration-300',
+                          theme === 'dark' ? 'opacity-100 text-[#F0F5F2]' : 'opacity-0',
+                        )}
+                      >
+                        <Moon className="h-3.5 w-3.5" strokeWidth={2.1} />
+                      </span>
+
+                      {/* Sliding Circle Knob */}
+                      <motion.span
+                        layout
+                        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                        className={cn(
+                          'pointer-events-none absolute top-0.5 h-[18px] w-[18px] rounded-full border-2 transition-colors duration-300',
+                          theme === 'dark'
+                            ? 'left-0.5 border-[#F0F5F2] bg-[#1E2924]'
+                            : 'right-0.5 border-[#F59E0B] bg-[#FDE68A]/70',
+                        )}
+                      />
+                    </span>
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          </li>
+
           {ACCOUNT_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isPathActive(pathname, item.href, true);
@@ -301,7 +400,7 @@ export function Sidebar() {
                 {active && (
                   <motion.span
                     layoutId="sidebar-active-pill"
-                    transition={{ duration: 0.22, ease: SIDEBAR_EASE }}
+                    transition={{ duration: 0.28, ease: SIDEBAR_EASE }}
                     className="absolute inset-0 rounded-2xl bg-[#2E8B57] shadow-[0_6px_20px_-4px_rgba(46,139,87,0.5)]"
                   />
                 )}
@@ -309,10 +408,11 @@ export function Sidebar() {
                   href={item.href}
                   onClick={onNavigate}
                   title={!expanded ? item.label : undefined}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
                     'relative z-10 flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
                     active
-                      ? 'text-[#F0F5F2]'
+                      ? 'sidebar-nav-active text-[#F0F5F2]'
                       : 'text-[#A3B3AC] hover:bg-[#1A2420]/90 hover:text-[#F0F5F2]',
                   )}
                 >
@@ -322,10 +422,10 @@ export function Sidebar() {
                   <AnimatePresence initial={false}>
                     {expanded && (
                       <motion.span
-                        initial={{ opacity: 0, x: -6 }}
+                        initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -6 }}
-                        transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                        exit={{ opacity: 0, x: -8 }}
+                        transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                         className="flex-1 truncate whitespace-nowrap"
                       >
                         {item.label}
@@ -351,10 +451,10 @@ export function Sidebar() {
               <AnimatePresence initial={false}>
                 {expanded && (
                   <motion.span
-                    initial={{ opacity: 0, x: -6 }}
+                    initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -6 }}
-                    transition={{ duration: 0.15, ease: SIDEBAR_EASE }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: SIDEBAR_LABEL_DURATION, ease: SIDEBAR_EASE }}
                     className="truncate whitespace-nowrap"
                   >
                     {isSigningOut ? 'Signing Out...' : 'Sign Out'}
@@ -377,7 +477,7 @@ export function Sidebar() {
         onMouseLeave={() => setIsHovered(false)}
         initial={false}
         animate={{ width: isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH }}
-        transition={{ duration: 0.24, ease: SIDEBAR_EASE }}
+        transition={{ duration: SIDEBAR_WIDTH_DURATION, ease: SIDEBAR_EASE }}
         className="sticky top-4 z-40 hidden h-[calc(100vh-2rem)] shrink-0 rounded-[2rem] border border-[#23302B] bg-[#131A17]/95 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.65)] backdrop-blur-md md:block"
       >
         {renderSidebarBody(isExpanded)}

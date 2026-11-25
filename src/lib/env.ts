@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-const DEFAULT_PROD_SERVER_ORIGIN = 'https://bistech-ems-server.vercel.app';
+const isDevPreview =
+  process.env.VERCEL_GIT_COMMIT_REF === 'dev' ||
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+
+const DEFAULT_PROD_SERVER_ORIGIN = isDevPreview
+  ? 'https://bistech-ems-server-dev.vercel.app'
+  : 'https://bistech-ems-server.vercel.app';
 const DEFAULT_DEV_SERVER_ORIGIN = 'http://localhost:4000';
 
 const publicEnvSchema = z.object({
@@ -10,6 +17,7 @@ const publicEnvSchema = z.object({
       ? DEFAULT_PROD_SERVER_ORIGIN
       : DEFAULT_DEV_SERVER_ORIGIN,
   ),
+  NEXT_PUBLIC_FEEDBACK_FORM_URL: z.string().url().optional(),
 });
 
 const serverEnvSchema = z.object({
@@ -19,7 +27,10 @@ const serverEnvSchema = z.object({
       : DEFAULT_DEV_SERVER_ORIGIN,
   ),
   SESSION_COOKIE_NAME: z.string().min(1).default('ems_access'),
+  CLOUDINARY_URL: z.string().optional(),
 });
+
+const rawFeedbackUrl = process.env.NEXT_PUBLIC_FEEDBACK_FORM_URL?.trim();
 
 export const publicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING ?? 'disabled',
@@ -29,21 +40,35 @@ export const publicEnv = publicEnvSchema.parse({
     (process.env.NODE_ENV === 'production'
       ? DEFAULT_PROD_SERVER_ORIGIN
       : DEFAULT_DEV_SERVER_ORIGIN),
+  NEXT_PUBLIC_FEEDBACK_FORM_URL: rawFeedbackUrl || undefined,
 });
 
 export const isMockingEnabled = publicEnv.NEXT_PUBLIC_API_MOCKING === 'enabled';
 
 export function getServerEnv() {
-  const defaultUrl =
-    process.env.NODE_ENV === 'production'
-      ? DEFAULT_PROD_SERVER_ORIGIN
-      : DEFAULT_DEV_SERVER_ORIGIN;
+  const isDevPreviewActive =
+    process.env.VERCEL_GIT_COMMIT_REF === 'dev' ||
+    process.env.VERCEL_ENV === 'preview' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
-  const rawUrl = process.env.API_INTERNAL_URL ?? defaultUrl;
+  const defaultUrl =
+    isDevPreviewActive
+      ? 'https://bistech-ems-server-dev.vercel.app'
+      : process.env.NODE_ENV === 'production'
+        ? DEFAULT_PROD_SERVER_ORIGIN
+        : DEFAULT_DEV_SERVER_ORIGIN;
+
+  const rawConfigured = process.env.API_INTERNAL_URL;
+  const rawUrl =
+    isDevPreviewActive && rawConfigured === 'https://bistech-ems-server.vercel.app'
+      ? 'https://bistech-ems-server-dev.vercel.app'
+      : (rawConfigured ?? defaultUrl);
+
   const normalizedUrl = rawUrl.replace(/\/+$/, '');
 
   return serverEnvSchema.parse({
     API_INTERNAL_URL: normalizedUrl,
     SESSION_COOKIE_NAME: process.env.SESSION_COOKIE_NAME ?? 'ems_access',
+    CLOUDINARY_URL: process.env.CLOUDINARY_URL,
   });
 }
