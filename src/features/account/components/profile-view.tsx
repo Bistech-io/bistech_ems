@@ -29,6 +29,10 @@ import {
   updateMyProfile,
   type EmployeeProfileData,
 } from '@/features/account/api';
+import {
+  fetchOrganizationSettings,
+  type OrganizationShiftSettings,
+} from '@/features/attendance/api';
 import { changePassword } from '@/features/auth/api';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
 import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
@@ -83,6 +87,18 @@ function ReadOnlyField({ label, value, icon: Icon }: ReadOnlyFieldProps) {
   );
 }
 
+function format24hTo12h(hhmm: string): string {
+  if (!hhmm) return hhmm;
+  if (hhmm.includes('AM') || hhmm.includes('PM')) return hhmm;
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 export function ProfileView() {
   const { user, activeRole, isLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +109,9 @@ export function ProfileView() {
   const [avatarSaved, setAvatarSaved] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [lastUserId, setLastUserId] = useState<string | null>(null);
+
+  // Dynamic Shift Settings & Organization details synced with DB
+  const [orgShift, setOrgShift] = useState<OrganizationShiftSettings | null>(null);
 
   // Personal Details (editable, persisted in DB)
   const [profileData, setProfileData] = useState<EmployeeProfileData | null>(null);
@@ -185,6 +204,15 @@ export function ProfileView() {
         // Keep fields empty if user has no employee record
       });
 
+    fetchOrganizationSettings()
+      .then((data) => {
+        if (cancelled) return;
+        setOrgShift(data);
+      })
+      .catch(() => {
+        // Fallback gracefully if endpoint is unavailable
+      });
+
     return () => {
       cancelled = true;
     };
@@ -195,6 +223,18 @@ export function ProfileView() {
   const displayEmail = user?.email ?? '—';
   const displayRole = activeRole ? ROLE_LABELS[activeRole] : '—';
   const initials = useMemo(() => getInitials(displayName), [displayName]);
+
+  const effectiveWorkStart = profileData?.workStart || orgShift?.workStart;
+  const effectiveWorkEnd = profileData?.workEnd || orgShift?.workEnd;
+  const effectiveTimezone = profileData?.timezone || orgShift?.timezone;
+
+  const workShiftDisplay = useMemo(() => {
+    if (!effectiveWorkStart || !effectiveTimezone) return '—';
+    if (effectiveWorkEnd) {
+      return `${format24hTo12h(effectiveWorkStart)} – ${format24hTo12h(effectiveWorkEnd)} · ${effectiveTimezone}`;
+    }
+    return `${format24hTo12h(effectiveWorkStart)} · ${effectiveTimezone}`;
+  }, [effectiveWorkStart, effectiveWorkEnd, effectiveTimezone]);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     setAvatarError(null);
@@ -472,7 +512,7 @@ export function ProfileView() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-                  {displayName}
+                  {profileData?.fullName || displayName}
                 </h2>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/40 bg-[#1F5C3A]/40 px-3 py-0.5 text-xs font-medium text-[#4CAF7D]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
@@ -481,7 +521,8 @@ export function ProfileView() {
               </div>
 
               <p className="text-sm font-medium text-[#A3B3AC]">
-                {profileData?.designation.title ?? displayRole} · {profileData?.department.name ?? 'BisTech'}
+                {profileData?.designation.title ?? displayRole} ·{' '}
+                {profileData?.department.name ?? profileData?.organizationName ?? 'BisTech'}
               </p>
 
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
@@ -591,11 +632,7 @@ export function ProfileView() {
               />
               <ReadOnlyField
                 label="Work Shift"
-                value={
-                  profileData?.workStart && profileData?.timezone
-                    ? `${profileData.workStart} · ${profileData.timezone}`
-                    : '—'
-                }
+                value={workShiftDisplay}
                 icon={Clock}
               />
             </div>

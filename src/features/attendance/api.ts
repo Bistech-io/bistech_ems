@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { successEnvelopeSchema } from '@ems/contracts';
 import { apiRequest } from '@/lib/api/client';
 import type { OrganizationShiftSettings } from './types';
+export type { OrganizationShiftSettings };
 
 export const attendanceRecordDtoSchema = z.object({
   id: z.string().nullable(),
