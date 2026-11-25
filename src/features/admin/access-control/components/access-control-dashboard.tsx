@@ -40,6 +40,15 @@ function getInitials(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+function getRoleHierarchyRank(role: AccessControlRole): number {
+  const key = role.name.toLowerCase();
+  if (key === 'super_admin') return 0;
+  if (key === 'dept_head' || key === 'department_head') return 1;
+  if (key === 'hr_manager') return 2;
+  if (key === 'employee') return 3;
+  return 4;
+}
+
 export function AccessControlDashboard() {
   const [roles, setRoles] = useState<AccessControlRole[]>([]);
   const [users, setUsers] = useState<OrgUserItem[]>([]);
@@ -92,21 +101,29 @@ export function AccessControlDashboard() {
 
   const filteredRoles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return roles.filter((role) => {
-      if (roleTypeFilter === 'system' && !role.isSystem) return false;
-      if (roleTypeFilter === 'custom' && role.isSystem) return false;
-      if (!q) return true;
-      return (
-        role.displayName.toLowerCase().includes(q) ||
-        role.name.toLowerCase().includes(q) ||
-        role.description.toLowerCase().includes(q) ||
-        role.permissions.some(
-          (p) =>
-            p.key.toLowerCase().includes(q) ||
-            (PERMISSION_CATALOG_BY_KEY[p.key]?.label.toLowerCase().includes(q) ?? false),
-        )
-      );
-    });
+    return roles
+      .filter((role) => {
+        if (roleTypeFilter === 'system' && !role.isSystem) return false;
+        if (roleTypeFilter === 'custom' && role.isSystem) return false;
+        if (!q) return true;
+        return (
+          role.displayName.toLowerCase().includes(q) ||
+          role.name.toLowerCase().includes(q) ||
+          role.description.toLowerCase().includes(q) ||
+          role.permissions.some(
+            (p) =>
+              p.key.toLowerCase().includes(q) ||
+              (PERMISSION_CATALOG_BY_KEY[p.key]?.label.toLowerCase().includes(q) ?? false),
+          )
+        );
+      })
+      .sort((a, b) => {
+        const rankDiff = getRoleHierarchyRank(a) - getRoleHierarchyRank(b);
+        if (rankDiff !== 0) return rankDiff;
+        const permDiff = b.permissions.length - a.permissions.length;
+        if (permDiff !== 0) return permDiff;
+        return a.displayName.localeCompare(b.displayName);
+      });
   }, [roles, searchQuery, roleTypeFilter]);
 
   const stats = useMemo(() => {
