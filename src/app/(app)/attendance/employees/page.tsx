@@ -3,7 +3,11 @@ import { EmployeeAttendanceDashboard } from '@/features/attendance/components/em
 
 export default function EmployeeAttendancePage() {
   return (
-    <RoleGuard allowedRoles={['super_admin', 'hr_manager']}>
+    <RoleGuard
+      allowedRoles={['super_admin', 'hr_manager']}
+      permission="attendance.read"
+      minScope="org"
+    >
       <EmployeeAttendanceDashboard />
     </RoleGuard>
   );

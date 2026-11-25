@@ -13,6 +13,8 @@ vi.mock('@/features/admin/access-control/api', async (importOriginal) => {
     fetchAccessControlRoles: vi.fn(),
     fetchPermissionCatalog: vi.fn(),
     createCustomRole: vi.fn(),
+    updateCustomRole: vi.fn(),
+    deleteCustomRole: vi.fn(),
   };
 });
 
@@ -21,6 +23,7 @@ vi.mock('@/features/admin/leadership/api', async (importOriginal) => {
   return {
     ...actual,
     fetchOrgUsers: vi.fn(),
+    putUserRoles: vi.fn(),
   };
 });
 
@@ -169,6 +172,95 @@ describe('AccessControlDashboard', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Finance Auditor')).toBeInTheDocument();
+    });
+  });
+
+  it('edits, assigns a member to, and deletes a custom role', async () => {
+    const user = userEvent.setup();
+    vi.mocked(accessControlApi.fetchAccessControlRoles).mockResolvedValue([
+      ...MOCK_ROLES,
+      {
+        id: 'role-custom-1',
+        name: 'finance_auditor',
+        displayName: 'Finance Auditor',
+        description: 'Audits logs.',
+        isSystem: false,
+        userCount: 0,
+        permissions: [{ key: 'audit.read', scope: 'org' }],
+      },
+    ]);
+
+    vi.mocked(leadershipApi.putUserRoles).mockResolvedValue({
+      id: 'user-1',
+      email: 'nadia@bistech.io',
+      displayName: 'Nadia Rahman',
+      accountStatus: 'active',
+      roles: ['hr_manager', 'finance_auditor'],
+    });
+
+    vi.mocked(accessControlApi.updateCustomRole).mockResolvedValue({
+      id: 'role-custom-1',
+      name: 'finance_auditor',
+      displayName: 'Finance Auditor',
+      description: 'Updated audit scope.',
+      isSystem: false,
+      userCount: 1,
+      permissions: [
+        { key: 'audit.read', scope: 'org' },
+        { key: 'attendance.read', scope: 'org' },
+      ],
+    });
+
+    vi.mocked(accessControlApi.deleteCustomRole).mockResolvedValue({
+      id: 'role-custom-1',
+      name: 'finance_auditor',
+      detachedUsersCount: 1,
+    });
+
+    render(<AccessControlDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Finance Auditor')).toBeInTheDocument();
+    });
+
+    // Open custom role drawer
+    await user.click(screen.getByRole('button', { name: /Finance Auditor/i }));
+    const drawer = await screen.findByRole('dialog', {
+      name: /Finance Auditor role details/i,
+    });
+
+    // Assign member to custom role
+    await user.selectOptions(
+      within(drawer).getByLabelText(/Select user to assign Finance Auditor/i),
+      'user-1',
+    );
+    await user.click(within(drawer).getByRole('button', { name: /^Assign$/i }));
+
+    await waitFor(() => {
+      expect(leadershipApi.putUserRoles).toHaveBeenCalledWith('user-1', [
+        'hr_manager',
+        'finance_auditor',
+      ]);
+      expect(within(drawer).getByText('Nadia Rahman')).toBeInTheDocument();
+    });
+
+    // Edit custom role
+    await user.click(within(drawer).getByRole('button', { name: /Edit Finance Auditor/i }));
+    const editModal = await screen.findByRole('dialog', { name: /Edit custom role/i });
+    await user.click(within(editModal).getByLabelText(/Read Attendance/i));
+    await user.click(within(editModal).getByRole('button', { name: /Save Changes/i }));
+
+    await waitFor(() => {
+      expect(accessControlApi.updateCustomRole).toHaveBeenCalled();
+    });
+
+    // Delete custom role
+    await user.click(within(drawer).getByRole('button', { name: /Delete Finance Auditor/i }));
+    await user.click(within(drawer).getByRole('button', { name: /Confirm Delete/i }));
+
+    await waitFor(() => {
+      expect(accessControlApi.deleteCustomRole).toHaveBeenCalledWith('role-custom-1');
+      expect(screen.queryByRole('dialog', { name: /Finance Auditor role details/i })).not.toBeInTheDocument();
     });
   });
 });

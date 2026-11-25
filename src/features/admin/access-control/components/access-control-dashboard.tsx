@@ -58,8 +58,9 @@ export function AccessControlDashboard() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleTypeFilter, setRoleTypeFilter] = useState<'all' | 'system' | 'custom'>('all');
-  const [selectedRole, setSelectedRole] = useState<AccessControlRole | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<AccessControlRole | null>(null);
   const [bannerMessage, setBannerMessage] = useState<{
     tone: 'success' | 'info';
     text: string;
@@ -138,6 +139,11 @@ export function AccessControlDashboard() {
     };
   }, [roles, permissionCatalog.length, users.length]);
 
+  const selectedRole = useMemo(
+    () => roles.find((r) => r.id === selectedRoleId) ?? null,
+    [roles, selectedRoleId],
+  );
+
   const selectedRoleMembers = useMemo(() => {
     if (!selectedRole) return [];
     return membersByRoleName.get(selectedRole.name) ?? [];
@@ -150,6 +156,47 @@ export function AccessControlDashboard() {
       text: syncedWithServer
         ? `Custom role "${newRole.displayName}" created with ${newRole.permissions.length} permissions.`
         : `Custom role "${newRole.displayName}" added locally with ${newRole.permissions.length} permissions (awaiting backend POST /api/v1/roles deployment).`,
+    });
+  }
+
+  function handleRoleUpdated(updatedRole: AccessControlRole) {
+    setRoles((prev) => prev.map((r) => (r.id === updatedRole.id ? updatedRole : r)));
+    setBannerMessage({
+      tone: 'success',
+      text: `Custom role "${updatedRole.displayName}" updated (${updatedRole.permissions.length} permissions).`,
+    });
+  }
+
+  function handleRoleDeleted(deletedRole: AccessControlRole, detachedUsersCount: number) {
+    setRoles((prev) => prev.filter((r) => r.id !== deletedRole.id));
+    if (detachedUsersCount > 0) {
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (!userHasRole(u.roles, deletedRole.name)) return u;
+          const remaining = u.roles.filter(
+            (r) => r.toLowerCase() !== deletedRole.name.toLowerCase(),
+          );
+          return {
+            ...u,
+            roles: remaining.length > 0 ? remaining : ['employee'],
+          };
+        }),
+      );
+    }
+    setSelectedRoleId(null);
+    setBannerMessage({
+      tone: 'success',
+      text: `Custom role "${deletedRole.displayName}" deleted.${detachedUsersCount > 0 ? ` Updated ${detachedUsersCount} affected user(s).` : ''}`,
+    });
+  }
+
+  function handleUserRolesUpdated(userId: string, nextRoles: string[]) {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, roles: nextRoles } : u)),
+    );
+    setBannerMessage({
+      tone: 'success',
+      text: 'Member role assignment updated.',
     });
   }
 
@@ -315,7 +362,7 @@ export function AccessControlDashboard() {
         <section className="grid gap-4 lg:grid-cols-2">
           {filteredRoles.map((role) => {
             const assignedMembers = membersByRoleName.get(role.name) ?? [];
-            const memberCount = assignedMembers.length || role.userCount;
+            const memberCount = users.length > 0 ? assignedMembers.length : role.userCount;
             const visiblePerms = role.permissions.slice(0, MAX_VISIBLE_PERMS_PER_CARD);
             const remainingPerms = Math.max(
               0,
@@ -326,7 +373,7 @@ export function AccessControlDashboard() {
               <button
                 key={role.id}
                 type="button"
-                onClick={() => setSelectedRole(role)}
+                onClick={() => setSelectedRoleId(role.id)}
                 className="group flex flex-col rounded-3xl border border-[#23302B] bg-[#131A17] p-6 text-left transition-all duration-200 hover:border-[#2E8B57]/60 hover:bg-[#131A17]/90 hover:shadow-[0_12px_32px_-12px_rgba(46,139,87,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
               >
                 {/* Role Card Top */}
@@ -465,20 +512,32 @@ export function AccessControlDashboard() {
         </section>
       )}
 
-      {/* Right-Side Drawer: Members & Full Permissions for Clicked Role */}
+              {/* Right-Side Drawer: Members & Full Permissions for Clicked Role */}
       <RoleMembersDrawer
         role={selectedRole}
         members={selectedRoleMembers}
-        onClose={() => setSelectedRole(null)}
+        allUsers={users}
+        onClose={() => setSelectedRoleId(null)}
+        onEditRole={(roleToEdit) => {
+          setEditingRole(roleToEdit);
+          setCreateModalOpen(true);
+        }}
+        onRoleDeleted={handleRoleDeleted}
+        onUserRolesUpdated={handleUserRolesUpdated}
       />
 
-      {/* Modal: Create Custom Role */}
+      {/* Modal: Create / Edit Custom Role */}
       <CreateRoleModal
         open={createModalOpen}
+        editingRole={editingRole}
         existingRoleNames={roles.map((r) => r.name)}
         permissionCatalog={permissionCatalog}
-        onClose={() => setCreateModalOpen(false)}
+        onClose={() => {
+          setCreateModalOpen(false);
+          setEditingRole(null);
+        }}
         onRoleCreated={handleRoleCreated}
+        onRoleUpdated={handleRoleUpdated}
       />
     </motion.div>
   );

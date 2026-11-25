@@ -3,7 +3,11 @@ import { OrganizationManagementDashboard } from '@/features/admin/organization/c
 
 export default function OrganizationManagementPage() {
   return (
-    <RoleGuard allowedRoles={['super_admin']}>
+    <RoleGuard
+      allowedRoles={['super_admin']}
+      permission="org.settings.manage"
+      minScope="org"
+    >
       <OrganizationManagementDashboard />
     </RoleGuard>
   );

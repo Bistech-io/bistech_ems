@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import {
-  can,
-  hasAnyRole,
-  ROLE_LABELS,
+  getRoleLabel,
+  isAuthorizedForRule,
   type PermissionKey,
   type RoleName,
   type ScopeLevel,
@@ -40,10 +39,13 @@ export function RoleGuard({
     );
   }
 
-  const roleAllowed = hasAnyRole(user, allowedRoles);
-  const permissionAllowed = permission ? can(user, permission, minScope) : true;
+  const authorized = isAuthorizedForRule(user, {
+    allowedRoles,
+    permission,
+    minScope,
+  });
 
-  if (!roleAllowed || !permissionAllowed) {
+  if (!authorized) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -57,17 +59,17 @@ export function RoleGuard({
           </div>
           <h1 className="mt-4 font-heading text-xl font-bold text-[#F0F5F2]">
             {allowedRoles.length === 1
-              ? `${ROLE_LABELS[allowedRoles[0]]} Access Required`
+              ? `${getRoleLabel(allowedRoles[0])} Access Required`
               : 'Restricted Access'}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-[#A3B3AC]">
             This section is restricted to{' '}
             <span className="font-medium text-[#F0F5F2]">
-              {allowedRoles.map((r) => ROLE_LABELS[r]).join(' or ')}
+              {allowedRoles.map((r) => getRoleLabel(r)).join(' or ')}
             </span>
             . Your current active role is{' '}
             <span className="font-medium text-[#4CAF7D]">
-              {activeRole ? ROLE_LABELS[activeRole] : 'Unauthenticated'}
+              {activeRole ? getRoleLabel(activeRole) : 'Unauthenticated'}
             </span>
             .
           </p>

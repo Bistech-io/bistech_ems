@@ -3,7 +3,11 @@ import { MyTeamDashboard } from '@/features/team/components/my-team-dashboard';
 
 export default function MyTeamPage() {
   return (
-    <RoleGuard allowedRoles={['dept_head']}>
+    <RoleGuard
+      allowedRoles={['dept_head']}
+      permission="team.read"
+      minScope="department"
+    >
       <MyTeamDashboard />
     </RoleGuard>
   );

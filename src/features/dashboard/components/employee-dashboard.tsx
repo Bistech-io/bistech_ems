@@ -18,7 +18,7 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
+import { getRoleLabel, type RoleName } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { fetchOrganizationSettings } from '@/features/attendance/api';
 import type { OrganizationShiftSettings } from '@/features/attendance/types';
@@ -70,7 +70,11 @@ export function EmployeeDashboard() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const role: RoleName = activeRole ?? 'employee';
-  const meta = ROLE_DASHBOARD_META[role] ?? ROLE_DASHBOARD_META.employee;
+  const roleDisplayLabel = getRoleLabel(role);
+  const meta = ROLE_DASHBOARD_META[role] ?? {
+    title: `${roleDisplayLabel} Dashboard`,
+    badge: `${roleDisplayLabel} Workspace`,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +158,7 @@ export function EmployeeDashboard() {
       '—';
     const department = emp?.department || '—';
     const teamName = emp?.teams?.[0] || '—';
-    const designation = emp?.designation || user?.roleTitle || ROLE_LABELS[role];
+    const designation = emp?.designation || user?.roleTitle || getRoleLabel(role);
 
     return {
       fullName,
@@ -226,7 +230,7 @@ export function EmployeeDashboard() {
           <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
             <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
             <span className="text-xs font-medium text-[#A3B3AC]">Role:</span>
-            <span className="text-xs font-semibold text-[#F0F5F2]">{ROLE_LABELS[role]}</span>
+            <span className="text-xs font-semibold text-[#F0F5F2]">{getRoleLabel(role)}</span>
           </div>
         </div>
       </header>

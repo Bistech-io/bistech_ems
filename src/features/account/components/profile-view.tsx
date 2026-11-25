@@ -35,7 +35,7 @@ import {
 } from '@/features/attendance/api';
 import { changePassword } from '@/features/auth/api';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
-import { ROLE_LABELS, type RoleName } from '@/lib/auth/permissions';
+import { getRoleLabel } from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -226,7 +226,7 @@ export function ProfileView() {
   const displayName = user?.name ?? 'BisTech Member';
   const displayUsername = user?.username ? `@${user.username}` : '—';
   const displayEmail = user?.email ?? '—';
-  const displayRole = activeRole ? ROLE_LABELS[activeRole] : '—';
+  const displayRole = activeRole ? getRoleLabel(activeRole) : '—';
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   const workShiftDisplay = useMemo(() => {
