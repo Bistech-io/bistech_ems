@@ -750,6 +750,7 @@ All 28 domain tables, composite uniqueness constraints, relationships, and enums
 | `0007_triggers.sql` | `updated_at` triggers; append-only triggers on 5 immutable tables |
 | `0008_functions.sql` | `managed_employee_ids()` |
 | `0009_grants.sql` | least-privilege grants for `ems_app` |
+| `0013_office_ip_attendance_security.sql` | `organizations.allowed_office_ips` IP/CIDR allowlist + `attendance_records.check_out_at`, `check_in_ip`, `check_out_ip` |
 
 ### 7.4 Final DDL
 
