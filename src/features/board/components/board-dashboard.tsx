@@ -610,7 +610,7 @@ export function BoardDashboard() {
                               backgroundColor: stickyPalette.bg,
                               borderColor: stickyPalette.border,
                             }}
-                            className="board-sticky-note relative flex aspect-[1/0.95] min-h-[210px] cursor-pointer flex-col justify-between rounded-[2px] border p-4 pt-6 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+                            className="board-sticky-note relative flex cursor-pointer flex-col justify-between rounded-[2px] border p-4 pt-5 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
                           >
                             {/* Translucent Adhesive Tape Strip */}
                             <span
