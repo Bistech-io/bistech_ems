@@ -374,36 +374,6 @@ html.light .board-cork-surface {
     inset 0 0 0 1px rgba(255, 246, 232, 0.2) !important;
 }
 
-.board-section-heading {
-  color: #f3e6d3;
-  text-shadow: 0 1px 2px rgba(20, 12, 6, 0.45);
-}
-
-.board-section-badge {
-  background-color: rgba(34, 23, 14, 0.52);
-  border: 1px solid rgba(243, 230, 211, 0.22);
-  color: #f7ecdc;
-}
-
-.board-section-divider {
-  border-color: rgba(243, 230, 211, 0.24);
-}
-
-html.light .board-section-heading {
-  color: #362414 !important;
-  text-shadow: 0 1px 0 rgba(255, 246, 232, 0.4) !important;
-}
-
-html.light .board-section-badge {
-  background-color: rgba(54, 36, 20, 0.14) !important;
-  border-color: rgba(54, 36, 20, 0.24) !important;
-  color: #2f1f11 !important;
-}
-
-html.light .board-section-divider {
-  border-color: rgba(54, 36, 20, 0.26) !important;
-}
-
 /* Custom Role permission checklist row hover contrast (Dark & Light safe) */
 .role-perm-row {
   transition: background-color 150ms ease, color 150ms ease;

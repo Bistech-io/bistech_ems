@@ -469,23 +469,10 @@ export function BoardDashboard() {
               </div>
             </div>
           ) : (
-            <div className="space-y-10">
+            <div className="space-y-12">
               {/* SECTION 1: BIG PINNED NOTICES */}
               {noticePosts.length > 0 && (
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Pin className="h-4 w-4 text-[#F87171]" />
-                      <h2 className="board-section-heading font-heading text-sm font-bold uppercase tracking-[0.12em]">
-                        Pinned Notices
-                      </h2>
-                      <span className="board-section-badge rounded-full px-2 py-0.5 text-[11px] font-semibold">
-                        {noticePosts.length}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid items-start gap-8 lg:grid-cols-2">
+                <div className="grid items-start gap-8 lg:grid-cols-2">
                     {noticePosts.map((post) => {
                       const hash = hashString(post.id);
                       const tiltDeg = ((hash % 3) - 1) * 0.45;
@@ -559,30 +546,11 @@ export function BoardDashboard() {
                       );
                     })}
                   </div>
-                </div>
-              )}
-
-              {/* SEPARATOR BETWEEN NOTICES & STICKY NOTES */}
-              {noticePosts.length > 0 && opinionPosts.length > 0 && (
-                <div className="board-section-divider border-t border-dashed" />
               )}
 
               {/* SECTION 2: SMALL SQUARE-ISH OPINION STICKY NOTES */}
               {opinionPosts.length > 0 && (
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <StickyNote className="h-4 w-4 text-[#FBBF24]" />
-                      <h2 className="board-section-heading font-heading text-sm font-bold uppercase tracking-[0.12em]">
-                        Opinion Sticky Notes
-                      </h2>
-                      <span className="board-section-badge rounded-full px-2 py-0.5 text-[11px] font-semibold">
-                        {opinionPosts.length}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                     {opinionPosts.map((post) => {
                       const hash = hashString(post.id);
                       const tiltDeg = ((hash % 5) - 2) * 0.75;
@@ -666,7 +634,6 @@ export function BoardDashboard() {
                         </article>
                       );
                     })}
-                  </div>
                 </div>
               )}
             </div>
