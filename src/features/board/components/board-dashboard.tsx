@@ -55,7 +55,10 @@ export function BoardDashboard() {
     ) {
       return true;
     }
-    return hasAnyRole(user, ['super_admin', 'hr_manager', 'dept_head']);
+    return (
+      hasAnyRole(user, ['super_admin', 'hr_manager', 'dept_head']) ||
+      can(user, 'feedback.manage', 'org')
+    );
   }, [user, activeRole]);
 
   const canModerateAll = useMemo(
