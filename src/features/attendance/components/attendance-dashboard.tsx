@@ -7,8 +7,6 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock,
-  Fingerprint,
-  Loader2,
   Settings2,
   ShieldCheck,
   Timer,
@@ -25,10 +23,12 @@ import {
   fetchOrganizationSettings,
   patchOrganizationSettings,
   postCheckIn,
+  postCheckOut,
   type AttendanceBoardData,
 } from '../api';
 import type { AttendanceDayRecord, OrganizationShiftSettings } from '../types';
 import { ATTENDANCE_STATUS_STYLE, AttendanceCalendar } from './attendance-calendar';
+import { HoldActionButton } from './hold-action-button';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -94,16 +94,33 @@ function formatStopwatch(elapsedSeconds: number): string {
 
 function computeStopwatchState(
   checkInIso: string | null | undefined,
+  checkOutIso: string | null | undefined,
   workEndHhMm: string,
   now: Date | null,
-): { display: string; isShiftEnded: boolean; isActive: boolean } {
+): { display: string; isShiftEnded: boolean; isCheckedOut: boolean; isActive: boolean } {
   if (!checkInIso || !now) {
-    return { display: '00:00:00', isShiftEnded: false, isActive: false };
+    return { display: '00:00:00', isShiftEnded: false, isCheckedOut: false, isActive: false };
   }
 
   const checkInDate = new Date(checkInIso);
   if (Number.isNaN(checkInDate.getTime())) {
-    return { display: '00:00:00', isShiftEnded: false, isActive: false };
+    return { display: '00:00:00', isShiftEnded: false, isCheckedOut: false, isActive: false };
+  }
+
+  if (checkOutIso) {
+    const checkOutDate = new Date(checkOutIso);
+    if (!Number.isNaN(checkOutDate.getTime())) {
+      const elapsedSeconds = Math.max(
+        0,
+        Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / 1000),
+      );
+      return {
+        display: formatStopwatch(elapsedSeconds),
+        isShiftEnded: false,
+        isCheckedOut: true,
+        isActive: false,
+      };
+    }
   }
 
   const [endHStr, endMStr] = workEndHhMm.split(':');
@@ -128,6 +145,7 @@ function computeStopwatchState(
   return {
     display: formatStopwatch(elapsedSeconds),
     isShiftEnded,
+    isCheckedOut: false,
     isActive: !isShiftEnded,
   };
 }
@@ -172,11 +190,17 @@ function buildCalendarRecordsMap(
         continue;
       }
 
+      const mergedCheckOutIso =
+        apiRec.checkOutAt ??
+        (key === todayKey ? (localCheckIn?.checkOutIso ?? board?.today?.checkOutAt ?? null) : null);
+
       records[key] = {
         date: key,
         status: apiRec.status,
         checkInIso: apiRec.checkInAt,
         checkInTime: formatTimeFromIso(apiRec.checkInAt, tz),
+        checkOutIso: mergedCheckOutIso,
+        checkOutTime: formatTimeFromIso(mergedCheckOutIso, tz),
         lateMinutes: apiRec.lateMinutes,
         note:
           apiRec.note ??
@@ -196,11 +220,14 @@ function buildCalendarRecordsMap(
         board.today.status !== 'not_checked_in' &&
         !(board.today.status === 'absent' && !firstCheckInDate)
       ) {
+        const todayCheckOutIso = board.today.checkOutAt ?? null;
         records[key] = {
           date: key,
           status: board.today.status,
           checkInIso: board.today.checkInAt,
           checkInTime: formatTimeFromIso(board.today.checkInAt, tz),
+          checkOutIso: todayCheckOutIso,
+          checkOutTime: formatTimeFromIso(todayCheckOutIso, tz),
           lateMinutes: board.today.lateMinutes,
         };
         continue;
@@ -263,6 +290,7 @@ export function AttendanceDashboard() {
   const [localCheckIn, setLocalCheckIn] = useState<AttendanceDayRecord | null>(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState<boolean>(true);
   const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
+  const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
 
   // Dynamic Shift Settings (GET /organization/settings + PATCH /organization/settings)
@@ -453,6 +481,7 @@ export function AttendanceDashboard() {
   const todayRecord = recordsByDate[todayKey];
   const isCheckedInToday =
     todayRecord?.status === 'present' || todayRecord?.status === 'late';
+  const isCheckedOutToday = Boolean(todayRecord?.checkOutIso);
 
   const selectedRecord = recordsByDate[selectedDateKey];
   const isViewingToday = selectedDateKey === todayKey;
@@ -461,6 +490,7 @@ export function AttendanceDashboard() {
     () =>
       computeStopwatchState(
         isViewingToday ? todayRecord?.checkInIso : selectedRecord?.checkInIso,
+        isViewingToday ? todayRecord?.checkOutIso : selectedRecord?.checkOutIso,
         shiftSettings?.workEnd ?? '18:30',
         now,
       ),
@@ -532,6 +562,42 @@ export function AttendanceDashboard() {
       }
     } finally {
       setIsCheckingIn(false);
+    }
+  }
+
+  async function handleCheckOut() {
+    if (!isCheckedInToday || isCheckedOutToday || isCheckingOut) return;
+    setIsCheckingOut(true);
+    setCheckInError(null);
+
+    try {
+      const record = await postCheckOut();
+      const tz = shiftSettings?.timezone ?? board?.timezone ?? 'Asia/Dhaka';
+      const checkInIso = record.checkInAt ?? todayRecord?.checkInIso ?? null;
+      const checkOutIso = record.checkOutAt ?? new Date().toISOString();
+      setLocalCheckIn({
+        date: record.workDate || todayKey,
+        status: record.status,
+        checkInIso,
+        checkInTime: formatTimeFromIso(checkInIso, tz),
+        checkOutIso,
+        checkOutTime: formatTimeFromIso(checkOutIso, tz),
+        lateMinutes: record.lateMinutes,
+      });
+      setSelectedDateKey(record.workDate || todayKey);
+      await loadBoard(viewYear, viewMonth);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if ((err.code as string) === 'ALREADY_CHECKED_OUT') {
+          await loadBoard(viewYear, viewMonth);
+        } else {
+          setCheckInError(err.message || getErrorMessageForCode(err.code));
+        }
+      } else {
+        setCheckInError('Unable to reach attendance server. Please try again.');
+      }
+    } finally {
+      setIsCheckingOut(false);
     }
   }
 
@@ -625,7 +691,12 @@ export function AttendanceDashboard() {
                   <span className="font-heading text-3xl font-bold tracking-[-0.02em] text-[#F0F5F2]">
                     {formattedTime}
                   </span>
-                  {isCheckedInToday && todayRecord ? (
+                  {isCheckedOutToday && todayRecord ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#38BDF8]/40 bg-[#38BDF8]/15 px-2.5 py-0.5 text-xs font-medium text-[#38BDF8]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Checked Out
+                    </span>
+                  ) : isCheckedInToday && todayRecord ? (
                     <span
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
@@ -644,40 +715,39 @@ export function AttendanceDashboard() {
                   )}
                 </div>
                 <p className="mt-2 text-xs text-[#6E8078]">
-                  {isCheckedInToday && todayRecord
-                    ? `Recorded at ${todayRecord.checkInTime ?? 'today'}. Daily attendance is complete.`
-                    : 'One-tap daily check-in. Attendance timestamp is recorded once per workday.'}
+                  {isCheckedOutToday && todayRecord
+                    ? `Checked in at ${todayRecord.checkInTime ?? '—'} · Checked out at ${todayRecord.checkOutTime ?? '—'}.`
+                    : isCheckedInToday && todayRecord
+                      ? `Checked in at ${todayRecord.checkInTime ?? 'today'}. Hold for 2.5s when ready to check out.`
+                      : 'Press and hold for 2.5 seconds to record your daily check-in.'}
                 </p>
               </div>
 
-              <button
-                type="button"
-                disabled={isCheckedInToday || isCheckingIn}
-                onClick={handleCheckIn}
-                className={cn(
-                  'inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl px-6 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
-                  isCheckedInToday
-                    ? 'cursor-not-allowed border border-[#2E8B57]/40 bg-[#1F5C3A]/35 text-[#4CAF7D] opacity-80'
-                    : 'bg-[#2E8B57] text-[#F0F5F2] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-60',
-                )}
-              >
-                {isCheckingIn ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Checking in...</span>
-                  </>
-                ) : isCheckedInToday ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Checked In</span>
-                  </>
-                ) : (
-                  <>
-                    <Fingerprint className="h-4 w-4" />
-                    <span>Check In</span>
-                  </>
-                )}
-              </button>
+              {isCheckedOutToday ? (
+                <div className="inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl border border-[#2E8B57]/40 bg-[#1F5C3A]/35 px-6 text-sm font-semibold text-[#4CAF7D]">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Checked Out</span>
+                </div>
+              ) : isCheckedInToday ? (
+                <HoldActionButton
+                  variant="check-out"
+                  label="Hold to Check Out"
+                  loadingLabel="Checking out..."
+                  durationMs={2500}
+                  isLoading={isCheckingOut}
+                  onComplete={handleCheckOut}
+                />
+              ) : (
+                <HoldActionButton
+                  variant="check-in"
+                  label="Hold to Check In"
+                  loadingLabel="Checking in..."
+                  durationMs={2500}
+                  disabled={isLoadingBoard}
+                  isLoading={isCheckingIn}
+                  onComplete={handleCheckIn}
+                />
+              )}
             </div>
 
             {checkInError && (
@@ -758,7 +828,9 @@ export function AttendanceDashboard() {
                       <p className="font-medium text-[#F0F5F2]">{log.date}</p>
                       <p className="text-xs text-[#6E8078]">
                         {log.checkInTime
-                          ? `Check-in at ${log.checkInTime}`
+                          ? log.checkOutTime
+                            ? `In ${log.checkInTime} · Out ${log.checkOutTime}`
+                            : `Check-in at ${log.checkInTime}`
                           : log.note ?? 'No check-in'}
                       </p>
                     </div>
@@ -826,12 +898,19 @@ export function AttendanceDashboard() {
                 )}
               </div>
 
-              {/* 3-Column Metrics: Check-In Time | Punctuality | Worked Stopwatch */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* 4-Tile Metrics: Check-In | Check-Out | Punctuality | Worked Stopwatch */}
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-3.5">
                   <span className="text-[11px] text-[#6E8078]">Check-In Time</span>
                   <p className="mt-1 font-heading text-base font-semibold text-[#F0F5F2]">
                     {selectedRecord?.checkInTime ?? '—'}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-3.5">
+                  <span className="text-[11px] text-[#6E8078]">Check-Out Time</span>
+                  <p className="mt-1 font-heading text-base font-semibold text-[#F0F5F2]">
+                    {selectedRecord?.checkOutTime ?? '—'}
                   </p>
                 </div>
 
@@ -859,7 +938,12 @@ export function AttendanceDashboard() {
                   <p className="mt-1 font-heading text-base font-semibold tabular-nums text-[#F0F5F2]">
                     {selectedRecord?.checkInIso ? stopwatch.display : '00:00:00'}
                   </p>
-                  {selectedRecord?.checkInIso && stopwatch.isShiftEnded && (
+                  {selectedRecord?.checkInIso && stopwatch.isCheckedOut && (
+                    <span className="mt-0.5 block text-[10px] font-medium text-[#4CAF7D]">
+                      Checked out ({selectedRecord.checkOutTime})
+                    </span>
+                  )}
+                  {selectedRecord?.checkInIso && !stopwatch.isCheckedOut && stopwatch.isShiftEnded && (
                     <span className="mt-0.5 block text-[10px] font-medium text-[#F59E0B]">
                       Shift ended ({format24hTo12h(shiftSettings?.workEnd ?? '18:30')})
                     </span>
