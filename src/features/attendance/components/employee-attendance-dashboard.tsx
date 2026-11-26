@@ -349,7 +349,7 @@ export function EmployeeAttendanceDashboard() {
             <span className="text-[#A3B3AC]">Shift:</span>
             <strong className="text-[#F0F5F2]">
               {shiftSettings
-                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)}`
                 : '—'}
             </strong>
           </div>
