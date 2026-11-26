@@ -475,11 +475,11 @@ export function BoardDashboard() {
                 <div className="space-y-5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Pin className="h-4 w-4 text-[#4CAF7D]" />
-                      <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em] text-[#A3B3AC]">
+                      <Pin className="h-4 w-4 text-[#F87171]" />
+                      <h2 className="board-section-heading font-heading text-sm font-bold uppercase tracking-[0.12em]">
                         Pinned Notices
                       </h2>
-                      <span className="rounded-full border border-[#23302B] bg-[#131A17] px-2 py-0.5 text-[11px] font-semibold text-[#F0F5F2]">
+                      <span className="board-section-badge rounded-full px-2 py-0.5 text-[11px] font-semibold">
                         {noticePosts.length}
                       </span>
                     </div>
@@ -564,7 +564,7 @@ export function BoardDashboard() {
 
               {/* SEPARATOR BETWEEN NOTICES & STICKY NOTES */}
               {noticePosts.length > 0 && opinionPosts.length > 0 && (
-                <div className="border-t border-dashed border-[#23302B]/90" />
+                <div className="board-section-divider border-t border-dashed" />
               )}
 
               {/* SECTION 2: SMALL SQUARE-ISH OPINION STICKY NOTES */}
@@ -573,10 +573,10 @@ export function BoardDashboard() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <StickyNote className="h-4 w-4 text-[#FBBF24]" />
-                      <h2 className="font-heading text-sm font-bold uppercase tracking-[0.12em] text-[#A3B3AC]">
+                      <h2 className="board-section-heading font-heading text-sm font-bold uppercase tracking-[0.12em]">
                         Opinion Sticky Notes
                       </h2>
-                      <span className="rounded-full border border-[#23302B] bg-[#131A17] px-2 py-0.5 text-[11px] font-semibold text-[#F0F5F2]">
+                      <span className="board-section-badge rounded-full px-2 py-0.5 text-[11px] font-semibold">
                         {opinionPosts.length}
                       </span>
                     </div>

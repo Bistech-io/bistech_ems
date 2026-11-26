@@ -320,49 +320,88 @@ html.light .login-wave-svg path {
 }
 
 /* ============================================================================
- * Real-life Pin Board Surface (Harmonized with Dark & Soft Cream Themes)
+ * Real-life Corkboard Surface (Real Cork & Wood Color, Tastefully Dimmed)
  * ============================================================================ */
 .board-cork-frame {
   border-radius: 1.75rem;
   padding: 0.75rem;
-  background: linear-gradient(145deg, #273731 0%, #1c2823 52%, #16201c 100%);
-  border: 1.5px solid #354d43;
+  background: linear-gradient(145deg, #4b3524 0%, #38271a 52%, #291c12 100%);
+  border: 1.5px solid #5e432e;
   box-shadow:
     0 24px 52px -18px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(76, 175, 125, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 rgba(255, 228, 196, 0.14),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.45);
 }
 
 html.light .board-cork-frame {
-  background: #fbf9f5 !important;
-  border-color: #e3ded4 !important;
+  background: linear-gradient(145deg, #9e7e5c 0%, #866849 52%, #72573b 100%) !important;
+  border-color: #6b5136 !important;
   box-shadow:
-    0 14px 32px -20px rgba(35, 36, 33, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+    0 18px 36px -18px rgba(56, 39, 24, 0.32),
+    inset 0 1px 0 rgba(255, 244, 228, 0.28),
+    inset 0 -2px 5px rgba(56, 39, 24, 0.25) !important;
 }
 
 .board-cork-surface {
   position: relative;
   border-radius: 1.25rem;
-  border: 1px solid rgba(0, 0, 0, 0.32);
-  background-color: #192420;
+  border: 1px solid rgba(28, 18, 10, 0.55);
+  background-color: #543e2b;
   background-image:
-    radial-gradient(rgba(76, 175, 125, 0.22) 1.1px, transparent 0),
-    radial-gradient(rgba(240, 245, 242, 0.06) 1px, transparent 0);
-  background-size: 20px 20px, 10px 10px;
-  background-position: 0 0, 5px 5px;
-  box-shadow: inset 0 3px 18px rgba(0, 0, 0, 0.45);
+    radial-gradient(rgba(30, 19, 10, 0.34) 1.2px, transparent 0),
+    radial-gradient(rgba(184, 142, 96, 0.16) 1.1px, transparent 0),
+    radial-gradient(rgba(224, 190, 148, 0.08) 0.9px, transparent 0),
+    radial-gradient(ellipse at 50% 0%, rgba(168, 124, 80, 0.18) 0%, rgba(36, 24, 15, 0.24) 100%);
+  background-size: 16px 16px, 22px 22px, 11px 11px, 100% 100%;
+  background-position: 0 0, 7px 9px, 3px 5px, 0 0;
+  box-shadow:
+    inset 0 4px 20px rgba(18, 11, 6, 0.52),
+    inset 0 0 0 1px rgba(255, 224, 186, 0.06);
 }
 
 html.light .board-cork-surface {
-  border-color: rgba(145, 138, 126, 0.22) !important;
-  background-color: #efece4 !important;
+  border-color: rgba(84, 60, 36, 0.35) !important;
+  background-color: #bca080 !important;
   background-image:
-    radial-gradient(rgba(46, 139, 87, 0.14) 1px, transparent 0),
-    radial-gradient(rgba(91, 86, 77, 0.08) 1px, transparent 0) !important;
-  background-size: 20px 20px, 10px 10px !important;
-  background-position: 0 0, 5px 5px !important;
-  box-shadow: inset 0 2px 12px rgba(91, 86, 77, 0.1) !important;
+    radial-gradient(rgba(92, 62, 34, 0.22) 1.1px, transparent 0),
+    radial-gradient(rgba(255, 244, 226, 0.24) 1px, transparent 0),
+    radial-gradient(rgba(74, 48, 26, 0.12) 0.9px, transparent 0),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 245, 230, 0.16) 0%, rgba(92, 64, 38, 0.14) 100%) !important;
+  background-size: 16px 16px, 22px 22px, 11px 11px, 100% 100% !important;
+  background-position: 0 0, 7px 9px, 3px 5px, 0 0 !important;
+  box-shadow:
+    inset 0 3px 16px rgba(68, 45, 24, 0.24),
+    inset 0 0 0 1px rgba(255, 246, 232, 0.2) !important;
+}
+
+.board-section-heading {
+  color: #f3e6d3;
+  text-shadow: 0 1px 2px rgba(20, 12, 6, 0.45);
+}
+
+.board-section-badge {
+  background-color: rgba(34, 23, 14, 0.52);
+  border: 1px solid rgba(243, 230, 211, 0.22);
+  color: #f7ecdc;
+}
+
+.board-section-divider {
+  border-color: rgba(243, 230, 211, 0.24);
+}
+
+html.light .board-section-heading {
+  color: #362414 !important;
+  text-shadow: 0 1px 0 rgba(255, 246, 232, 0.4) !important;
+}
+
+html.light .board-section-badge {
+  background-color: rgba(54, 36, 20, 0.14) !important;
+  border-color: rgba(54, 36, 20, 0.24) !important;
+  color: #2f1f11 !important;
+}
+
+html.light .board-section-divider {
+  border-color: rgba(54, 36, 20, 0.26) !important;
 }
 
 /* Custom Role permission checklist row hover contrast (Dark & Light safe) */
