@@ -35,6 +35,11 @@ export const monthlySummaryDtoSchema = z.object({
   attendanceRatePercent: z.number(),
 });
 
+export const attendanceNetworkStatusSchema = z.object({
+  isRestricted: z.boolean(),
+  isAllowed: z.boolean(),
+});
+
 export const attendanceBoardDataSchema = z.object({
   timezone: z.string(),
   workStart: z.string(),
@@ -42,6 +47,7 @@ export const attendanceBoardDataSchema = z.object({
   workEnd: z.string(),
   from: z.string(),
   to: z.string(),
+  networkStatus: attendanceNetworkStatusSchema.optional(),
   today: todayAttendanceDtoSchema,
   summary: monthlySummaryDtoSchema,
   records: z.array(attendanceRecordDtoSchema),
@@ -58,6 +64,9 @@ export const organizationSettingsDataSchema = z.object({
   workStart: z.string().default('10:00'),
   workEnd: z.string().default('18:30'),
   graceMinutes: z.number().default(15),
+  allowedOfficeIps: z.array(z.string()).default([]),
+  ipRestrictionEnabled: z.boolean().default(false),
+  currentIp: z.string().nullable().default(null),
 });
 
 export const organizationSettingsResponseSchema = successEnvelopeSchema(

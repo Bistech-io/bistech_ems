@@ -25,6 +25,11 @@ export interface AttendanceDayRecord {
   isDerived?: boolean;
 }
 
+export interface AttendanceNetworkStatus {
+  isRestricted: boolean;
+  isAllowed: boolean;
+}
+
 export interface OrganizationShiftSettings {
   timezone: string;
   /** HH:mm (24h, e.g. "09:00") */
@@ -32,4 +37,7 @@ export interface OrganizationShiftSettings {
   /** HH:mm (24h, e.g. "18:00") */
   workEnd: string;
   graceMinutes: number;
+  allowedOfficeIps?: string[];
+  ipRestrictionEnabled?: boolean;
+  currentIp?: string | null;
 }

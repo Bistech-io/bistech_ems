@@ -190,5 +190,59 @@ describe('OrganizationManagementDashboard', () => {
       ).toBeInTheDocument();
     });
   });
+
+  it('adds, validates, and saves allowed office IPs including 1-click current IP', async () => {
+    vi.spyOn(attendanceApi, 'fetchOrganizationSettings').mockResolvedValue({
+      ...mockInitialSettings,
+      allowedOfficeIps: ['203.0.113.10'],
+      ipRestrictionEnabled: true,
+      currentIp: '103.45.20.88',
+    });
+
+    const patchSpy = vi.spyOn(attendanceApi, 'patchOrganizationSettings').mockResolvedValue({
+      ...mockInitialSettings,
+      allowedOfficeIps: ['203.0.113.10', '103.45.20.88', '103.45.20.0/24'],
+      ipRestrictionEnabled: true,
+      currentIp: '103.45.20.88',
+    });
+
+    render(<OrganizationManagementDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Office Network IP Security')).toBeInTheDocument();
+    });
+
+    // Shows detected current IP and existing allowlist entry
+    expect(screen.getByText('103.45.20.88')).toBeInTheDocument();
+    expect(screen.getByText('203.0.113.10')).toBeInTheDocument();
+
+    // Rejects invalid IP client-side
+    const ipInput = screen.getByLabelText(/Add Office IP Address or CIDR Range/i);
+    fireEvent.change(ipInput, { target: { value: 'invalid-ip-address' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Add IP$/i }));
+    expect(screen.getByText(/Invalid IP address or CIDR range/i)).toBeInTheDocument();
+
+    // 1-click add current IP
+    fireEvent.click(screen.getByRole('button', { name: /Add Current IP/i }));
+
+    // Add valid CIDR range
+    fireEvent.change(ipInput, { target: { value: '103.45.20.0/24' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Add IP$/i }));
+
+    // Save Office IPs
+    fireEvent.click(screen.getByRole('button', { name: /Save Office IPs/i }));
+
+    await waitFor(() => {
+      expect(patchSpy).toHaveBeenCalledWith({
+        allowedOfficeIps: ['203.0.113.10', '103.45.20.88', '103.45.20.0/24'],
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Office IP restriction active \(3 allowed entries\)/i),
+      ).toBeInTheDocument();
+    });
+  });
 });
 

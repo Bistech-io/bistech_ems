@@ -4,7 +4,7 @@ import { OrganizationManagementDashboard } from '@/features/admin/organization/c
 export default function OrganizationManagementPage() {
   return (
     <RoleGuard
-      allowedRoles={['super_admin']}
+      allowedRoles={['super_admin', 'admin', 'hr_manager']}
       permission="org.settings.manage"
       minScope="org"
     >

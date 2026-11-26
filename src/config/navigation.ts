@@ -143,7 +143,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
         icon: Building2,
         permission: 'org.settings.manage',
         minScope: 'org',
-        allowedRoles: ['super_admin'],
+        allowedRoles: ['super_admin', 'admin', 'hr_manager'],
       },
       {
         id: 'admin-leadership',
