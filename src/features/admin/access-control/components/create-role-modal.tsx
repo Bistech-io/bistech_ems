@@ -448,8 +448,8 @@ export function CreateRoleModal({
                                   <div
                                     key={item.key}
                                     className={cn(
-                                      'flex items-start justify-between gap-3 px-4 py-3 transition-colors',
-                                      isChecked ? 'bg-[#1F5C3A]/15' : 'hover:bg-[#1A2420]/40',
+                                      'role-perm-row flex items-start justify-between gap-3 px-4 py-3',
+                                      isChecked && 'role-perm-row-checked',
                                     )}
                                   >
                                     <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
@@ -472,14 +472,14 @@ export function CreateRoleModal({
                                       </span>
                                       <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-xs font-medium text-[#F0F5F2]">
+                                          <span className="role-perm-title text-xs font-medium text-[#F0F5F2]">
                                             {item.label}
                                           </span>
-                                          <code className="rounded bg-[#131A17] px-1.5 py-0.5 font-mono text-[10px] text-[#4CAF7D]">
+                                          <code className="role-perm-key rounded bg-[#131A17] px-1.5 py-0.5 font-mono text-[10px] text-[#4CAF7D]">
                                             {item.key}
                                           </code>
                                         </div>
-                                        <p className="mt-0.5 text-[11px] text-[#6E8078]">
+                                        <p className="role-perm-desc mt-0.5 text-[11px] text-[#6E8078]">
                                           {item.description}
                                         </p>
                                       </div>
