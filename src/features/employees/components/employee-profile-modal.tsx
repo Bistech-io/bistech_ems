@@ -7,7 +7,9 @@ import {
   Building2,
   CheckCircle2,
   Loader2,
+  Lock,
   ShieldCheck,
+  Unlock,
   UserCog,
   X,
 } from 'lucide-react';
@@ -21,7 +23,11 @@ import { getRoleLabel, isCustomRoleName } from '@/lib/auth/permissions';
 import { ApiError } from '@/lib/api/errors';
 import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
-import { createDesignation, updateEmployeeDesignation } from '../api';
+import {
+  createDesignation,
+  updateEmployeeAccountStatus,
+  updateEmployeeDesignation,
+} from '../api';
 import type {
   DepartmentOption,
   DesignationOption,
@@ -54,6 +60,7 @@ interface EmployeeProfileModalProps {
     departmentId: string,
     nextRoles: string[],
   ) => void;
+  onAccountStatusUpdated?: (employeeId: string, accountStatus: string) => void;
   onLiveStatusChange: (employeeId: string, status: EmployeeLiveStatus | 'auto') => void;
 }
 
@@ -89,6 +96,7 @@ export function EmployeeProfileModal({
   onDesignationUpdated,
   onDepartmentUpdated,
   onRoleUpdated,
+  onAccountStatusUpdated,
   onLiveStatusChange,
 }: EmployeeProfileModalProps) {
   useRegisterRightDrawer(Boolean(employee), 512);
@@ -111,6 +119,10 @@ export function EmployeeProfileModal({
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [savedRoleNotice, setSavedRoleNotice] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
+
+  const [isTogglingFreeze, setIsTogglingFreeze] = useState(false);
+  const [freezeNotice, setFreezeNotice] = useState<string | null>(null);
+  const [freezeError, setFreezeError] = useState<string | null>(null);
 
   const availableDepartments = useMemo<DepartmentOption[]>(() => {
     if (!employee) return departments;
@@ -141,6 +153,8 @@ export function EmployeeProfileModal({
       setSavedDepartmentNotice(false);
       setSavedRoleNotice(false);
       setRoleError(null);
+      setFreezeNotice(null);
+      setFreezeError(null);
     }, 0);
     return () => {
       cancelled = true;
@@ -644,6 +658,104 @@ export function EmployeeProfileModal({
                     </p>
                   )}
                 </form>
+
+                {/* 4. Account Freezing Block */}
+                <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] text-[#A3B3AC] uppercase">
+                        <Lock className="h-3.5 w-3.5 text-[#F59E0B]" />
+                        <span>Account Access</span>
+                      </p>
+                      <p className="mt-1 text-xs text-[#6E8078]">
+                        {employee.user.accountStatus === 'suspended'
+                          ? 'This account is frozen and cannot sign in.'
+                          : 'Freezing revokes active sessions and blocks sign-in.'}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-medium capitalize',
+                        employee.user.accountStatus === 'suspended'
+                          ? 'border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FCA5A5]'
+                          : 'border-[#2E8B57]/40 bg-[#1F5C3A]/30 text-[#4CAF7D]',
+                      )}
+                    >
+                      {employee.user.accountStatus === 'suspended' ? 'Frozen' : 'Active'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isTogglingFreeze}
+                    onClick={async () => {
+                      if (!employee || isTogglingFreeze) return;
+                      const willFreeze = employee.user.accountStatus !== 'suspended';
+                      setIsTogglingFreeze(true);
+                      setFreezeNotice(null);
+                      setFreezeError(null);
+                      try {
+                        const updated = await updateEmployeeAccountStatus(employee.id, {
+                          frozen: willFreeze,
+                        });
+                        onAccountStatusUpdated?.(
+                          employee.id,
+                          updated.user.accountStatus,
+                        );
+                        setFreezeNotice(
+                          willFreeze
+                            ? 'Employee account frozen.'
+                            : 'Employee account unfrozen.',
+                        );
+                      } catch (err) {
+                        setFreezeError(
+                          err instanceof ApiError
+                            ? err.message
+                            : 'Failed to update account status.',
+                        );
+                      } finally {
+                        setIsTogglingFreeze(false);
+                      }
+                    }}
+                    className={cn(
+                      'mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                      employee.user.accountStatus === 'suspended'
+                        ? 'border-[#2E8B57]/50 bg-[#1F5C3A]/40 text-[#4CAF7D] hover:bg-[#2E8B57] hover:text-[#F0F5F2]'
+                        : 'border-[#EF4444]/40 bg-[#EF4444]/15 text-[#FCA5A5] hover:bg-[#EF4444] hover:text-white',
+                    )}
+                  >
+                    {isTogglingFreeze ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : employee.user.accountStatus === 'suspended' ? (
+                      <>
+                        <Unlock className="h-3.5 w-3.5" />
+                        <span>Unfreeze Account</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-3.5 w-3.5" />
+                        <span>Freeze Account</span>
+                      </>
+                    )}
+                  </button>
+
+                  {freezeNotice && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#4CAF7D]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>{freezeNotice}</span>
+                    </p>
+                  )}
+
+                  {freezeError && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#EF4444]">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      <span>{freezeError}</span>
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </motion.aside>
