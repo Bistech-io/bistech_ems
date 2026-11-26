@@ -144,6 +144,16 @@ export function BoardDashboard() {
     });
   }, [posts, filterTab, searchQuery]);
 
+  const noticePosts = useMemo(
+    () => filteredPosts.filter((p) => p.isNotice),
+    [filteredPosts],
+  );
+
+  const opinionPosts = useMemo(
+    () => filteredPosts.filter((p) => !p.isNotice),
+    [filteredPosts],
+  );
+
   const counts = useMemo(() => {
     const notices = posts.filter((p) => p.isNotice).length;
     const opinions = posts.length - notices;
@@ -225,6 +235,108 @@ export function BoardDashboard() {
     }
   }
 
+  function renderAttachedComments(post: BoardPostItem, hash: number, compact = false) {
+    const attachedComments = commentsByPost[post.id] ?? [];
+    const visibleMiniNotes = attachedComments.slice(compact ? -1 : -2);
+    const hiddenCount = Math.max(
+      0,
+      Math.max(attachedComments.length, post.commentCount) - visibleMiniNotes.length,
+    );
+    const isQuickReplying = quickReplyPostId === post.id;
+
+    if (visibleMiniNotes.length === 0 && hiddenCount === 0 && !isQuickReplying) {
+      return null;
+    }
+
+    return (
+      <div className="-mt-2 flex flex-col gap-2 px-2 pt-0.5">
+        {visibleMiniNotes.length > 0 && (
+          <div className={cn('grid gap-2', compact ? 'grid-cols-1' : 'grid-cols-2')}>
+            {visibleMiniNotes.map((comment, idx) => {
+              const miniColor =
+                MINI_STICKY_COLORS[(hash + idx + 1) % MINI_STICKY_COLORS.length];
+              const miniTilt = idx % 2 === 0 ? '-1.5deg' : '1.4deg';
+              return (
+                <button
+                  key={comment.id}
+                  type="button"
+                  onClick={() => setSelectedPostId(post.id)}
+                  style={{
+                    backgroundColor: miniColor.bg,
+                    borderColor: miniColor.border,
+                    transform: `rotate(${miniTilt})`,
+                  }}
+                  className="board-mini-sticky relative rounded-[2px] border p-2.5 text-left transition-transform duration-150 hover:z-10 hover:scale-[1.03]"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-1.5 left-1/2 h-2.5 w-8 -translate-x-1/2 rounded-[1px] bg-black/15"
+                  />
+                  <p className="line-clamp-2 text-[11px] leading-snug text-[#23201b]">
+                    {comment.body}
+                  </p>
+                  <p className="mt-1.5 truncate text-[9px] font-semibold text-[#534d42]">
+                    — {comment.author.displayName}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {hiddenCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelectedPostId(post.id)}
+            className="self-end rounded-md border border-[#23302B] bg-[#131A17]/90 px-2.5 py-1 text-[10px] font-semibold text-[#A3B3AC] transition-colors hover:border-[#2E8B57]/60 hover:text-[#F0F5F2]"
+          >
+            +{hiddenCount} more attached {hiddenCount === 1 ? 'note' : 'notes'}
+          </button>
+        )}
+
+        {isQuickReplying && (
+          <form
+            onSubmit={(e) => handleQuickReplySubmit(e, post.id)}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#FFF3B0',
+              borderColor: '#E8D26A',
+            }}
+            className="board-mini-sticky relative rounded-[2px] border p-2.5"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute -top-1.5 left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-[1px] bg-black/15"
+            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                autoFocus
+                value={quickReplyText}
+                onChange={(e) => setQuickReplyText(e.target.value)}
+                placeholder="Write a quick sticky note..."
+                aria-label="Quick sticky note reply"
+                className="h-7 flex-1 rounded bg-white/80 px-2 text-[11px] text-[#23201b] placeholder-[#6B6456] focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={isSubmittingQuickReply || !quickReplyText.trim()}
+                aria-label="Post quick sticky note"
+                className="inline-flex h-7 items-center gap-1 rounded bg-[#2E8B57] px-2.5 text-[10px] font-semibold text-white hover:bg-[#349960] disabled:opacity-50"
+              >
+                {isSubmittingQuickReply ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Send className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -240,10 +352,10 @@ export function BoardDashboard() {
           </span>
           <div>
             <h1 className="font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-              Company Board
+              Public Board
             </h1>
             <p className="mt-0.5 text-xs text-[#A3B3AC]">
-              Pinned official notices &amp; team opinion sticky notes — attach small notes to reply.
+              Public notices &amp; team opinion sticky notes — attach small notes to reply.
             </p>
           </div>
         </div>
@@ -357,243 +469,173 @@ export function BoardDashboard() {
               </div>
             </div>
           ) : (
-            <div className="grid items-start gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredPosts.map((post) => {
-                const hash = hashString(post.id);
-                const tiltDeg = ((hash % 5) - 2) * 0.65; // subtle -1.3deg..+1.3deg real-board tilt
-                const pinColor = PUSHPIN_COLORS[hash % PUSHPIN_COLORS.length];
-                const stickyPalette =
-                  OPINION_STICKY_PALETTES[hash % OPINION_STICKY_PALETTES.length];
-                const attachedComments = commentsByPost[post.id] ?? [];
-                const visibleMiniNotes = attachedComments.slice(-2);
-                const hiddenCount = Math.max(
-                  0,
-                  Math.max(attachedComments.length, post.commentCount) -
-                    visibleMiniNotes.length,
-                );
-                const isQuickReplying = quickReplyPostId === post.id;
+            <div className="space-y-12">
+              {/* SECTION 1: BIG PINNED NOTICES */}
+              {noticePosts.length > 0 && (
+                <div className="grid items-start gap-8 lg:grid-cols-2">
+                    {noticePosts.map((post) => {
+                      const hash = hashString(post.id);
+                      const tiltDeg = ((hash % 3) - 1) * 0.45;
+                      const pinColor = PUSHPIN_COLORS[hash % PUSHPIN_COLORS.length];
+                      const isQuickReplying = quickReplyPostId === post.id;
 
-                return (
-                  <article
-                    key={post.id}
-                    className="group relative flex flex-col"
-                    style={{ transform: `rotate(${tiltDeg}deg)` }}
-                  >
-                    {/* Mother Card: Pinned Notice Paper vs. Pastel Opinion Sticky Note */}
-                    {post.isNotice ? (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedPostId(post.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setSelectedPostId(post.id);
-                          }
-                        }}
-                        className="board-notice-paper relative cursor-pointer rounded-[4px] border border-[#E5DEC9] px-5 pb-5 pt-8 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
-                      >
-                        {/* 3D Pushpin */}
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-1/2 top-2.5 z-10 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full shadow-[0_4px_6px_rgba(0,0,0,0.42)]"
-                          style={{
-                            background: `radial-gradient(circle at 35% 30%, ${pinColor.highlight}, ${pinColor.cap} 65%, ${pinColor.ring})`,
-                          }}
-                        />
-
-                        <div className="flex items-center justify-between gap-2 border-b border-[#E5DEC9] pb-2">
-                          <span className="rounded bg-[#DC2626]/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#B91C1C]">
-                            Notice
-                          </span>
-                          <span className="paper-ink-muted text-[11px] font-medium">
-                            {BOARD_CATEGORY_LABELS[post.category]} · {formatShortDate(post.createdAt)}
-                          </span>
-                        </div>
-
-                        <h2 className="paper-ink mt-3 font-heading text-base font-bold leading-snug">
-                          {post.subject}
-                        </h2>
-                        <p className="paper-ink mt-2 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed">
-                          {post.body}
-                        </p>
-
-                        <div className="paper-ink-muted mt-4 flex items-center justify-between border-t border-dashed border-[#D6CEB8] pt-2.5 text-[11px]">
-                          <span className="truncate font-medium">
-                            By <strong className="paper-ink">{post.submitter.displayName}</strong>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setQuickReplyPostId(isQuickReplying ? null : post.id);
-                              setQuickReplyText('');
-                            }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-black/5 px-2 py-1 text-[10px] font-semibold text-[#1F5C3A] transition-colors hover:bg-black/10"
-                          >
-                            <MessageSquarePlus className="h-3 w-3" />
-                            Stick reply
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedPostId(post.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setSelectedPostId(post.id);
-                          }
-                        }}
-                        style={{
-                          backgroundColor: stickyPalette.bg,
-                          borderColor: stickyPalette.border,
-                        }}
-                        className="board-sticky-note relative cursor-pointer rounded-[2px] border px-5 pb-5 pt-7 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
-                      >
-                        {/* Translucent Adhesive Tape Strip */}
-                        <span
-                          aria-hidden="true"
-                          className="absolute -top-2.5 left-1/2 h-5 w-16 -translate-x-1/2 rounded-[2px]"
-                          style={{ backgroundColor: stickyPalette.tape }}
-                        />
-
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                            style={{
-                              backgroundColor: stickyPalette.badgeBg,
-                              color: stickyPalette.badgeText,
-                            }}
-                          >
-                            {post.kind === 'issue' ? 'Issue' : 'Opinion'}
-                          </span>
-                          <span className="sticky-ink-muted text-[11px] font-medium">
-                            {BOARD_CATEGORY_LABELS[post.category]} · {formatShortDate(post.createdAt)}
-                          </span>
-                        </div>
-
-                        <h2 className="sticky-ink mt-3 font-heading text-base font-bold leading-snug">
-                          {post.subject}
-                        </h2>
-                        <p className="sticky-ink mt-2 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed">
-                          {post.body}
-                        </p>
-
-                        <div className="sticky-ink-muted mt-4 flex items-center justify-between border-t border-black/10 pt-2.5 text-[11px]">
-                          <span className="truncate font-medium">
-                            — <strong className="sticky-ink">{post.submitter.displayName}</strong>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setQuickReplyPostId(isQuickReplying ? null : post.id);
-                              setQuickReplyText('');
-                            }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-black/8 px-2 py-1 text-[10px] font-semibold text-[#23201b] transition-colors hover:bg-black/15"
-                          >
-                            <MessageSquarePlus className="h-3 w-3" />
-                            Stick reply
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Attached Small Sticky-Note Comments (stuck along the bottom of the mother card) */}
-                    {(visibleMiniNotes.length > 0 || hiddenCount > 0 || isQuickReplying) && (
-                      <div className="-mt-2.5 flex flex-col gap-2 px-2.5 pt-0.5">
-                        {visibleMiniNotes.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2">
-                            {visibleMiniNotes.map((comment, idx) => {
-                              const miniColor =
-                                MINI_STICKY_COLORS[(hash + idx + 1) % MINI_STICKY_COLORS.length];
-                              const miniTilt = idx % 2 === 0 ? '-1.8deg' : '1.6deg';
-                              return (
-                                <button
-                                  key={comment.id}
-                                  type="button"
-                                  onClick={() => setSelectedPostId(post.id)}
-                                  style={{
-                                    backgroundColor: miniColor.bg,
-                                    borderColor: miniColor.border,
-                                    transform: `rotate(${miniTilt})`,
-                                  }}
-                                  className="board-mini-sticky relative rounded-[2px] border p-2.5 text-left transition-transform duration-150 hover:z-10 hover:scale-[1.03]"
-                                >
-                                  <span
-                                    aria-hidden="true"
-                                    className="absolute -top-1.5 left-1/2 h-2.5 w-8 -translate-x-1/2 rounded-[1px] bg-black/15"
-                                  />
-                                  <p className="line-clamp-2 text-[11px] leading-snug text-[#23201b]">
-                                    {comment.body}
-                                  </p>
-                                  <p className="mt-1.5 truncate text-[9px] font-semibold text-[#534d42]">
-                                    — {comment.author.displayName}
-                                  </p>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {hiddenCount > 0 && (
-                          <button
-                            type="button"
+                      return (
+                        <article
+                          key={post.id}
+                          className="group relative flex flex-col"
+                          style={{ transform: `rotate(${tiltDeg}deg)` }}
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
                             onClick={() => setSelectedPostId(post.id)}
-                            className="self-end rounded-md bg-black/45 px-2.5 py-1 text-[10px] font-semibold text-[#FAF7F0] backdrop-blur-sm transition-colors hover:bg-black/65"
-                          >
-                            +{hiddenCount} more attached{' '}
-                            {hiddenCount === 1 ? 'note' : 'notes'}
-                          </button>
-                        )}
-
-                        {isQuickReplying && (
-                          <form
-                            onSubmit={(e) => handleQuickReplySubmit(e, post.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                              backgroundColor: '#FFF3B0',
-                              borderColor: '#E8D26A',
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedPostId(post.id);
+                              }
                             }}
-                            className="board-mini-sticky relative rounded-[2px] border p-2.5"
+                            className="board-notice-paper relative min-h-[240px] cursor-pointer rounded-[6px] border border-[#E5DEC9] px-7 pb-6 pt-10 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
                           >
+                            {/* 3D Pushpin */}
                             <span
                               aria-hidden="true"
-                              className="absolute -top-1.5 left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-[1px] bg-black/15"
+                              className="absolute left-1/2 top-3 z-10 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full shadow-[0_5px_8px_rgba(0,0,0,0.42)]"
+                              style={{
+                                background: `radial-gradient(circle at 35% 30%, ${pinColor.highlight}, ${pinColor.cap} 65%, ${pinColor.ring})`,
+                              }}
                             />
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="text"
-                                autoFocus
-                                value={quickReplyText}
-                                onChange={(e) => setQuickReplyText(e.target.value)}
-                                placeholder="Write a quick sticky note..."
-                                aria-label="Quick sticky note reply"
-                                className="h-7 flex-1 rounded bg-white/80 px-2 text-[11px] text-[#23201b] placeholder-[#6B6456] focus:outline-none"
-                              />
+
+                            <div className="flex items-center justify-between gap-2 border-b border-[#E5DEC9] pb-2.5">
+                              <span className="rounded bg-[#DC2626]/12 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#B91C1C]">
+                                Official Notice
+                              </span>
+                              <span className="paper-ink-muted text-xs font-medium">
+                                {BOARD_CATEGORY_LABELS[post.category]} · {formatShortDate(post.createdAt)}
+                              </span>
+                            </div>
+
+                            <h3 className="paper-ink mt-4 font-heading text-lg font-bold leading-snug sm:text-xl">
+                              {post.subject}
+                            </h3>
+                            <p className="paper-ink mt-3 line-clamp-6 whitespace-pre-wrap text-sm leading-relaxed">
+                              {post.body}
+                            </p>
+
+                            <div className="paper-ink-muted mt-6 flex items-center justify-between border-t border-dashed border-[#D6CEB8] pt-3 text-xs">
+                              <span className="truncate font-medium">
+                                Pinned by <strong className="paper-ink">{post.submitter.displayName}</strong>
+                              </span>
                               <button
-                                type="submit"
-                                disabled={isSubmittingQuickReply || !quickReplyText.trim()}
-                                aria-label="Post quick sticky note"
-                                className="inline-flex h-7 items-center gap-1 rounded bg-[#2E8B57] px-2.5 text-[10px] font-semibold text-white hover:bg-[#349960] disabled:opacity-50"
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setQuickReplyPostId(isQuickReplying ? null : post.id);
+                                  setQuickReplyText('');
+                                }}
+                                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-black/5 px-2.5 py-1.5 text-[11px] font-semibold text-[#1F5C3A] transition-colors hover:bg-black/10"
                               >
-                                {isSubmittingQuickReply ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Send className="h-3 w-3" />
-                                )}
+                                <MessageSquarePlus className="h-3.5 w-3.5" />
+                                Stick reply
                               </button>
                             </div>
-                          </form>
-                        )}
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
+                          </div>
+
+                          {renderAttachedComments(post, hash, false)}
+                        </article>
+                      );
+                    })}
+                  </div>
+              )}
+
+              {/* SECTION 2: SMALL SQUARE-ISH OPINION STICKY NOTES */}
+              {opinionPosts.length > 0 && (
+                <div className="grid items-start gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                    {opinionPosts.map((post) => {
+                      const hash = hashString(post.id);
+                      const tiltDeg = ((hash % 5) - 2) * 0.75;
+                      const stickyPalette =
+                        OPINION_STICKY_PALETTES[hash % OPINION_STICKY_PALETTES.length];
+                      const isQuickReplying = quickReplyPostId === post.id;
+
+                      return (
+                        <article
+                          key={post.id}
+                          className="group relative flex flex-col"
+                          style={{ transform: `rotate(${tiltDeg}deg)` }}
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setSelectedPostId(post.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedPostId(post.id);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: stickyPalette.bg,
+                              borderColor: stickyPalette.border,
+                            }}
+                            className="board-sticky-note relative flex cursor-pointer flex-col justify-between rounded-[2px] border p-4 pt-5 transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]"
+                          >
+                            {/* Translucent Adhesive Tape Strip */}
+                            <span
+                              aria-hidden="true"
+                              className="absolute -top-2 left-1/2 h-4 w-14 -translate-x-1/2 rounded-[2px]"
+                              style={{ backgroundColor: stickyPalette.tape }}
+                            />
+
+                            <div>
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span
+                                  className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                  style={{
+                                    backgroundColor: stickyPalette.badgeBg,
+                                    color: stickyPalette.badgeText,
+                                  }}
+                                >
+                                  {post.kind === 'issue' ? 'Issue' : 'Opinion'}
+                                </span>
+                                <span className="sticky-ink-muted text-[10px] font-medium">
+                                  {formatShortDate(post.createdAt)}
+                                </span>
+                              </div>
+
+                              <h3 className="sticky-ink mt-2.5 line-clamp-2 font-heading text-sm font-bold leading-snug">
+                                {post.subject}
+                              </h3>
+                              <p className="sticky-ink mt-1.5 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed">
+                                {post.body}
+                              </p>
+                            </div>
+
+                            <div className="sticky-ink-muted mt-3 flex items-center justify-between gap-1 border-t border-black/10 pt-2 text-[10px]">
+                              <span className="truncate font-medium">
+                                — <strong className="sticky-ink">{post.submitter.displayName}</strong>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setQuickReplyPostId(isQuickReplying ? null : post.id);
+                                  setQuickReplyText('');
+                                }}
+                                className="inline-flex shrink-0 items-center gap-1 rounded bg-black/8 px-1.5 py-1 text-[10px] font-semibold text-[#23201b] transition-colors hover:bg-black/15"
+                              >
+                                <MessageSquarePlus className="h-3 w-3" />
+                                Reply
+                              </button>
+                            </div>
+                          </div>
+
+                          {renderAttachedComments(post, hash, true)}
+                        </article>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           )}
         </div>

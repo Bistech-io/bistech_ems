@@ -68,7 +68,7 @@ export const NAVIGATION_GROUPS: NavGroup[] = [
       },
       {
         id: 'board',
-        label: 'Board',
+        label: 'Public Board',
         href: '/board',
         icon: Pin,
         permission: 'feedback.read',
