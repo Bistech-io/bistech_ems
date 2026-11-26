@@ -129,7 +129,11 @@ export function FirstLoginPasswordModal() {
         await postCheckIn('First day check-in');
       } catch (checkInErr) {
         if (
-          !(checkInErr instanceof ApiError && checkInErr.code === 'ALREADY_CHECKED_IN')
+          !(
+            checkInErr instanceof ApiError &&
+            (checkInErr.code === 'ALREADY_CHECKED_IN' ||
+              checkInErr.code === 'OUTSIDE_OFFICE_NETWORK')
+          )
         ) {
           throw checkInErr;
         }

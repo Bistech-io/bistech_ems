@@ -8,9 +8,11 @@ import {
   CheckCircle2,
   Clock,
   Settings2,
+  ShieldAlert,
   ShieldCheck,
   Timer,
   TrendingUp,
+  Wifi,
   X,
 } from 'lucide-react';
 import { ApiError, getErrorMessageForCode } from '@/lib/api/errors';
@@ -420,6 +422,7 @@ export function AttendanceDashboard() {
         }
       })
       .finally(() => {
+        clearTimeout(startTimer);
         if (!cancelled) {
           setIsLoadingBoard(false);
         }
@@ -517,6 +520,13 @@ export function AttendanceDashboard() {
   }, [recordsByDate]);
 
   const isWaitingForData = isAuthLoading || isLoadingBoard || !now;
+  const networkStatus = board?.networkStatus;
+  const isOutsideOfficeNetwork = Boolean(
+    networkStatus?.isRestricted && !networkStatus.isAllowed,
+  );
+  const isOfficeNetworkVerified = Boolean(
+    networkStatus?.isRestricted && networkStatus.isAllowed,
+  );
 
   const formattedDate = useMemo(() => {
     if (!now) return '';
@@ -558,7 +568,7 @@ export function AttendanceDashboard() {
         if (err.code === 'ALREADY_CHECKED_IN') {
           await loadBoard(viewYear, viewMonth);
         } else {
-          setCheckInError(getErrorMessageForCode(err.code));
+          setCheckInError(err.message || getErrorMessageForCode(err.code));
         }
       } else {
         setCheckInError('Unable to reach attendance server. Please try again.');
@@ -731,11 +741,23 @@ export function AttendanceDashboard() {
                   ) : isCheckedOutToday && todayRecord ? (
                     `Checked in at ${todayRecord.checkInTime ?? '—'} · Checked out at ${todayRecord.checkOutTime ?? '—'}.`
                   ) : isCheckedInToday && todayRecord ? (
-                    `Checked in at ${todayRecord.checkInTime ?? 'today'}. Hold for 2.5s when ready to check out.`
+                    isOutsideOfficeNetwork ? (
+                      `Checked in at ${todayRecord.checkInTime ?? 'today'}. Connect to the office network to check out.`
+                    ) : (
+                      `Checked in at ${todayRecord.checkInTime ?? 'today'}. Hold for 2.5s when ready to check out.`
+                    )
+                  ) : isOutsideOfficeNetwork ? (
+                    'Connect to the office Wi-Fi or LAN to enable daily check-in.'
                   ) : (
                     'Press and hold for 2.5 seconds to record your daily check-in.'
                   )}
                 </p>
+                {!isWaitingForData && isOfficeNetworkVerified && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/35 bg-[#1F5C3A]/25 px-2.5 py-0.5 text-[11px] font-medium text-[#4CAF7D]">
+                    <Wifi className="h-3 w-3" />
+                    <span>Office Network Verified</span>
+                  </div>
+                )}
               </div>
 
               {isWaitingForData ? (
@@ -751,6 +773,7 @@ export function AttendanceDashboard() {
                   label="Hold to Check Out"
                   loadingLabel="Checking out..."
                   durationMs={2500}
+                  disabled={isLoadingBoard || isOutsideOfficeNetwork}
                   isLoading={isCheckingOut}
                   onComplete={handleCheckOut}
                 />
@@ -760,12 +783,24 @@ export function AttendanceDashboard() {
                   label="Hold to Check In"
                   loadingLabel="Checking in..."
                   durationMs={2500}
-                  disabled={isLoadingBoard}
+                  disabled={isLoadingBoard || isOutsideOfficeNetwork}
                   isLoading={isCheckingIn}
                   onComplete={handleCheckIn}
                 />
               )}
             </div>
+
+            {!isWaitingForData && isOutsideOfficeNetwork && !isCheckedOutToday && (
+              <div
+                role="alert"
+                className="mt-4 flex items-center gap-2.5 rounded-2xl border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-3.5 py-2.5 text-xs text-[#FCD34D]"
+              >
+                <ShieldAlert className="h-4 w-4 shrink-0 text-[#F59E0B]" />
+                <span>
+                  <strong className="font-semibold">Outside Office Network:</strong> Check-in and check-out are locked outside approved office IPs. Connect to the office Wi-Fi or LAN and refresh.
+                </span>
+              </div>
+            )}
 
             {checkInError && (
               <div

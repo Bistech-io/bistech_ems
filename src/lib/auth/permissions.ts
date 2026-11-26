@@ -37,6 +37,7 @@ const SCOPE_ORDER: Record<ScopeLevel, number> = {
 
 export const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
+  admin: 'Admin',
   hr_manager: 'HR Manager',
   dept_head: 'Dept Head',
   employee: 'Employee',
@@ -44,6 +45,7 @@ export const ROLE_LABELS: Record<string, string> = {
 
 const ROLE_PRIORITY: Record<string, number> = {
   super_admin: 4,
+  admin: 3.5,
   hr_manager: 3,
   dept_head: 2,
   employee: 1,
@@ -154,6 +156,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<RoleName, PermissionGrantMap> = {
     'employee.history.read': 'org',
     'org.structure.read': 'org',
     'org.structure.manage': 'org',
+    'org.settings.manage': 'org',
     'attendance.self': 'own',
     'attendance.read': 'org',
     'attendance.correct': 'org',
