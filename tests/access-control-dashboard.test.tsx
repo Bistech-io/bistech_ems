@@ -263,4 +263,64 @@ describe('AccessControlDashboard', () => {
       expect(screen.queryByRole('dialog', { name: /Finance Auditor role details/i })).not.toBeInTheDocument();
     });
   });
+
+  it('allows adding and removing members in system roles such as Super Admin and HR Manager', async () => {
+    const user = userEvent.setup();
+    vi.mocked(leadershipApi.putUserRoles)
+      .mockResolvedValueOnce({
+        id: 'user-1',
+        email: 'nadia@bistech.io',
+        displayName: 'Nadia Rahman',
+        accountStatus: 'active',
+        roles: ['hr_manager', 'super_admin'],
+      })
+      .mockResolvedValueOnce({
+        id: 'user-2',
+        email: 'tariq@bistech.io',
+        displayName: 'Tariq Hasan',
+        accountStatus: 'active',
+        roles: ['employee'],
+      });
+
+    render(<AccessControlDashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Super Admin')).toBeInTheDocument();
+    });
+
+    // Open Super Admin system role drawer and assign Nadia Rahman
+    await user.click(screen.getByRole('button', { name: /Super Admin/i }));
+    const saDrawer = await screen.findByRole('dialog', {
+      name: /Super Admin role details/i,
+    });
+
+    await user.selectOptions(
+      within(saDrawer).getByLabelText(/Select user to assign Super Admin/i),
+      'user-1',
+    );
+    await user.click(within(saDrawer).getByRole('button', { name: /^Assign$/i }));
+
+    await waitFor(() => {
+      expect(leadershipApi.putUserRoles).toHaveBeenCalledWith('user-1', [
+        'hr_manager',
+        'super_admin',
+      ]);
+      expect(within(saDrawer).getByText('Nadia Rahman')).toBeInTheDocument();
+    });
+
+    // Switch to HR Manager drawer and remove Tariq Hasan
+    await user.click(within(saDrawer).getByRole('button', { name: /Close role details drawer/i }));
+    await user.click(screen.getByRole('button', { name: /HR Manager/i }));
+    const hrDrawer = await screen.findByRole('dialog', {
+      name: /HR Manager role details/i,
+    });
+
+    await user.click(
+      within(hrDrawer).getByRole('button', { name: /Remove Tariq Hasan from HR Manager/i }),
+    );
+
+    await waitFor(() => {
+      expect(leadershipApi.putUserRoles).toHaveBeenCalledWith('user-2', ['employee']);
+    });
+  });
 });

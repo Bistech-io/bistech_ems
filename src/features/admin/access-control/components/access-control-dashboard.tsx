@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import { fetchOrgUsers, type OrgUserItem } from '@/features/admin/leadership/api';
+import { useOptionalAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
 import {
   fetchAccessControlRoles,
@@ -50,6 +51,7 @@ function getRoleHierarchyRank(role: AccessControlRole): number {
 }
 
 export function AccessControlDashboard() {
+  const currentUser = useOptionalAuth()?.user;
   const [roles, setRoles] = useState<AccessControlRole[]>([]);
   const [users, setUsers] = useState<OrgUserItem[]>([]);
   const [permissionCatalog, setPermissionCatalog] =
@@ -517,6 +519,7 @@ export function AccessControlDashboard() {
         role={selectedRole}
         members={selectedRoleMembers}
         allUsers={users}
+        currentUserId={currentUser?.userId}
         onClose={() => setSelectedRoleId(null)}
         onEditRole={(roleToEdit) => {
           setEditingRole(roleToEdit);

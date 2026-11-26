@@ -39,6 +39,7 @@ interface RoleMembersDrawerProps {
   role: AccessControlRole | null;
   members: OrgUserItem[];
   allUsers?: OrgUserItem[];
+  currentUserId?: string;
   onClose: () => void;
   onEditRole?: (role: AccessControlRole) => void;
   onRoleDeleted?: (role: AccessControlRole, detachedUsersCount: number) => void;
@@ -56,6 +57,7 @@ export function RoleMembersDrawer({
   role,
   members,
   allUsers = [],
+  currentUserId,
   onClose,
   onEditRole,
   onRoleDeleted,
@@ -89,11 +91,14 @@ export function RoleMembersDrawer({
   }, [role, onClose]);
 
   const assignableUsers = useMemo(() => {
-    if (!role || role.isSystem) return [];
+    if (!role) return [];
     return allUsers
-      .filter((u) => !userHasRole(u.roles, role.name))
+      .filter(
+        (u) =>
+          u.id !== currentUserId && !userHasRole(u.roles, role.name),
+      )
       .sort((a, b) => a.displayName.localeCompare(b.displayName));
-  }, [allUsers, role]);
+  }, [allUsers, role, currentUserId]);
 
   async function handleConfirmDeleteRole() {
     if (!role || role.isSystem || isDeleting) return;
@@ -115,7 +120,7 @@ export function RoleMembersDrawer({
   }
 
   async function handleAssignMember() {
-    if (!role || role.isSystem || !selectedUserIdToAdd || mutatingUserId) return;
+    if (!role || !selectedUserIdToAdd || mutatingUserId) return;
     const targetUser = allUsers.find((u) => u.id === selectedUserIdToAdd);
     if (!targetUser) return;
 
@@ -138,13 +143,17 @@ export function RoleMembersDrawer({
   }
 
   async function handleRemoveMember(targetUser: OrgUserItem) {
-    if (!role || role.isSystem || mutatingUserId) return;
+    if (!role || mutatingUserId) return;
     setDrawerError(null);
     setMutatingUserId(targetUser.id);
     try {
-      const remaining = targetUser.roles.filter(
-        (r) => r.toLowerCase() !== role.name.toLowerCase(),
-      );
+      const roleKey = role.name.toLowerCase();
+      const remaining = targetUser.roles.filter((r) => {
+        const lower = r.toLowerCase();
+        if (lower === roleKey) return false;
+        if (roleKey === 'dept_head' && lower === 'department_head') return false;
+        return true;
+      });
       const nextRoles = remaining.length > 0 ? remaining : ['employee'];
       const updated = await putUserRoles(targetUser.id, nextRoles);
       onUserRolesUpdated?.(targetUser.id, updated.roles);
@@ -356,7 +365,7 @@ export function RoleMembersDrawer({
             <div className="flex-1 overflow-y-auto p-6">
               {activeTab === 'members' ? (
                 <div className="space-y-4">
-                  {!role.isSystem && onUserRolesUpdated && (
+                  {onUserRolesUpdated && (
                     <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/80 p-3.5">
                       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4CAF7D]">
                         Assign Member to Role
@@ -427,7 +436,24 @@ export function RoleMembersDrawer({
                     </div>
                   ) : (
                     <ul className="space-y-2.5">
-                      {filteredMembers.map((user) => (
+                      {filteredMembers.map((user) => {
+                        const isSelf = Boolean(currentUserId && user.id === currentUserId);
+                        const isLastActiveSuperAdmin =
+                          role.name.toLowerCase() === 'super_admin' &&
+                          user.accountStatus === 'active' &&
+                          members.filter((m) => m.accountStatus === 'active').length <= 1;
+                        const isBaselineEmployeeOnly =
+                          role.name.toLowerCase() === 'employee' &&
+                          user.roles.length <= 1;
+                        const removeBlockReason = isSelf
+                          ? 'You cannot remove your own role'
+                          : isLastActiveSuperAdmin
+                            ? 'Cannot remove the last active Super Admin'
+                            : isBaselineEmployeeOnly
+                              ? 'Users must retain at least one role'
+                              : null;
+
+                        return (
                         <li
                           key={user.id}
                           className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-4 transition-colors hover:border-[#2E8B57]/50"
@@ -461,13 +487,17 @@ export function RoleMembersDrawer({
                                   >
                                     {user.accountStatus}
                                   </span>
-                                  {!role.isSystem && onUserRolesUpdated && (
+                                  {onUserRolesUpdated && (
                                     <button
                                       type="button"
-                                      disabled={mutatingUserId === user.id}
+                                      disabled={
+                                        mutatingUserId === user.id ||
+                                        Boolean(removeBlockReason)
+                                      }
+                                      title={removeBlockReason ?? `Remove ${role.displayName} from ${user.displayName}`}
                                       onClick={() => handleRemoveMember(user)}
                                       aria-label={`Remove ${user.displayName} from ${role.displayName}`}
-                                      className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#23302B] bg-[#131A17] px-2 text-[10px] font-medium text-[#A3B3AC] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:opacity-50"
+                                      className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#23302B] bg-[#131A17] px-2 text-[10px] font-medium text-[#A3B3AC] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-45"
                                     >
                                       {mutatingUserId === user.id ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -511,7 +541,8 @@ export function RoleMembersDrawer({
                             </div>
                           </div>
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

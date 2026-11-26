@@ -16,6 +16,10 @@ export interface AttendanceDayRecord {
   checkInTime?: string;
   /** Raw ISO 8601 timestamp for stopwatch calculation */
   checkInIso?: string | null;
+  /** Formatted check-out display time (e.g. "06:15 PM") */
+  checkOutTime?: string;
+  /** Raw ISO 8601 check-out timestamp */
+  checkOutIso?: string | null;
   lateMinutes?: number;
   note?: string;
   isDerived?: boolean;

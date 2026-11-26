@@ -171,7 +171,7 @@ export function EmployeeAttendanceDashboard() {
     };
   }, [today]);
 
-  // Fetch selected employee's monthly attendance records whenever drawer employee or month changes
+  // Fetch selected employee's monthly attendance records & earliest check-in date together
   useEffect(() => {
     if (!selectedEmployee) return;
     let cancelled = false;
@@ -180,20 +180,19 @@ export function EmployeeAttendanceDashboard() {
     }, 0);
 
     const bounds = getMonthBounds(drawerYear, drawerMonth);
-    fetchOrgAttendanceRange({
-      employeeId: selectedEmployee.id,
-      from: bounds.from,
-      to: bounds.to,
-      limit: 100,
-    })
-      .then((list) => {
+    Promise.all([
+      fetchOrgAttendanceRange({
+        employeeId: selectedEmployee.id,
+        from: bounds.from,
+        to: bounds.to,
+        limit: 100,
+      }).catch(() => [] as OrgAttendanceListItem[]),
+      fetchEmployeeFirstCheckInDate(selectedEmployee.id, todayKey).catch(() => null),
+    ])
+      .then(([list, earliestDate]) => {
         if (!cancelled) {
           setDrawerMonthRecords(list);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDrawerMonthRecords([]);
+          setDrawerFirstCheckInDate(earliestDate);
         }
       })
       .finally(() => {
@@ -204,30 +203,7 @@ export function EmployeeAttendanceDashboard() {
       clearTimeout(startTimer);
       cancelled = true;
     };
-  }, [selectedEmployee, drawerYear, drawerMonth]);
-
-  // Fetch selected employee's earliest check-in date when opening the drawer
-  useEffect(() => {
-    if (!selectedEmployee) {
-      return;
-    }
-    let cancelled = false;
-    fetchEmployeeFirstCheckInDate(selectedEmployee.id, todayKey)
-      .then((date) => {
-        if (!cancelled) {
-          setDrawerFirstCheckInDate(date);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDrawerFirstCheckInDate(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedEmployee, todayKey]);
+  }, [selectedEmployee, drawerYear, drawerMonth, todayKey]);
 
   useEffect(() => {
     if (!selectedEmployee) return;
@@ -373,7 +349,7 @@ export function EmployeeAttendanceDashboard() {
             <span className="text-[#A3B3AC]">Shift:</span>
             <strong className="text-[#F0F5F2]">
               {shiftSettings
-                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)}`
                 : '—'}
             </strong>
           </div>
@@ -567,26 +543,42 @@ export function EmployeeAttendanceDashboard() {
               <div className="mt-5 grid grid-cols-4 gap-2.5 text-center">
                 <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-3">
                   <span className="text-[11px] text-[#A3B3AC]">Attended</span>
-                  <p className="mt-1 font-heading text-xl font-bold text-[#4CAF7D]">
-                    {drawerSummary.attended}
+                  <p className="mt-1 min-h-[28px] font-heading text-xl font-bold text-[#4CAF7D]">
+                    {isLoadingDrawer ? (
+                      <span className="mx-auto inline-block h-6 w-8 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      drawerSummary.attended
+                    )}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-3">
                   <span className="text-[11px] text-[#A3B3AC]">Present</span>
-                  <p className="mt-1 font-heading text-xl font-bold text-[#F0F5F2]">
-                    {drawerSummary.present}
+                  <p className="mt-1 min-h-[28px] font-heading text-xl font-bold text-[#F0F5F2]">
+                    {isLoadingDrawer ? (
+                      <span className="mx-auto inline-block h-6 w-8 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      drawerSummary.present
+                    )}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-3">
                   <span className="text-[11px] text-[#A3B3AC]">Late</span>
-                  <p className="mt-1 font-heading text-xl font-bold text-[#F59E0B]">
-                    {drawerSummary.late}
+                  <p className="mt-1 min-h-[28px] font-heading text-xl font-bold text-[#F59E0B]">
+                    {isLoadingDrawer ? (
+                      <span className="mx-auto inline-block h-6 w-8 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      drawerSummary.late
+                    )}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 p-3">
                   <span className="text-[11px] text-[#A3B3AC]">Absent</span>
-                  <p className="mt-1 font-heading text-xl font-bold text-[#EF4444]">
-                    {drawerSummary.absent}
+                  <p className="mt-1 min-h-[28px] font-heading text-xl font-bold text-[#EF4444]">
+                    {isLoadingDrawer ? (
+                      <span className="mx-auto inline-block h-6 w-8 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      drawerSummary.absent
+                    )}
                   </p>
                 </div>
               </div>
