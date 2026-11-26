@@ -42,9 +42,8 @@ export function EmployeeHeroBanner({
             Welcome back, <span className="text-[#4CAF7D]">{employee.fullName}</span>
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[#A3B3AC]">
-            {employee.designation}. Shift window {employee.workStartTime} – {employee.workEndTime} (
-            {employee.graceMinutes}m grace). Track your daily attendance, active assignments, and
-            upcoming deadlines.
+            {employee.designation}. Shift window {employee.workStartTime} – {employee.workEndTime}.
+            Track your daily attendance, active assignments, and upcoming deadlines.
           </p>
         </div>
 

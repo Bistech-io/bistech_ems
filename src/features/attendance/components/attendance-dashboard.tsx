@@ -1,14 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   CalendarCheck,
   CheckCircle2,
   Clock,
-  Fingerprint,
-  Loader2,
   Settings2,
   ShieldCheck,
   Timer,
@@ -25,10 +23,12 @@ import {
   fetchOrganizationSettings,
   patchOrganizationSettings,
   postCheckIn,
+  postCheckOut,
   type AttendanceBoardData,
 } from '../api';
 import type { AttendanceDayRecord, OrganizationShiftSettings } from '../types';
 import { ATTENDANCE_STATUS_STYLE, AttendanceCalendar } from './attendance-calendar';
+import { HoldActionButton } from './hold-action-button';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -94,16 +94,33 @@ function formatStopwatch(elapsedSeconds: number): string {
 
 function computeStopwatchState(
   checkInIso: string | null | undefined,
+  checkOutIso: string | null | undefined,
   workEndHhMm: string,
   now: Date | null,
-): { display: string; isShiftEnded: boolean; isActive: boolean } {
+): { display: string; isShiftEnded: boolean; isCheckedOut: boolean; isActive: boolean } {
   if (!checkInIso || !now) {
-    return { display: '00:00:00', isShiftEnded: false, isActive: false };
+    return { display: '00:00:00', isShiftEnded: false, isCheckedOut: false, isActive: false };
   }
 
   const checkInDate = new Date(checkInIso);
   if (Number.isNaN(checkInDate.getTime())) {
-    return { display: '00:00:00', isShiftEnded: false, isActive: false };
+    return { display: '00:00:00', isShiftEnded: false, isCheckedOut: false, isActive: false };
+  }
+
+  if (checkOutIso) {
+    const checkOutDate = new Date(checkOutIso);
+    if (!Number.isNaN(checkOutDate.getTime())) {
+      const elapsedSeconds = Math.max(
+        0,
+        Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / 1000),
+      );
+      return {
+        display: formatStopwatch(elapsedSeconds),
+        isShiftEnded: false,
+        isCheckedOut: true,
+        isActive: false,
+      };
+    }
   }
 
   const [endHStr, endMStr] = workEndHhMm.split(':');
@@ -128,6 +145,7 @@ function computeStopwatchState(
   return {
     display: formatStopwatch(elapsedSeconds),
     isShiftEnded,
+    isCheckedOut: false,
     isActive: !isShiftEnded,
   };
 }
@@ -172,11 +190,17 @@ function buildCalendarRecordsMap(
         continue;
       }
 
+      const mergedCheckOutIso =
+        apiRec.checkOutAt ??
+        (key === todayKey ? (localCheckIn?.checkOutIso ?? board?.today?.checkOutAt ?? null) : null);
+
       records[key] = {
         date: key,
         status: apiRec.status,
         checkInIso: apiRec.checkInAt,
         checkInTime: formatTimeFromIso(apiRec.checkInAt, tz),
+        checkOutIso: mergedCheckOutIso,
+        checkOutTime: formatTimeFromIso(mergedCheckOutIso, tz),
         lateMinutes: apiRec.lateMinutes,
         note:
           apiRec.note ??
@@ -196,11 +220,14 @@ function buildCalendarRecordsMap(
         board.today.status !== 'not_checked_in' &&
         !(board.today.status === 'absent' && !firstCheckInDate)
       ) {
+        const todayCheckOutIso = board.today.checkOutAt ?? null;
         records[key] = {
           date: key,
           status: board.today.status,
           checkInIso: board.today.checkInAt,
           checkInTime: formatTimeFromIso(board.today.checkInAt, tz),
+          checkOutIso: todayCheckOutIso,
+          checkOutTime: formatTimeFromIso(todayCheckOutIso, tz),
           lateMinutes: board.today.lateMinutes,
         };
         continue;
@@ -260,9 +287,11 @@ export function AttendanceDashboard() {
 
   const [board, setBoard] = useState<AttendanceBoardData | null>(null);
   const [firstCheckInDate, setFirstCheckInDate] = useState<string | null>(null);
+  const firstCheckInFetchedRef = useRef(false);
   const [localCheckIn, setLocalCheckIn] = useState<AttendanceDayRecord | null>(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState<boolean>(true);
   const [isCheckingIn, setIsCheckingIn] = useState<boolean>(false);
+  const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
 
   // Dynamic Shift Settings (GET /organization/settings + PATCH /organization/settings)
@@ -359,20 +388,36 @@ export function AttendanceDashboard() {
     }
 
     let cancelled = false;
+    const startTimer = setTimeout(() => {
+      if (!cancelled) setIsLoadingBoard(true);
+    }, 0);
+
     const bounds = getMonthBounds(viewYear, viewMonth);
-    fetchMyAttendanceBoard(bounds)
-      .then((data) => {
+    const shouldFetchFirstCheckIn = !firstCheckInFetchedRef.current;
+
+    Promise.all([
+      fetchMyAttendanceBoard(bounds).catch(() => null),
+      shouldFetchFirstCheckIn
+        ? fetchMyFirstCheckInDate().catch(() => null)
+        : Promise.resolve(undefined),
+    ])
+      .then(([data, earliestDate]) => {
         if (cancelled) return;
-        setBoard(data);
-        setShiftSettings((prev) => ({
-          timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
-          workStart: data.workStart || prev?.workStart || '10:00',
-          workEnd: data.workEnd || prev?.workEnd || '18:30',
-          graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
-        }));
-      })
-      .catch(() => {
-        // Keep UI responsive if offline or user has no employee profile yet
+        if (shouldFetchFirstCheckIn) {
+          firstCheckInFetchedRef.current = true;
+          if (earliestDate !== undefined) {
+            setFirstCheckInDate(earliestDate);
+          }
+        }
+        if (data) {
+          setBoard(data);
+          setShiftSettings((prev) => ({
+            timezone: data.timezone || prev?.timezone || 'Asia/Dhaka',
+            workStart: data.workStart || prev?.workStart || '10:00',
+            workEnd: data.workEnd || prev?.workEnd || '18:30',
+            graceMinutes: data.graceMinutes ?? prev?.graceMinutes ?? 15,
+          }));
+        }
       })
       .finally(() => {
         if (!cancelled) {
@@ -381,26 +426,10 @@ export function AttendanceDashboard() {
       });
 
     return () => {
+      clearTimeout(startTimer);
       cancelled = true;
     };
   }, [viewYear, viewMonth, isAuthLoading, hasEmployeeProfile]);
-
-  useEffect(() => {
-    if (isAuthLoading || !hasEmployeeProfile) return;
-    let cancelled = false;
-    fetchMyFirstCheckInDate()
-      .then((date) => {
-        if (!cancelled) {
-          setFirstCheckInDate(date);
-        }
-      })
-      .catch(() => {
-        // Ignore if offline or unavailable
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthLoading, hasEmployeeProfile]);
 
   const effectiveFirstCheckInDate = useMemo(() => {
     let earliest = firstCheckInDate;
@@ -453,6 +482,7 @@ export function AttendanceDashboard() {
   const todayRecord = recordsByDate[todayKey];
   const isCheckedInToday =
     todayRecord?.status === 'present' || todayRecord?.status === 'late';
+  const isCheckedOutToday = Boolean(todayRecord?.checkOutIso);
 
   const selectedRecord = recordsByDate[selectedDateKey];
   const isViewingToday = selectedDateKey === todayKey;
@@ -461,6 +491,7 @@ export function AttendanceDashboard() {
     () =>
       computeStopwatchState(
         isViewingToday ? todayRecord?.checkInIso : selectedRecord?.checkInIso,
+        isViewingToday ? todayRecord?.checkOutIso : selectedRecord?.checkOutIso,
         shiftSettings?.workEnd ?? '18:30',
         now,
       ),
@@ -485,8 +516,10 @@ export function AttendanceDashboard() {
       .slice(0, 5);
   }, [recordsByDate]);
 
+  const isWaitingForData = isAuthLoading || isLoadingBoard || !now;
+
   const formattedDate = useMemo(() => {
-    if (!now) return 'Loading date...';
+    if (!now) return '';
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       month: 'long',
@@ -496,7 +529,7 @@ export function AttendanceDashboard() {
   }, [now]);
 
   const formattedTime = useMemo(() => {
-    if (!now) return '--:--';
+    if (!now) return '';
     return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -532,6 +565,42 @@ export function AttendanceDashboard() {
       }
     } finally {
       setIsCheckingIn(false);
+    }
+  }
+
+  async function handleCheckOut() {
+    if (!isCheckedInToday || isCheckedOutToday || isCheckingOut) return;
+    setIsCheckingOut(true);
+    setCheckInError(null);
+
+    try {
+      const record = await postCheckOut();
+      const tz = shiftSettings?.timezone ?? board?.timezone ?? 'Asia/Dhaka';
+      const checkInIso = record.checkInAt ?? todayRecord?.checkInIso ?? null;
+      const checkOutIso = record.checkOutAt ?? new Date().toISOString();
+      setLocalCheckIn({
+        date: record.workDate || todayKey,
+        status: record.status,
+        checkInIso,
+        checkInTime: formatTimeFromIso(checkInIso, tz),
+        checkOutIso,
+        checkOutTime: formatTimeFromIso(checkOutIso, tz),
+        lateMinutes: record.lateMinutes,
+      });
+      setSelectedDateKey(record.workDate || todayKey);
+      await loadBoard(viewYear, viewMonth);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if ((err.code as string) === 'ALREADY_CHECKED_OUT') {
+          await loadBoard(viewYear, viewMonth);
+        } else {
+          setCheckInError(err.message || getErrorMessageForCode(err.code));
+        }
+      } else {
+        setCheckInError('Unable to reach attendance server. Please try again.');
+      }
+    } finally {
+      setIsCheckingOut(false);
     }
   }
 
@@ -586,17 +655,21 @@ export function AttendanceDashboard() {
           <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
             Attendance Dashboard
           </h1>
-          <p className="mt-1 text-sm text-[#A3B3AC]">{formattedDate}</p>
+          <p className="mt-1 min-h-[20px] text-sm text-[#A3B3AC]">
+            {formattedDate || <span className="inline-block h-4 w-44 animate-pulse rounded bg-[#1A2420]" />}
+          </p>
         </div>
 
         {/* Dynamic Shift Pill */}
         <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
           <Clock className="h-4 w-4 text-[#4CAF7D]" />
           <span className="text-xs text-[#A3B3AC]">Shift:</span>
-          <span className="text-xs font-semibold text-[#F0F5F2]">
-            {shiftSettings
-              ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
-              : '—'}
+          <span className="min-w-[140px] text-xs font-semibold text-[#F0F5F2]">
+            {shiftSettings ? (
+              `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)}`
+            ) : (
+              <span className="inline-block h-3.5 w-36 animate-pulse rounded bg-[#1A2420] align-middle" />
+            )}
           </span>
           {canManageShift && (
             <button
@@ -622,10 +695,19 @@ export function AttendanceDashboard() {
               <div>
                 <span className="text-xs font-medium text-[#A3B3AC]">Today&apos;s Status</span>
                 <div className="mt-1.5 flex items-baseline gap-3">
-                  <span className="font-heading text-3xl font-bold tracking-[-0.02em] text-[#F0F5F2]">
-                    {formattedTime}
+                  <span className="min-h-[36px] font-heading text-3xl font-bold tracking-[-0.02em] text-[#F0F5F2]">
+                    {formattedTime || (
+                      <span className="inline-block h-8 w-28 animate-pulse rounded-lg bg-[#1A2420] align-middle" />
+                    )}
                   </span>
-                  {isCheckedInToday && todayRecord ? (
+                  {isWaitingForData ? (
+                    <span className="inline-block h-6 w-28 animate-pulse rounded-full bg-[#1A2420]" />
+                  ) : isCheckedOutToday && todayRecord ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#38BDF8]/40 bg-[#38BDF8]/15 px-2.5 py-0.5 text-xs font-medium text-[#38BDF8]">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Checked Out
+                    </span>
+                  ) : isCheckedInToday && todayRecord ? (
                     <span
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
@@ -639,45 +721,50 @@ export function AttendanceDashboard() {
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-[#23302B] bg-[#1A2420] px-2.5 py-0.5 text-xs font-medium text-[#A3B3AC]">
-                      {isLoadingBoard ? 'Checking status...' : 'Not Checked In Yet'}
+                      Not Checked In Yet
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-[#6E8078]">
-                  {isCheckedInToday && todayRecord
-                    ? `Recorded at ${todayRecord.checkInTime ?? 'today'}. Daily attendance is complete.`
-                    : 'One-tap daily check-in. Attendance timestamp is recorded once per workday.'}
+                <p className="mt-2 min-h-[16px] text-xs text-[#6E8078]">
+                  {isWaitingForData ? (
+                    <span className="inline-block h-3.5 w-60 animate-pulse rounded bg-[#1A2420]" />
+                  ) : isCheckedOutToday && todayRecord ? (
+                    `Checked in at ${todayRecord.checkInTime ?? '—'} · Checked out at ${todayRecord.checkOutTime ?? '—'}.`
+                  ) : isCheckedInToday && todayRecord ? (
+                    `Checked in at ${todayRecord.checkInTime ?? 'today'}. Hold for 2.5s when ready to check out.`
+                  ) : (
+                    'Press and hold for 2.5 seconds to record your daily check-in.'
+                  )}
                 </p>
               </div>
 
-              <button
-                type="button"
-                disabled={isCheckedInToday || isCheckingIn}
-                onClick={handleCheckIn}
-                className={cn(
-                  'inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl px-6 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4CAF7D]',
-                  isCheckedInToday
-                    ? 'cursor-not-allowed border border-[#2E8B57]/40 bg-[#1F5C3A]/35 text-[#4CAF7D] opacity-80'
-                    : 'bg-[#2E8B57] text-[#F0F5F2] shadow-[0_8px_24px_-6px_rgba(46,139,87,0.55)] hover:bg-[#4CAF7D] hover:text-[#0B0F0E] disabled:cursor-not-allowed disabled:opacity-60',
-                )}
-              >
-                {isCheckingIn ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Checking in...</span>
-                  </>
-                ) : isCheckedInToday ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Checked In</span>
-                  </>
-                ) : (
-                  <>
-                    <Fingerprint className="h-4 w-4" />
-                    <span>Check In</span>
-                  </>
-                )}
-              </button>
+              {isWaitingForData ? (
+                <div className="h-12 w-[215px] animate-pulse rounded-2xl border border-[#23302B] bg-[#1A2420]/70" />
+              ) : isCheckedOutToday ? (
+                <div className="inline-flex h-12 items-center justify-center gap-2.5 rounded-2xl border border-[#2E8B57]/40 bg-[#1F5C3A]/35 px-6 text-sm font-semibold text-[#4CAF7D]">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Checked Out</span>
+                </div>
+              ) : isCheckedInToday ? (
+                <HoldActionButton
+                  variant="check-out"
+                  label="Hold to Check Out"
+                  loadingLabel="Checking out..."
+                  durationMs={2500}
+                  isLoading={isCheckingOut}
+                  onComplete={handleCheckOut}
+                />
+              ) : (
+                <HoldActionButton
+                  variant="check-in"
+                  label="Hold to Check In"
+                  loadingLabel="Checking in..."
+                  durationMs={2500}
+                  disabled={isLoadingBoard}
+                  isLoading={isCheckingIn}
+                  onComplete={handleCheckIn}
+                />
+              )}
             </div>
 
             {checkInError && (
@@ -698,8 +785,12 @@ export function AttendanceDashboard() {
                 <span className="text-xs text-[#A3B3AC]">Present</span>
                 <CalendarCheck className="h-4 w-4 text-[#4CAF7D]" />
               </div>
-              <p className="mt-2 font-heading text-2xl font-bold text-[#F0F5F2]">
-                {summary.present}
+              <p className="mt-2 min-h-[32px] font-heading text-2xl font-bold text-[#F0F5F2]">
+                {isWaitingForData ? (
+                  <span className="inline-block h-7 w-10 animate-pulse rounded bg-[#1A2420]" />
+                ) : (
+                  summary.present
+                )}
               </p>
             </div>
 
@@ -708,8 +799,12 @@ export function AttendanceDashboard() {
                 <span className="text-xs text-[#A3B3AC]">Late</span>
                 <Clock className="h-4 w-4 text-[#F59E0B]" />
               </div>
-              <p className="mt-2 font-heading text-2xl font-bold text-[#F0F5F2]">
-                {summary.late}
+              <p className="mt-2 min-h-[32px] font-heading text-2xl font-bold text-[#F0F5F2]">
+                {isWaitingForData ? (
+                  <span className="inline-block h-7 w-10 animate-pulse rounded bg-[#1A2420]" />
+                ) : (
+                  summary.late
+                )}
               </p>
             </div>
 
@@ -718,8 +813,12 @@ export function AttendanceDashboard() {
                 <span className="text-xs text-[#A3B3AC]">Absent</span>
                 <AlertCircle className="h-4 w-4 text-[#EF4444]" />
               </div>
-              <p className="mt-2 font-heading text-2xl font-bold text-[#F0F5F2]">
-                {summary.absent}
+              <p className="mt-2 min-h-[32px] font-heading text-2xl font-bold text-[#F0F5F2]">
+                {isWaitingForData ? (
+                  <span className="inline-block h-7 w-10 animate-pulse rounded bg-[#1A2420]" />
+                ) : (
+                  summary.absent
+                )}
               </p>
             </div>
 
@@ -728,8 +827,12 @@ export function AttendanceDashboard() {
                 <span className="text-xs text-[#A3B3AC]">Rate</span>
                 <TrendingUp className="h-4 w-4 text-[#4CAF7D]" />
               </div>
-              <p className="mt-2 font-heading text-2xl font-bold text-[#F0F5F2]">
-                {summary.rate}%
+              <p className="mt-2 min-h-[32px] font-heading text-2xl font-bold text-[#F0F5F2]">
+                {isWaitingForData ? (
+                  <span className="inline-block h-7 w-14 animate-pulse rounded bg-[#1A2420]" />
+                ) : (
+                  `${summary.rate}%`
+                )}
               </p>
             </div>
           </section>
@@ -744,7 +847,22 @@ export function AttendanceDashboard() {
             </p>
 
             <div className="mt-4 divide-y divide-[#23302B]/70">
-              {recentLogs.length === 0 ? (
+              {isWaitingForData ? (
+                <div className="space-y-3 py-2">
+                  {[1, 2, 3].map((row) => (
+                    <div
+                      key={row}
+                      className="flex items-center justify-between py-2"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-24 animate-pulse rounded bg-[#1A2420]" />
+                        <div className="h-3 w-36 animate-pulse rounded bg-[#1A2420]/70" />
+                      </div>
+                      <div className="h-5 w-16 animate-pulse rounded-full bg-[#1A2420]" />
+                    </div>
+                  ))}
+                </div>
+              ) : recentLogs.length === 0 ? (
                 <p className="py-6 text-center text-xs text-[#6E8078]">
                   No attendance records for this month yet.
                 </p>
@@ -758,7 +876,9 @@ export function AttendanceDashboard() {
                       <p className="font-medium text-[#F0F5F2]">{log.date}</p>
                       <p className="text-xs text-[#6E8078]">
                         {log.checkInTime
-                          ? `Check-in at ${log.checkInTime}`
+                          ? log.checkOutTime
+                            ? `In ${log.checkInTime} · Out ${log.checkOutTime}`
+                            : `Check-in at ${log.checkInTime}`
                           : log.note ?? 'No check-in'}
                       </p>
                     </div>
@@ -784,18 +904,22 @@ export function AttendanceDashboard() {
 
         {/* Right Column: Calendar + Separate Check-In Status & Stopwatch Card */}
         <div className="flex flex-col gap-6 lg:col-span-5">
-          <AttendanceCalendar
-            year={viewYear}
-            month={viewMonth}
-            todayKey={todayKey}
-            selectedDateKey={selectedDateKey}
-            recordsByDate={recordsByDate}
-            onSelectDate={setSelectedDateKey}
-            onMonthChange={(y, m) => {
-              setViewYear(y);
-              setViewMonth(m);
-            }}
-          />
+          {isWaitingForData ? (
+            <div className="h-[340px] animate-pulse rounded-3xl border border-[#23302B] bg-[#131A17] p-5" />
+          ) : (
+            <AttendanceCalendar
+              year={viewYear}
+              month={viewMonth}
+              todayKey={todayKey}
+              selectedDateKey={selectedDateKey}
+              recordsByDate={recordsByDate}
+              onSelectDate={setSelectedDateKey}
+              onMonthChange={(y, m) => {
+                setViewYear(y);
+                setViewMonth(m);
+              }}
+            />
+          )}
 
           {/* Separate Day / Today's Check-In Status Card with Stopwatch */}
           <section className="flex flex-1 flex-col justify-between rounded-3xl border border-[#23302B] bg-[#131A17] p-5 md:p-6">
@@ -805,12 +929,18 @@ export function AttendanceDashboard() {
                   <p className="text-[11px] font-semibold tracking-[0.06em] text-[#4CAF7D] uppercase">
                     {isViewingToday ? "Today's Check-In Status" : 'Selected Day Status'}
                   </p>
-                  <h3 className="mt-0.5 font-heading text-lg font-semibold text-[#F0F5F2]">
-                    {selectedDateKey}
+                  <h3 className="mt-0.5 min-h-[28px] font-heading text-lg font-semibold text-[#F0F5F2]">
+                    {isWaitingForData ? (
+                      <span className="inline-block h-5 w-28 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      selectedDateKey
+                    )}
                   </h3>
                 </div>
 
-                {selectedRecord ? (
+                {isWaitingForData ? (
+                  <span className="h-6 w-20 animate-pulse rounded-full bg-[#1A2420]" />
+                ) : selectedRecord ? (
                   <span
                     className={cn(
                       'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium',
@@ -826,23 +956,42 @@ export function AttendanceDashboard() {
                 )}
               </div>
 
-              {/* 3-Column Metrics: Check-In Time | Punctuality | Worked Stopwatch */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* 4-Tile Metrics: Check-In | Check-Out | Punctuality | Worked Stopwatch */}
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-3.5">
                   <span className="text-[11px] text-[#6E8078]">Check-In Time</span>
-                  <p className="mt-1 font-heading text-base font-semibold text-[#F0F5F2]">
-                    {selectedRecord?.checkInTime ?? '—'}
+                  <p className="mt-1 min-h-[24px] font-heading text-base font-semibold text-[#F0F5F2]">
+                    {isWaitingForData ? (
+                      <span className="inline-block h-5 w-16 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      selectedRecord?.checkInTime ?? '—'
+                    )}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-3.5">
+                  <span className="text-[11px] text-[#6E8078]">Check-Out Time</span>
+                  <p className="mt-1 min-h-[24px] font-heading text-base font-semibold text-[#F0F5F2]">
+                    {isWaitingForData ? (
+                      <span className="inline-block h-5 w-16 animate-pulse rounded bg-[#1A2420]" />
+                    ) : (
+                      selectedRecord?.checkOutTime ?? '—'
+                    )}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-[#23302B]/80 bg-[#0B0F0E]/75 p-3.5">
                   <span className="text-[11px] text-[#6E8078]">Punctuality</span>
-                  <p className="mt-1 font-heading text-base font-semibold text-[#F0F5F2]">
-                    {selectedRecord?.checkInTime
-                      ? selectedRecord.lateMinutes && selectedRecord.lateMinutes > 0
+                  <p className="mt-1 min-h-[24px] font-heading text-base font-semibold text-[#F0F5F2]">
+                    {isWaitingForData ? (
+                      <span className="inline-block h-5 w-16 animate-pulse rounded bg-[#1A2420]" />
+                    ) : selectedRecord?.checkInTime ? (
+                      selectedRecord.lateMinutes && selectedRecord.lateMinutes > 0
                         ? formatLateDuration(selectedRecord.lateMinutes)
                         : 'On Time'
-                      : '—'}
+                    ) : (
+                      '—'
+                    )}
                   </p>
                 </div>
 
@@ -852,14 +1001,25 @@ export function AttendanceDashboard() {
                     <Timer
                       className={cn(
                         'h-3.5 w-3.5',
-                        stopwatch.isActive ? 'text-[#4CAF7D]' : 'text-[#6E8078]',
+                        !isWaitingForData && stopwatch.isActive ? 'text-[#4CAF7D]' : 'text-[#6E8078]',
                       )}
                     />
                   </div>
-                  <p className="mt-1 font-heading text-base font-semibold tabular-nums text-[#F0F5F2]">
-                    {selectedRecord?.checkInIso ? stopwatch.display : '00:00:00'}
+                  <p className="mt-1 min-h-[24px] font-heading text-base font-semibold tabular-nums text-[#F0F5F2]">
+                    {isWaitingForData ? (
+                      <span className="inline-block h-5 w-20 animate-pulse rounded bg-[#1A2420]" />
+                    ) : selectedRecord?.checkInIso ? (
+                      stopwatch.display
+                    ) : (
+                      '00:00:00'
+                    )}
                   </p>
-                  {selectedRecord?.checkInIso && stopwatch.isShiftEnded && (
+                  {!isWaitingForData && selectedRecord?.checkInIso && stopwatch.isCheckedOut && (
+                    <span className="mt-0.5 block text-[10px] font-medium text-[#4CAF7D]">
+                      Checked out ({selectedRecord.checkOutTime})
+                    </span>
+                  )}
+                  {!isWaitingForData && selectedRecord?.checkInIso && !stopwatch.isCheckedOut && stopwatch.isShiftEnded && (
                     <span className="mt-0.5 block text-[10px] font-medium text-[#F59E0B]">
                       Shift ended ({format24hTo12h(shiftSettings?.workEnd ?? '18:30')})
                     </span>

@@ -8,6 +8,7 @@ export const attendanceRecordDtoSchema = z.object({
   id: z.string().nullable(),
   workDate: z.string(),
   checkInAt: z.string().nullable(),
+  checkOutAt: z.string().nullable().optional(),
   status: z.enum(['present', 'late', 'absent']),
   source: z.enum(['web', 'hr_correction']).nullable(),
   lateMinutes: z.number(),
@@ -21,6 +22,7 @@ export const todayAttendanceDtoSchema = z.object({
   workDate: z.string(),
   status: z.enum(['present', 'late', 'absent', 'not_checked_in']),
   checkInAt: z.string().nullable(),
+  checkOutAt: z.string().nullable().optional(),
   lateMinutes: z.number(),
   source: z.enum(['web', 'hr_correction']).nullable(),
 });
@@ -49,6 +51,7 @@ export type AttendanceBoardData = z.infer<typeof attendanceBoardDataSchema>;
 
 export const attendanceBoardResponseSchema = successEnvelopeSchema(attendanceBoardDataSchema);
 export const checkInResponseSchema = successEnvelopeSchema(attendanceRecordDtoSchema);
+export const checkOutResponseSchema = successEnvelopeSchema(attendanceRecordDtoSchema);
 
 export const organizationSettingsDataSchema = z.object({
   timezone: z.string().default('Asia/Dhaka'),
@@ -123,10 +126,20 @@ export async function postCheckIn(note?: string): Promise<AttendanceRecordDto> {
   return res.data;
 }
 
+export async function postCheckOut(note?: string): Promise<AttendanceRecordDto> {
+  const res = await apiRequest('/attendance/check-out', {
+    method: 'POST',
+    body: note ? { note } : {},
+    schema: checkOutResponseSchema,
+  });
+  return res.data;
+}
+
 export const orgAttendanceListItemSchema = z.object({
   id: z.string().nullable().optional(),
   workDate: z.string(),
   checkInAt: z.string().nullable().optional(),
+  checkOutAt: z.string().nullable().optional(),
   status: z.enum(['present', 'late', 'absent']),
   source: z.enum(['web', 'hr_correction']).nullable().optional(),
   lateMinutes: z.number().default(0),
