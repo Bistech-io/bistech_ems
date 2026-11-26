@@ -347,6 +347,21 @@ export function EmployeesDashboard() {
     fetchDepartments().then(setDepartments).catch(() => {});
   }
 
+  function handleAccountStatusUpdated(employeeId: string, accountStatus: string) {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === employeeId
+          ? { ...emp, user: { ...emp.user, accountStatus } }
+          : emp,
+      ),
+    );
+    setSelectedEmployee((prev) =>
+      prev && prev.id === employeeId
+        ? { ...prev, user: { ...prev.user, accountStatus } }
+        : prev,
+    );
+  }
+
   function handleLiveStatusChange(
     employeeId: string,
     status: EmployeeLiveStatus | 'auto',
@@ -514,14 +529,21 @@ export function EmployeesDashboard() {
                         {emp.designation.title}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span
-                          className={cn(
-                            'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium',
-                            style.badge,
+                        <div className="inline-flex items-center gap-1.5">
+                          {emp.user.accountStatus === 'suspended' && (
+                            <span className="inline-flex items-center rounded-full border border-[#EF4444]/40 bg-[#EF4444]/10 px-2.5 py-1 text-[11px] font-medium text-[#FCA5A5]">
+                              Frozen
+                            </span>
                           )}
-                        >
-                          {style.label}
-                        </span>
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium',
+                              style.badge,
+                            )}
+                          >
+                            {style.label}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -566,6 +588,7 @@ export function EmployeesDashboard() {
         onDesignationUpdated={handleDesignationUpdated}
         onDepartmentUpdated={handleDepartmentUpdated}
         onRoleUpdated={handleRoleUpdated}
+        onAccountStatusUpdated={handleAccountStatusUpdated}
         onLiveStatusChange={handleLiveStatusChange}
       />
     </motion.div>
