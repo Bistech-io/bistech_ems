@@ -112,6 +112,13 @@ describe('LoginForm', () => {
     });
   });
 
+  it('does not render quick demo sign-in buttons', () => {
+    renderLoginForm();
+    expect(screen.queryByText(/quick demo sign-in/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /super admin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /hr manager/i })).not.toBeInTheDocument();
+  });
+
   it('switches focus between username and password using ArrowDown, ArrowUp, and Enter', async () => {
     const user = userEvent.setup();
     renderLoginForm();

@@ -57,9 +57,9 @@ export function LoginForm({ nextPath }: LoginFormProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     setError,
     setFocus,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginRequest>({
     resolver: zodResolver(loginRequestSchema),
