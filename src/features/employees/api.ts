@@ -167,3 +167,18 @@ export async function updateEmployeeDesignation(
   });
   return res.data;
 }
+
+export async function updateEmployeeAccountStatus(
+  employeeId: string,
+  payload: {
+    frozen: boolean;
+    reason?: string;
+  },
+): Promise<EmployeeItem> {
+  const res = await apiRequest(`/employees/${employeeId}/account-status`, {
+    method: 'PATCH',
+    body: payload,
+    schema: employeeSingleResponseSchema,
+  });
+  return res.data;
+}
