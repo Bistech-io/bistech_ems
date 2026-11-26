@@ -19,10 +19,11 @@ import {
   putUserRoles,
   type OrgRoleItem,
 } from '@/features/admin/leadership/api';
-import { getRoleLabel, isCustomRoleName } from '@/lib/auth/permissions';
+import { can, getRoleLabel, isCustomRoleName } from '@/lib/auth/permissions';
 import { ApiError } from '@/lib/api/errors';
 import { useRegisterRightDrawer } from '@/lib/ui/right-drawer';
 import { cn } from '@/lib/utils';
+import { useOptionalAuth } from '@/providers/auth-provider';
 import {
   createDesignation,
   updateEmployeeAccountStatus,
@@ -100,6 +101,8 @@ export function EmployeeProfileModal({
   onLiveStatusChange,
 }: EmployeeProfileModalProps) {
   useRegisterRightDrawer(Boolean(employee), 512);
+  const auth = useOptionalAuth();
+  const canManageRoles = can(auth?.user ?? null, 'role.manage', 'org');
 
   const [designationInput, setDesignationInput] = useState<string>('');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
@@ -134,13 +137,15 @@ export function EmployeeProfileModal({
   useEffect(() => {
     if (!employee) return;
     let cancelled = false;
-    fetchOrgRoles()
-      .then((rolesList) => {
-        if (!cancelled) {
-          setAvailableCustomRoles(rolesList.filter((r) => !r.isSystem));
-        }
-      })
-      .catch(() => {});
+    if (canManageRoles) {
+      fetchOrgRoles()
+        .then((rolesList) => {
+          if (!cancelled) {
+            setAvailableCustomRoles(rolesList.filter((r) => !r.isSystem));
+          }
+        })
+        .catch(() => {});
+    }
 
     const timer = setTimeout(() => {
       setDesignationInput(employee.designation.title);
@@ -160,7 +165,7 @@ export function EmployeeProfileModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [employee, liveStatus]);
+  }, [employee, liveStatus, canManageRoles]);
 
   function handleConfirmStatusChange(e: React.FormEvent) {
     e.preventDefault();
