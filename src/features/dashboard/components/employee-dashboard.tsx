@@ -64,10 +64,10 @@ const ROLE_DASHBOARD_META: Record<
 };
 
 export function EmployeeDashboard() {
-  const { user, isAuthenticated, activeRole } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading, activeRole } = useAuth();
   const [summary, setSummary] = useState<SummaryDashboardData | null>(null);
   const [shiftSettings, setShiftSettings] = useState<OrganizationShiftSettings | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const role: RoleName = activeRole ?? 'employee';
   const roleDisplayLabel = getRoleLabel(role);
@@ -75,6 +75,7 @@ export function EmployeeDashboard() {
     title: `${roleDisplayLabel} Dashboard`,
     badge: `${roleDisplayLabel} Workspace`,
   };
+  const isWaitingForSummary = isAuthLoading || (isAuthenticated && isLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,46 +199,73 @@ export function EmployeeDashboard() {
     >
       {/* Clean Role Header with Eye-Catchy Dynamic Designation */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#23302B] pb-5">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
-            {meta.badge}
-          </p>
-          <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
-            {meta.title}
-          </h1>
-          <div className="mt-2.5 flex flex-wrap items-center gap-3">
-            <span className="font-heading text-lg font-semibold tracking-[-0.01em] text-[#F0F5F2] md:text-xl">
-              {persona.fullName}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/50 bg-gradient-to-r from-[#1F5C3A]/60 to-[#2E8B57]/25 px-3 py-1 text-xs font-semibold tracking-wide text-[#4CAF7D] shadow-[0_4px_14px_-4px_rgba(46,139,87,0.45)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
-              {persona.designation}
-            </span>
+        {isAuthLoading ? (
+          <div className="space-y-2.5">
+            <div className="h-3.5 w-36 animate-pulse rounded bg-[#1A2420]" />
+            <div className="h-8 w-56 animate-pulse rounded-lg bg-[#1A2420]" />
+            <div className="h-6 w-48 animate-pulse rounded-full bg-[#1A2420]" />
           </div>
-        </div>
+        ) : (
+          <div>
+            <p className="text-xs font-semibold tracking-[0.08em] text-[#4CAF7D] uppercase">
+              {meta.badge}
+            </p>
+            <h1 className="mt-1 font-heading text-2xl font-bold tracking-[-0.02em] text-[#F0F5F2] md:text-3xl">
+              {meta.title}
+            </h1>
+            <div className="mt-2.5 flex flex-wrap items-center gap-3">
+              <span className="font-heading text-lg font-semibold tracking-[-0.01em] text-[#F0F5F2] md:text-xl">
+                {persona.fullName}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2E8B57]/50 bg-gradient-to-r from-[#1F5C3A]/60 to-[#2E8B57]/25 px-3 py-1 text-xs font-semibold tracking-wide text-[#4CAF7D] shadow-[0_4px_14px_-4px_rgba(46,139,87,0.45)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#4CAF7D]" />
+                {persona.designation}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-2 rounded-2xl border border-[#23302B] bg-[#131A17] px-3.5 py-2 text-xs">
             <Clock className="h-4 w-4 text-[#4CAF7D]" />
             <span className="text-[#A3B3AC]">Shift:</span>
-            <strong className="text-[#F0F5F2]">
-              {shiftSettings
-                ? `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
-                : '—'}
+            <strong className="min-w-[130px] text-[#F0F5F2]">
+              {shiftSettings ? (
+                `${format24hTo12h(shiftSettings.workStart)} – ${format24hTo12h(shiftSettings.workEnd)} · ${shiftSettings.graceMinutes}m grace`
+              ) : (
+                <span className="inline-block h-3.5 w-32 animate-pulse rounded bg-[#1A2420] align-middle" />
+              )}
             </strong>
           </div>
 
           <div className="flex items-center gap-2.5 rounded-2xl border border-[#23302B] bg-[#131A17] px-4 py-2.5">
             <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
             <span className="text-xs font-medium text-[#A3B3AC]">Role:</span>
-            <span className="text-xs font-semibold text-[#F0F5F2]">{getRoleLabel(role)}</span>
+            <span className="text-xs font-semibold text-[#F0F5F2]">
+              {isAuthLoading ? (
+                <span className="inline-block h-3.5 w-20 animate-pulse rounded bg-[#1A2420] align-middle" />
+              ) : (
+                getRoleLabel(role)
+              )}
+            </span>
           </div>
         </div>
       </header>
 
-      {isLoading ? (
-        <div className="flex h-56 items-center justify-center rounded-3xl border border-[#23302B] bg-[#131A17]">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#23302B] border-t-[#4CAF7D]" />
+      {isWaitingForSummary ? (
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((card) => (
+              <div
+                key={card}
+                className="h-28 animate-pulse rounded-2xl border border-[#23302B] bg-[#131A17]"
+              />
+            ))}
+          </div>
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="h-64 animate-pulse rounded-3xl border border-[#23302B] bg-[#131A17] lg:col-span-7" />
+            <div className="h-64 animate-pulse rounded-3xl border border-[#23302B] bg-[#131A17] lg:col-span-5" />
+          </div>
         </div>
       ) : (
         <>

@@ -281,7 +281,7 @@ export function BoardDashboard() {
                 : 'text-[#A3B3AC] hover:text-[#F0F5F2]',
             )}
           >
-            All ({counts.total})
+            {isLoading ? 'All' : `All (${counts.total})`}
           </button>
           <button
             type="button"
@@ -294,7 +294,7 @@ export function BoardDashboard() {
             )}
           >
             <FileText className="h-3.5 w-3.5" />
-            Notices ({counts.notices})
+            {isLoading ? 'Notices' : `Notices (${counts.notices})`}
           </button>
           <button
             type="button"
@@ -307,7 +307,7 @@ export function BoardDashboard() {
             )}
           >
             <StickyNote className="h-3.5 w-3.5" />
-            Opinions ({counts.opinions})
+            {isLoading ? 'Opinions' : `Opinions (${counts.opinions})`}
           </button>
         </div>
 
