@@ -126,6 +126,7 @@ export function EmployeeProfileModal({
   const [isTogglingFreeze, setIsTogglingFreeze] = useState(false);
   const [freezeNotice, setFreezeNotice] = useState<string | null>(null);
   const [freezeError, setFreezeError] = useState<string | null>(null);
+  const [confirmFreezeModal, setConfirmFreezeModal] = useState<'freeze' | 'unfreeze' | null>(null);
 
   const availableDepartments = useMemo<DepartmentOption[]>(() => {
     if (!employee) return departments;
@@ -160,6 +161,7 @@ export function EmployeeProfileModal({
       setRoleError(null);
       setFreezeNotice(null);
       setFreezeError(null);
+      setConfirmFreezeModal(null);
     }, 0);
     return () => {
       cancelled = true;
@@ -693,34 +695,13 @@ export function EmployeeProfileModal({
                   <button
                     type="button"
                     disabled={isTogglingFreeze}
-                    onClick={async () => {
+                    onClick={() => {
                       if (!employee || isTogglingFreeze) return;
-                      const willFreeze = employee.user.accountStatus !== 'suspended';
-                      setIsTogglingFreeze(true);
                       setFreezeNotice(null);
                       setFreezeError(null);
-                      try {
-                        const updated = await updateEmployeeAccountStatus(employee.id, {
-                          frozen: willFreeze,
-                        });
-                        onAccountStatusUpdated?.(
-                          employee.id,
-                          updated.user.accountStatus,
-                        );
-                        setFreezeNotice(
-                          willFreeze
-                            ? 'Employee account frozen.'
-                            : 'Employee account unfrozen.',
-                        );
-                      } catch (err) {
-                        setFreezeError(
-                          err instanceof ApiError
-                            ? err.message
-                            : 'Failed to update account status.',
-                        );
-                      } finally {
-                        setIsTogglingFreeze(false);
-                      }
+                      setConfirmFreezeModal(
+                        employee.user.accountStatus === 'suspended' ? 'unfreeze' : 'freeze',
+                      );
                     }}
                     className={cn(
                       'mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
@@ -764,6 +745,120 @@ export function EmployeeProfileModal({
               </div>
             )}
           </motion.aside>
+
+          {confirmFreezeModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="freeze-confirm-title"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B0F0E]/80 p-4 backdrop-blur-sm"
+              onClick={() => !isTogglingFreeze && setConfirmFreezeModal(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.18, ease: EASE }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md rounded-3xl border border-[#23302B] bg-[#131A17] p-6 shadow-2xl"
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border',
+                      confirmFreezeModal === 'freeze'
+                        ? 'border-[#EF4444]/40 bg-[#EF4444]/15 text-[#FCA5A5]'
+                        : 'border-[#2E8B57]/40 bg-[#1F5C3A]/35 text-[#4CAF7D]',
+                    )}
+                  >
+                    {confirmFreezeModal === 'freeze' ? (
+                      <Lock className="h-5 w-5" />
+                    ) : (
+                      <Unlock className="h-5 w-5" />
+                    )}
+                  </span>
+                  <div>
+                    <h3
+                      id="freeze-confirm-title"
+                      className="font-heading text-base font-semibold text-[#F0F5F2]"
+                    >
+                      {confirmFreezeModal === 'freeze'
+                        ? 'Freeze Employee Account?'
+                        : 'Unfreeze Employee Account?'}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-[#A3B3AC]">
+                      {confirmFreezeModal === 'freeze'
+                        ? `Are you sure you want to freeze ${employee.fullName}'s account? Active sessions will be revoked immediately and they will be blocked from signing in.`
+                        : `Are you sure you want to unfreeze ${employee.fullName}'s account? They will be able to sign in again.`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    disabled={isTogglingFreeze}
+                    onClick={() => setConfirmFreezeModal(null)}
+                    className="inline-flex h-10 items-center rounded-xl border border-[#23302B] bg-[#0B0F0E] px-4 text-xs font-medium text-[#A3B3AC] transition-colors hover:text-[#F0F5F2] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isTogglingFreeze}
+                    onClick={async () => {
+                      if (!employee || isTogglingFreeze) return;
+                      const willFreeze = confirmFreezeModal === 'freeze';
+                      setIsTogglingFreeze(true);
+                      setFreezeNotice(null);
+                      setFreezeError(null);
+                      try {
+                        const updated = await updateEmployeeAccountStatus(employee.id, {
+                          frozen: willFreeze,
+                        });
+                        onAccountStatusUpdated?.(
+                          employee.id,
+                          updated.user.accountStatus,
+                        );
+                        setFreezeNotice(
+                          willFreeze
+                            ? 'Employee account frozen.'
+                            : 'Employee account unfrozen.',
+                        );
+                        setConfirmFreezeModal(null);
+                      } catch (err) {
+                        setFreezeError(
+                          err instanceof ApiError
+                            ? err.message
+                            : 'Failed to update account status.',
+                        );
+                        setConfirmFreezeModal(null);
+                      } finally {
+                        setIsTogglingFreeze(false);
+                      }
+                    }}
+                    className={cn(
+                      'inline-flex h-10 items-center gap-2 rounded-xl px-4 text-xs font-semibold transition-colors disabled:opacity-50',
+                      confirmFreezeModal === 'freeze'
+                        ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
+                        : 'bg-[#2E8B57] text-[#F0F5F2] hover:bg-[#4CAF7D] hover:text-[#0B0F0E]',
+                    )}
+                  >
+                    {isTogglingFreeze ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : confirmFreezeModal === 'freeze' ? (
+                      <span>Confirm Freeze</span>
+                    ) : (
+                      <span>Confirm Unfreeze</span>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </div>
       )}
     </AnimatePresence>
