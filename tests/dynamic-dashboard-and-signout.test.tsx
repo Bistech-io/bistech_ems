@@ -119,6 +119,167 @@ describe('Dynamic Dashboard per Role', () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/^dept head$/i).length).toBeGreaterThanOrEqual(1);
   });
+
+  it('renders dynamic company dashboard for a custom "admin" role with governance permissions', async () => {
+    server.use(
+      http.get('/api/v1/dashboard/summary', () => {
+        return HttpResponse.json({
+          success: true,
+          message: 'OK',
+          data: {
+            primaryRole: 'super_admin',
+            availableViews: ['company', 'hr'],
+            company: {
+              timezone: 'Asia/Dhaka',
+              workStart: '10:00',
+              graceMinutes: 15,
+              workEnd: '18:30',
+              workforce: {
+                activeEmployees: 18,
+                inactiveEmployees: 1,
+                joinersThisMonth: 2,
+                departmentSummary: [
+                  { departmentId: 'd1', departmentName: 'Engineering', activeCount: 10 },
+                ],
+              },
+              todayAttendance: {
+                workDate: '2026-11-26',
+                isWorkingDay: true,
+                presentCount: 14,
+                lateCount: 2,
+                notCheckedInCount: 2,
+                absentCount: 0,
+                attendanceRatePercent: 89,
+              },
+              monthlyAttendance: {
+                presentDays: 14,
+                lateDays: 2,
+                absentDays: 0,
+                expectedWorkingDays: 16,
+                attendanceRatePercent: 95,
+              },
+              tasks: {
+                countsByStatus: {
+                  todo: 4,
+                  inProgress: 3,
+                  inReview: 2,
+                  changesRequested: 0,
+                  done: 9,
+                },
+                openCount: 9,
+                overdueCount: 1,
+                dueSoonCount: 2,
+                completionRatePercent: 50,
+              },
+              openFeedbackCount: 2,
+              recentJoiners: [],
+              recentAuditLogs: [],
+              governance: {
+                activeTeamsCount: 3,
+                totalDepartments: 4,
+                departmentsWithHead: 3,
+                pendingReviewsCount: 2,
+              },
+              feedbackBreakdown: {
+                openTotal: 2,
+                issues: 1,
+                suggestions: 1,
+              },
+            },
+            hr: null,
+            me: null,
+          },
+          meta: null,
+        });
+      }),
+    );
+
+    render(
+      <QueryProvider>
+        <AuthProvider
+          initialSession={{
+            user: {
+              id: 'u-custom-admin',
+              username: 'custom_admin',
+              email: 'admin.custom@bistech.io',
+              name: 'Custom Admin User',
+              accountStatus: 'active',
+            },
+            employeeId: null,
+            roles: ['admin'],
+            permissions: {
+              'role.manage': 'org',
+              'user.read': 'org',
+              'org.settings.manage': 'org',
+              'dashboard.read': 'org',
+            },
+            csrfToken: 'csrf-custom-admin',
+          }}
+        >
+          <EmployeeDashboard />
+        </AuthProvider>
+      </QueryProvider>,
+    );
+
+    expect(screen.getByText(/admin workspace/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /admin dashboard/i })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Active Workforce')).toBeInTheDocument();
+      expect(screen.getByText('18')).toBeInTheDocument();
+      expect(screen.getByText('Admin Quick Access')).toBeInTheDocument();
+    });
+  });
+
+  it('renders fallback Custom Role Workspace cards when custom role has no org dashboard or employee profile', async () => {
+    server.use(
+      http.get('/api/v1/dashboard/summary', () => {
+        return HttpResponse.json({
+          success: true,
+          message: 'OK',
+          data: {
+            primaryRole: 'employee',
+            availableViews: [],
+            company: null,
+            hr: null,
+            me: null,
+          },
+          meta: null,
+        });
+      }),
+    );
+
+    render(
+      <QueryProvider>
+        <AuthProvider
+          initialSession={{
+            user: {
+              id: 'u-custom-narrow',
+              username: 'narrow_admin',
+              email: 'narrow@bistech.io',
+              name: 'Narrow Custom Role',
+              accountStatus: 'active',
+            },
+            employeeId: null,
+            roles: ['admin'],
+            permissions: {
+              'feedback.read': 'own',
+              'feedback.submit': 'own',
+            },
+            csrfToken: 'csrf-narrow',
+          }}
+        >
+          <EmployeeDashboard />
+        </AuthProvider>
+      </QueryProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Authorized Workspaces' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Granted Permissions' })).toBeInTheDocument();
+      expect(screen.getByText('feedback.read')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('Sign Out resilience', () => {

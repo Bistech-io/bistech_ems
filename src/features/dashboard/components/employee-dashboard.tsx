@@ -12,13 +12,21 @@ import {
   CheckSquare,
   Clock,
   Crown,
+  KeyRound,
   Layers,
+  LayoutGrid,
   ShieldCheck,
   TrendingUp,
   UserCheck,
   Users,
 } from 'lucide-react';
-import { getRoleLabel, type RoleName } from '@/lib/auth/permissions';
+import { ACCOUNT_NAV_ITEMS, getFilteredNavigation } from '@/config/navigation';
+import {
+  can,
+  getRoleLabel,
+  isCustomRoleName,
+  type RoleName,
+} from '@/lib/auth/permissions';
 import { useAuth } from '@/providers/auth-provider';
 import { fetchOrganizationSettings } from '@/features/attendance/api';
 import type { OrganizationShiftSettings } from '@/features/attendance/types';
@@ -71,11 +79,83 @@ export function EmployeeDashboard() {
 
   const role: RoleName = activeRole ?? 'employee';
   const roleDisplayLabel = getRoleLabel(role);
+  const isCustomRole = isCustomRoleName(role);
   const meta = ROLE_DASHBOARD_META[role] ?? {
     title: `${roleDisplayLabel} Dashboard`,
     badge: `${roleDisplayLabel} Workspace`,
   };
   const isWaitingForSummary = isAuthLoading || (isAuthenticated && isLoading);
+
+  const authorizedModules = useMemo(() => {
+    const navItems = getFilteredNavigation(user)
+      .flatMap((group) =>
+        group.items.map((item) => ({
+          ...item,
+          groupLabel: group.label,
+        })),
+      )
+      .filter((item) => item.href !== '/dashboard');
+
+    const accountItems = ACCOUNT_NAV_ITEMS.map((item) => ({
+      ...item,
+      groupLabel: 'Account',
+    }));
+
+    return [...navItems, ...accountItems];
+  }, [user]);
+
+  const permissionEntries = useMemo(
+    () =>
+      Object.entries(user?.permissions ?? {}).sort(([a], [b]) =>
+        a.localeCompare(b),
+      ),
+    [user?.permissions],
+  );
+
+  const resolvedView: 'super_admin' | 'hr_manager' | 'dept_head' | 'employee' | 'custom' =
+    useMemo(() => {
+      if (
+        role === 'super_admin' ||
+        role === 'hr_manager' ||
+        role === 'dept_head' ||
+        role === 'employee'
+      ) {
+        return role;
+      }
+
+      if (
+        summary?.company ||
+        summary?.primaryRole === 'super_admin' ||
+        can(user, 'role.manage', 'org') ||
+        can(user, 'audit.read', 'org') ||
+        can(user, 'org.settings.manage', 'org')
+      ) {
+        return 'super_admin';
+      }
+
+      if (
+        summary?.hr ||
+        summary?.primaryRole === 'hr_manager' ||
+        can(user, 'dashboard.read', 'org') ||
+        can(user, 'employee.read', 'org') ||
+        can(user, 'attendance.read', 'org')
+      ) {
+        return 'hr_manager';
+      }
+
+      if (summary?.me || user?.employeeId) {
+        if (
+          summary?.primaryRole === 'department_head' ||
+          can(user, 'dashboard.read', 'department') ||
+          can(user, 'task.review', 'department')
+        ) {
+          return 'dept_head';
+        }
+        return 'employee';
+      }
+
+      return 'custom';
+    }, [role, summary, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,8 +183,9 @@ export function EmployeeDashboard() {
   useEffect(() => {
     if (!isAuthenticated) return;
     let cancelled = false;
+    let settled = false;
     const startTimer = setTimeout(() => {
-      if (!cancelled) setIsLoading(true);
+      if (!cancelled && !settled) setIsLoading(true);
     }, 0);
 
     fetchDashboardSummary()
@@ -139,12 +220,15 @@ export function EmployeeDashboard() {
         // Keep dashboard resilient if backend summary is unavailable
       })
       .finally(() => {
+        settled = true;
+        clearTimeout(startTimer);
         if (!cancelled) {
           setIsLoading(false);
         }
       });
 
     return () => {
+      settled = true;
       clearTimeout(startTimer);
       cancelled = true;
     };
@@ -269,8 +353,8 @@ export function EmployeeDashboard() {
         </div>
       ) : (
         <>
-          {/* SUPER ADMIN VIEW */}
-          {role === 'super_admin' && (
+          {/* SUPER ADMIN / CUSTOM GOVERNANCE VIEW */}
+          {resolvedView === 'super_admin' && (
             <div className="space-y-6">
               <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
@@ -402,28 +486,46 @@ export function EmployeeDashboard() {
                   </div>
 
                   <div className="mt-auto grid grid-cols-2 gap-2.5 border-t border-[#23302B] pt-4">
-                    <Link
-                      href="/tasks"
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
-                    >
-                      <CheckSquare className="h-3.5 w-3.5" />
-                      <span>Full Task Board</span>
-                    </Link>
-                    <Link
-                      href="/employees"
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
-                    >
-                      <Users className="h-3.5 w-3.5" />
-                      <span>Directory</span>
-                    </Link>
+                    {isCustomRole ? (
+                      authorizedModules.slice(0, 4).map((mod) => {
+                        const ModIcon = mod.icon;
+                        return (
+                          <Link
+                            key={mod.id}
+                            href={mod.href}
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
+                          >
+                            <ModIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{mod.label}</span>
+                          </Link>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <Link
+                          href="/tasks"
+                          className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
+                        >
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          <span>Full Task Board</span>
+                        </Link>
+                        <Link
+                          href="/employees"
+                          className="flex items-center justify-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-3 py-2 text-xs font-medium text-[#F0F5F2] transition-colors hover:border-[#2E8B57] hover:text-[#4CAF7D]"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          <span>Directory</span>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </section>
               </div>
             </div>
           )}
 
-          {/* HR MANAGER VIEW */}
-          {role === 'hr_manager' && (
+          {/* HR MANAGER / ORG WORKFORCE VIEW */}
+          {resolvedView === 'hr_manager' && (
             <div className="space-y-6">
               <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
@@ -555,7 +657,7 @@ export function EmployeeDashboard() {
           )}
 
           {/* DEPARTMENT HEAD VIEW */}
-          {role === 'dept_head' && (
+          {resolvedView === 'dept_head' && (
             <div className="space-y-6">
               <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
@@ -604,7 +706,7 @@ export function EmployeeDashboard() {
           )}
 
           {/* EMPLOYEE VIEW */}
-          {role === 'employee' && (
+          {resolvedView === 'employee' && (
             <div className="space-y-6">
               <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
@@ -667,6 +769,155 @@ export function EmployeeDashboard() {
 
               <MyTasksTable tasks={myTaskRows} />
             </div>
+          )}
+
+          {/* CUSTOM ROLE DYNAMIC WORKSPACE VIEW */}
+          {resolvedView === 'custom' && (
+            <div className="space-y-6">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Active Role</span>
+                    <ShieldCheck className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-xl font-bold text-[#F0F5F2]">
+                    {roleDisplayLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">
+                    {user?.roles.length ?? 1} assigned {(user?.roles.length ?? 1) === 1 ? 'role' : 'roles'}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Granted Permissions</span>
+                    <KeyRound className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {permissionEntries.length}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">Active scoped capabilities</p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Accessible Workspaces</span>
+                    <LayoutGrid className="h-4 w-4 text-[#38BDF8]" />
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-[#F0F5F2]">
+                    {authorizedModules.length}
+                  </p>
+                  <p className="mt-1 text-xs text-[#6E8078]">Available modules in sidebar</p>
+                </div>
+
+                <div className="rounded-2xl border border-[#23302B] bg-[#131A17] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A3B3AC]">Session Status</span>
+                    <CheckCircle2 className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+                  <p className="mt-3 font-heading text-xl font-bold text-[#F0F5F2]">Active</p>
+                  <p className="mt-1 text-xs text-[#6E8078]">Custom access policy applied</p>
+                </div>
+              </section>
+
+              <div className="grid gap-6 lg:grid-cols-12">
+                <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-7">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Authorized Workspaces
+                    </h2>
+                    <span className="text-xs font-medium text-[#4CAF7D]">
+                      {authorizedModules.length} unlocked
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {authorizedModules.map((mod) => {
+                      const ModIcon = mod.icon;
+                      return (
+                        <Link
+                          key={mod.id}
+                          href={mod.href}
+                          className="group flex items-center justify-between rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 px-4 py-3 transition-colors hover:border-[#2E8B57]/60 hover:bg-[#1A2420]/70"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2E8B57]/35 bg-[#1F5C3A]/30 text-[#4CAF7D]">
+                              <ModIcon className="h-4 w-4" />
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-[#F0F5F2]">{mod.label}</p>
+                              <p className="text-[11px] text-[#6E8078]">{mod.groupLabel}</p>
+                            </div>
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-[#6E8078] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#4CAF7D]" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6 lg:col-span-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                      Granted Permissions
+                    </h2>
+                    <KeyRound className="h-4 w-4 text-[#4CAF7D]" />
+                  </div>
+
+                  {permissionEntries.length === 0 ? (
+                    <p className="mt-4 text-xs text-[#6E8078]">
+                      No explicit permission grants loaded yet.
+                    </p>
+                  ) : (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {permissionEntries.map(([permKey, scope]) => (
+                        <span
+                          key={permKey}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#23302B] bg-[#0B0F0E] px-2.5 py-1.5 text-[11px] text-[#F0F5F2]"
+                        >
+                          <code className="font-mono text-[#4CAF7D]">{permKey}</code>
+                          <span className="rounded bg-[#1F5C3A]/45 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#4CAF7D]">
+                            {scope}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </div>
+          )}
+
+          {/* Extra Authorized Modules Strip for Custom Roles on Org/Employee Views */}
+          {isCustomRole && resolvedView !== 'custom' && authorizedModules.length > 0 && (
+            <section className="rounded-3xl border border-[#23302B] bg-[#131A17] p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-base font-semibold text-[#F0F5F2]">
+                  {roleDisplayLabel} Quick Access
+                </h2>
+                <span className="text-xs font-medium text-[#4CAF7D]">
+                  {permissionEntries.length} granted permissions
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {authorizedModules.map((mod) => {
+                  const ModIcon = mod.icon;
+                  return (
+                    <Link
+                      key={mod.id}
+                      href={mod.href}
+                      className="group flex items-center justify-between rounded-2xl border border-[#23302B] bg-[#0B0F0E]/75 px-3.5 py-2.5 transition-colors hover:border-[#2E8B57]/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ModIcon className="h-4 w-4 text-[#4CAF7D]" />
+                        <span className="text-xs font-medium text-[#F0F5F2]">{mod.label}</span>
+                      </div>
+                      <ArrowUpRight className="h-3.5 w-3.5 text-[#6E8078] group-hover:text-[#4CAF7D]" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
           )}
         </>
       )}
